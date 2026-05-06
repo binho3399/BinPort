@@ -2,10 +2,34 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ReadDepthTracker } from "@/components/ReadDepthTracker";
 import { TrackLink } from "@/components/TrackLink";
-import { getContentBySlug } from "@/lib/content";
+import {
+  getCaseStudies,
+  getContentBySlug,
+  getExperiments,
+  getWritingPosts
+} from "@/lib/content";
 import type { CollectionName } from "@/types/content";
 
 type Params = { collection: CollectionName; slug: string };
+
+export const dynamicParams = false;
+
+export function generateStaticParams(): Params[] {
+  return [
+    ...getCaseStudies().map((item) => ({
+      collection: "case-studies" as const,
+      slug: item.frontmatter.slug
+    })),
+    ...getExperiments().map((item) => ({
+      collection: "experiments" as const,
+      slug: item.frontmatter.slug
+    })),
+    ...getWritingPosts().map((item) => ({
+      collection: "writing" as const,
+      slug: item.frontmatter.slug
+    }))
+  ];
+}
 
 export async function generateMetadata({
   params
