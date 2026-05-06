@@ -1,0 +1,19 @@
+{
+  "outputFile": "docs/codebase-mindmap.mmd",
+  "rootLabel": "BinPortRepo",
+  "maxDepth": 3,
+  "includeFilesAtDepth": 2,
+  "ignoreDirs": [
+    ".cursor",
+    ".git",
+    ".next",
+    "node_modules",
+    "dist",
+    "coverage",
+    ".turbo",
+    ".vercel"
+  ],
+  "ignoreFiles": [
+    "pnpm-lock.yaml"
+  ]
+}

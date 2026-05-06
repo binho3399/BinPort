@@ -1,0 +1,32 @@
+{
+  "name": "portfolio-site",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.10.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "map:generate": "node scripts/generate-codebase-mindmap.mjs",
+    "map:watch": "node scripts/watch-codebase-mindmap.mjs",
+    "map:check": "node scripts/generate-codebase-mindmap.mjs --check",
+    "map:precommit": "node scripts/precommit-update-mindmap.mjs"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "next": "^16.0.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "reading-time": "^1.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.1",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "eslint": "^9.38.0",
+    "eslint-config-next": "^16.0.1",
+    "tailwindcss": "^4.1.14",
+    "typescript": "^5.9.3"
+  }
+}
