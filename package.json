@@ -11,7 +11,11 @@
     "map:generate": "node scripts/generate-codebase-mindmap.mjs",
     "map:watch": "node scripts/watch-codebase-mindmap.mjs",
     "map:check": "node scripts/generate-codebase-mindmap.mjs --check",
-    "map:precommit": "node scripts/precommit-update-mindmap.mjs"
+    "map:precommit": "node scripts/precommit-update-mindmap.mjs",
+    "git:commit": "bash scripts/git-commit.sh",
+    "git:pull": "bash scripts/git-pull.sh",
+    "git:push": "bash scripts/git-push.sh",
+    "git:merge": "bash scripts/git-merge.sh"
   },
   "dependencies": {
     "gray-matter": "^4.0.3",
