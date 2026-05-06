@@ -24,12 +24,12 @@ if (generate.status !== 0) {
   process.exit(generate.status ?? 1);
 }
 
-const add = spawnSync("git", ["add", "docs/codebase-mindmap.mmd"], {
+const add = spawnSync("git", ["add", "docs/codebase-mindmap.md"], {
   stdio: "inherit"
 });
 
 if (add.status !== 0) {
-  console.error("Failed to stage docs/codebase-mindmap.mmd in pre-commit hook.");
+  console.error("Failed to stage docs/codebase-mindmap.md in pre-commit hook.");
   process.exit(add.status ?? 1);
 }
 

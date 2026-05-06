@@ -7,7 +7,7 @@ description: Uses the codebase Mermaid mindmap as the first navigation step befo
 
 ## Purpose
 
-Use `docs/codebase-mindmap.mmd` as the mandatory first step for code tasks, then narrow search scope to the smallest relevant area before reading files deeply.
+Use `docs/codebase-mindmap.md` as the mandatory first step for code tasks, then narrow search scope to the smallest relevant area before reading files deeply.
 
 ## Required workflow
 
@@ -16,7 +16,7 @@ Use `docs/codebase-mindmap.mmd` as the mandatory first step for code tasks, then
    - If stale, run `pnpm map:generate` before code exploration.
 
 2. Locate candidate modules from the mindmap:
-   - Read `docs/codebase-mindmap.mmd`.
+   - Read `docs/codebase-mindmap.md`.
    - Identify likely branches (for this repo usually `src/app`, `src/components`, `src/lib`, `src/config`, `scripts`, `docs`).
 
 3. Constrain search to mapped scope first:
@@ -49,7 +49,7 @@ Use `docs/codebase-mindmap.mmd` as the mandatory first step for code tasks, then
 ## Edge cases and fallbacks
 
 - Missing map file:
-  - If `docs/codebase-mindmap.mmd` is missing, run `pnpm map:generate` immediately and continue.
+  - If `docs/codebase-mindmap.md` is missing, run `pnpm map:generate` immediately and continue.
 - Stale map during long tasks:
   - Re-run `pnpm map:check` before major edits and before final validation.
 - Parallel agents:
@@ -63,7 +63,7 @@ Use `docs/codebase-mindmap.mmd` as the mandatory first step for code tasks, then
 
 ## Repo-specific references
 
-- Mindmap output: `docs/codebase-mindmap.mmd`
+- Mindmap output: `docs/codebase-mindmap.md`
 - Generator: `scripts/generate-codebase-mindmap.mjs`
 - Config: `scripts/mindmap.config.json`
 - Watch mode: `pnpm map:watch`

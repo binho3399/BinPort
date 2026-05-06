@@ -43,7 +43,7 @@ pnpm build
 ## Codebase mindmap workflow
 
 ```bash
-pnpm map:generate   # regenerate docs/codebase-mindmap.mmd
+pnpm map:generate   # regenerate docs/codebase-mindmap.md
 pnpm map:watch      # auto-regenerate on structural changes
 pnpm map:check      # verify mindmap is up to date
 pnpm map:precommit  # pre-commit helper (used by .husky/pre-commit)
@@ -51,7 +51,7 @@ pnpm map:precommit  # pre-commit helper (used by .husky/pre-commit)
 
 Mindmap output file:
 
-- `docs/codebase-mindmap.mmd`
+- `docs/codebase-mindmap.md`
 
 ## Project structure (high level)
 

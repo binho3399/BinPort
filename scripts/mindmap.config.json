@@ -1,5 +1,5 @@
 {
-  "outputFile": "docs/codebase-mindmap.mmd",
+  "outputFile": "docs/codebase-mindmap.md",
   "rootLabel": "BinPortRepo",
   "maxDepth": 3,
   "includeFilesAtDepth": 2,
@@ -9,6 +9,7 @@
     ".next",
     "node_modules",
     "dist",
+    "out",
     "coverage",
     ".turbo",
     ".vercel"
