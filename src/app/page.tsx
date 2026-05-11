@@ -21,28 +21,33 @@ export default function HomePage() {
 
   return (
     <main className="home">
-      <section className="home-hero container">
-        <span className="home-badge">Senior Product Designer</span>
-        <h1>{siteConfig.hero.headline}</h1>
-        <p>{siteConfig.hero.subheadline}</p>
-        <div className="home-hero-cta">
-          <TrackLink
-            href={siteConfig.home.primaryCta.href}
-            label={siteConfig.home.primaryCta.label}
-            eventName={siteConfig.home.primaryCta.eventName}
-          />
-          <TrackLink
-            href={siteConfig.home.secondaryCta.href}
-            label={siteConfig.home.secondaryCta.label}
-            eventName={siteConfig.home.secondaryCta.eventName}
-          />
+      <section className="container home-grid-shell">
+        <div className="home-grid-guides" aria-hidden="true" />
+        <div className="home-grid-content">
+          <section className="home-hero">
+            <span className="home-badge">Senior Product Designer</span>
+            <h1>{siteConfig.hero.headline}</h1>
+            <p>{siteConfig.hero.subheadline}</p>
+            <div className="home-hero-cta">
+              <TrackLink
+                href={siteConfig.home.primaryCta.href}
+                label={siteConfig.home.primaryCta.label}
+                eventName={siteConfig.home.primaryCta.eventName}
+              />
+              <TrackLink
+                href={siteConfig.home.secondaryCta.href}
+                label={siteConfig.home.secondaryCta.label}
+                eventName={siteConfig.home.secondaryCta.eventName}
+              />
+            </div>
+          </section>
         </div>
       </section>
 
-      <section className="container">
-        <div className="home-proof">
+      <section className="container home-section">
+        <div className="home-proof line-frame">
           <p>{siteConfig.home.trustLabel}</p>
-          <div className="home-proof-grid">
+          <div className="home-proof-grid section-grid section-grid-3">
             {siteConfig.home.trustStats.map((stat) => (
               <article key={stat.label} className="stat-card">
                 <strong>{stat.value}</strong>
@@ -54,11 +59,11 @@ export default function HomePage() {
       </section>
 
       <section className="container home-section">
-        <div className="section-heading">
+        <div className="section-heading line-frame">
           <h2>{siteConfig.home.sections.work.title}</h2>
           <p>{siteConfig.home.sections.work.description}</p>
         </div>
-        <div className="feature-grid">
+        <div className="feature-grid section-grid section-grid-3">
           {featuredCaseStudies.map((item) => (
             <article key={item.frontmatter.slug} className="feature-card">
               <p className="feature-eyebrow">{item.frontmatter.domain}</p>
@@ -76,11 +81,11 @@ export default function HomePage() {
       </section>
 
       <section className="container home-section">
-        <div className="section-heading">
+        <div className="section-heading line-frame">
           <h2>{siteConfig.home.sections.capabilities.title}</h2>
           <p>{siteConfig.home.sections.capabilities.description}</p>
         </div>
-        <div className="capability-grid">
+        <div className="capability-grid section-grid section-grid-3">
           {siteConfig.valuePillars.map((pillar) => (
             <article key={pillar.title} className="capability-card">
               <h3>{pillar.title}</h3>
@@ -91,11 +96,11 @@ export default function HomePage() {
       </section>
 
       <section className="container home-section">
-        <div className="section-heading">
+        <div className="section-heading line-frame">
           <h2>{siteConfig.home.sections.insights.title}</h2>
           <p>{siteConfig.home.sections.insights.description}</p>
         </div>
-        <div className="insight-grid">
+        <div className="insight-grid section-grid section-grid-2">
           {latestPosts.map((item) => (
             <article key={item.frontmatter.slug} className="insight-card">
               <p className="feature-eyebrow">Writing</p>
@@ -116,7 +121,7 @@ export default function HomePage() {
       </section>
 
       <section className="container home-section">
-        <div className="final-cta">
+        <div className="final-cta line-frame">
           <h2>{siteConfig.home.sections.finalCta.title}</h2>
           <p>{siteConfig.home.sections.finalCta.description}</p>
           <div className="home-hero-cta">
