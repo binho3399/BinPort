@@ -1,1 +1,0 @@
-(globalThis.TURBOPACK||(globalThis.TURBOPACK=[])).push(["object"==typeof document?document.currentScript:void 0,60132,t=>{"use strict";var n=t.i(79829);t.s(["TrackLink",0,function({href:t,label:o,eventName:e}){return(0,n.jsx)("a",{href:t,onClick:()=>{window.va&&window.va(e,{href:t,label:o})},style:{textDecoration:"none",fontWeight:600},children:o})}])}]);

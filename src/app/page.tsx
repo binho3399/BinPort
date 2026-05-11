@@ -21,27 +21,26 @@ export default function HomePage() {
 
   return (
     <main className="home">
-      <section className="container home-grid-shell">
-        <div className="home-grid-guides" aria-hidden="true" />
-        <div className="home-grid-content">
-          <section className="home-hero">
-            <span className="home-badge">Senior Product Designer</span>
-            <h1>{siteConfig.hero.headline}</h1>
-            <p>{siteConfig.hero.subheadline}</p>
-            <div className="home-hero-cta">
-              <TrackLink
-                href={siteConfig.home.primaryCta.href}
-                label={siteConfig.home.primaryCta.label}
-                eventName={siteConfig.home.primaryCta.eventName}
-              />
-              <TrackLink
-                href={siteConfig.home.secondaryCta.href}
-                label={siteConfig.home.secondaryCta.label}
-                eventName={siteConfig.home.secondaryCta.eventName}
-              />
-            </div>
-          </section>
-        </div>
+      <section className="container home-hero-wrap">
+        <section className="home-hero">
+          <span className="home-badge">Senior Product Designer</span>
+          <h1 className="home-hero-title">{siteConfig.hero.headline}</h1>
+          <p className="home-hero-lede">{siteConfig.hero.subheadline}</p>
+          <div className="home-hero-cta">
+            <TrackLink
+              href={siteConfig.home.primaryCta.href}
+              label={siteConfig.home.primaryCta.label}
+              eventName={siteConfig.home.primaryCta.eventName}
+              variant="primary"
+            />
+            <TrackLink
+              href={siteConfig.home.secondaryCta.href}
+              label={siteConfig.home.secondaryCta.label}
+              eventName={siteConfig.home.secondaryCta.eventName}
+              variant="secondary"
+            />
+          </div>
+        </section>
       </section>
 
       <section className="container home-section">
@@ -129,11 +128,13 @@ export default function HomePage() {
               href={siteConfig.home.finalCta.primary.href}
               label={siteConfig.home.finalCta.primary.label}
               eventName={siteConfig.home.finalCta.primary.eventName}
+              variant="primary"
             />
             <TrackLink
               href={siteConfig.home.finalCta.secondary.href}
               label={siteConfig.home.finalCta.secondary.label}
               eventName={siteConfig.home.finalCta.secondary.eventName}
+              variant="secondary"
             />
           </div>
         </div>

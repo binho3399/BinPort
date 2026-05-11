@@ -3,26 +3,19 @@ import { siteConfig } from "@/config/site";
 
 export function Nav() {
   return (
-    <header className="container">
-      <nav
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 16
-        }}
-      >
-        <Link href="/" style={{ textDecoration: "none", fontWeight: 700 }}>
+    <header className="site-header">
+      <div className="container site-header-inner">
+        <Link href="/" className="site-logo">
           {siteConfig.name}
         </Link>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <nav className="site-nav" aria-label="Primary">
           {siteConfig.navigation.map((item) => (
-            <Link key={item.href} href={item.href} style={{ textDecoration: "none" }}>
+            <Link key={item.href} href={item.href} className="site-nav-link">
               {item.label}
             </Link>
           ))}
-        </div>
-      </nav>
+        </nav>
+      </div>
     </header>
   );
 }

@@ -1,7 +1,22 @@
 import type { Metadata } from "next";
+import { IBM_Plex_Sans, IBM_Plex_Serif } from "next/font/google";
 import { Nav } from "@/components/Nav";
 import { siteConfig } from "@/config/site";
 import "./globals.css";
+
+const fontDisplay = IBM_Plex_Serif({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+  variable: "--font-display",
+  display: "swap"
+});
+
+const fontSans = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  variable: "--font-sans",
+  display: "swap"
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -33,7 +48,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en">
+    <html lang="en" className={`${fontSans.variable} ${fontDisplay.variable}`}>
       <body suppressHydrationWarning>
         <Nav />
         {children}

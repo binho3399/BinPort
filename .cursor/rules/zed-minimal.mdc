@@ -1,0 +1,230 @@
+---
+description: Zed Minimal design system — tokens and UI guidelines for this repo
+globs: "**/*.{tsx,jsx,css}"
+alwaysApply: false
+---
+
+# Zed Minimal
+
+When editing files that match the globs, align colors, typography, radius, spacing, and components with the tokens and guidelines below.
+
+## Design tokens (YAML)
+
+```yaml
+version: alpha
+name: Zed Minimal
+description: A bright, editorial, code-editor brand system with precise blue accents and restrained depth.
+colors:
+  primary: "#0055FF"
+  secondary: "#000000"
+  tertiary: "#F5F7FA"
+  neutral: "#FFFFFF"
+  surface: "#FFFFFF"
+  on-surface: "#000000"
+  error: "#D92D20"
+  primary-60: "#4D7DFF"
+  primary-70: "#2F68FF"
+  primary-80: "#1B4FE0"
+  border: "#D9DEE8"
+  muted: "#6B7280"
+typography:
+  headline-display:
+    fontFamily: "Plex Serif"
+    fontSize: "48px"
+    fontWeight: 340
+    lineHeight: "57.6px"
+    letterSpacing: "-0.96px"
+  headline-lg:
+    fontFamily: "Plex Serif"
+    fontSize: "36px"
+    fontWeight: 340
+    lineHeight: "43px"
+    letterSpacing: "0px"
+  headline-md:
+    fontFamily: "Plex Serif"
+    fontSize: "28px"
+    fontWeight: 340
+    lineHeight: "34px"
+    letterSpacing: "0px"
+  headline-sm:
+    fontFamily: "Writer"
+    fontSize: "21px"
+    fontWeight: 340
+    lineHeight: "25px"
+    letterSpacing: "0px"
+  body-lg:
+    fontFamily: "Writer"
+    fontSize: "16px"
+    fontWeight: 340
+    lineHeight: "24px"
+    letterSpacing: "-0.4px"
+  body-md:
+    fontFamily: "Writer"
+    fontSize: "14px"
+    fontWeight: 400
+    lineHeight: "21px"
+    letterSpacing: "0px"
+  body-sm:
+    fontFamily: "Writer"
+    fontSize: "12px"
+    fontWeight: 400
+    lineHeight: "18px"
+    letterSpacing: "0px"
+  label-lg:
+    fontFamily: "Writer"
+    fontSize: "14px"
+    fontWeight: 400
+    lineHeight: "21px"
+    letterSpacing: "0px"
+  label-md:
+    fontFamily: "Writer"
+    fontSize: "12px"
+    fontWeight: 400
+    lineHeight: "16px"
+    letterSpacing: "0px"
+  label-sm:
+    fontFamily: "Writer"
+    fontSize: "11px"
+    fontWeight: 400
+    lineHeight: "14px"
+    letterSpacing: "0px"
+  code-sm:
+    fontFamily: "Writer"
+    fontSize: "14px"
+    fontWeight: 400
+    lineHeight: "20px"
+    letterSpacing: "0px"
+  caption:
+    fontFamily: "Writer"
+    fontSize: "12px"
+    fontWeight: 400
+    lineHeight: "18px"
+    letterSpacing: "0px"
+rounded:
+  none: "0px"
+  sm: "4px"
+  md: "6px"
+  lg: "8px"
+  xl: "12px"
+  full: "9999px"
+spacing:
+  xs: "2px"
+  sm: "10px"
+  md: "14px"
+  lg: "24px"
+  xl: "64px"
+  gutter: "32px"
+  section: "96px"
+components:
+  button-primary:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.neutral}"
+    typography: "{typography.label-md}"
+    rounded: "{rounded.sm}"
+    padding: "11px 10px"
+    height: "36px"
+  button-primary-hover:
+    backgroundColor: "{colors.primary-70}"
+    textColor: "{colors.neutral}"
+    rounded: "{rounded.sm}"
+    padding: "11px 10px"
+  button-secondary:
+    backgroundColor: "{colors.neutral}"
+    textColor: "{colors.secondary}"
+    typography: "{typography.label-md}"
+    rounded: "{rounded.sm}"
+    padding: "11px 10px"
+    height: "36px"
+  button-link:
+    backgroundColor: "transparent"
+    textColor: "{colors.secondary}"
+    typography: "{typography.label-md}"
+    rounded: "{rounded.none}"
+    padding: "0px"
+  card:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.on-surface}"
+    rounded: "{rounded.sm}"
+    padding: "16px"
+  input:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.on-surface}"
+    typography: "{typography.body-md}"
+    rounded: "{rounded.sm}"
+    padding: "10px 12px"
+  chip:
+    backgroundColor: "{colors.tertiary}"
+    textColor: "{colors.on-surface}"
+    typography: "{typography.label-sm}"
+    rounded: "{rounded.full}"
+    padding: "4px 10px"
+  navbar:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.on-surface}"
+    height: "56px"
+  tooltip:
+    backgroundColor: "{colors.secondary}"
+    textColor: "{colors.neutral}"
+    typography: "{typography.body-sm}"
+    rounded: "{rounded.sm}"
+    padding: "6px 8px"
+```
+
+## Overview
+
+Zed feels crisp, intellectual, and quietly ambitious: a product for developers who value speed, craft, and low-friction collaboration. The page uses a bright white canvas, restrained black text, and a vivid electric blue accent to create a clean, high-contrast experience that feels modern without becoming noisy. Visual density is low in the hero and navigation, then increases in the product screenshot to signal depth and capability.
+
+## Colors
+
+- **Primary (#0055FF):** A saturated electric blue used for the brand mark, key links, the main call to action, and subtle emphasis in the announcement banner. It is the only true accent and should stay reserved for high-priority actions and highlights.
+- **Secondary (#000000):** A deep ink black used for navigation, body copy, and structural clarity. It anchors the system and keeps the design editorial and technical.
+- **Tertiary (#F5F7FA):** A near-white cool gray used for gentle surface separation, utility states, and low-emphasis backgrounds. It supports hierarchy without adding warmth.
+- **Neutral (#FFFFFF):** Pure white used for the page background, buttons with light treatments, and open canvas areas. This is the dominant surface color.
+- **Surface (#FFFFFF):** The primary component surface color, matching the page background to keep the interface airy and minimally layered.
+- **Border (#D9DEE8):** A soft cool border tone for dividers, input edges, and subtle framing around UI chrome. It keeps structure visible without heavy outlines.
+- **Muted (#6B7280):** A restrained gray for secondary metadata and helper text. Use it for supporting information that should not compete with headlines.
+- **Primary-60 (#4D7DFF), Primary-70 (#2F68FF), Primary-80 (#1B4FE0):** Small tonal steps for hover, active, and pressed states on blue actions. Keep them subtle and consistent with the brand accent.
+- **Error (#D92D20):** A clear red reserved for destructive actions, validation, and error messaging only.
+
+## Typography
+
+The system combines two distinctive families: Plex Serif for headlines and Writer for navigation, body copy, and controls. Plex Serif carries the editorial voice of the marketing page with a light, refined weight that feels confident rather than decorative. Writer keeps interface text practical and compact, with a modest letterform texture that suits a developer audience.
+
+Headlines use a serif hierarchy: `headline-display` for the large hero statement, `headline-lg` and `headline-md` for section emphasis, and `headline-sm` for smaller feature titles. Body text stays in Writer with a notably restrained weight, using `body-lg` for the hero description and `body-md` / `body-sm` for supporting content and metadata. Labels and button text should remain sentence case, not all caps, with minimal letter-spacing and no heavy tracking conventions.
+
+## Layout
+
+The page is centered around a fixed-max-width layout with a wide, spacious hero and clear horizontal structure. Navigation items sit in a single row with generous breathing room, while the hero content is centered and vertically stacked for immediate clarity. Section spacing is large enough to preserve the feeling of openness; use `section` spacing for major page breaks and `gutter` or `lg` rhythm for within-section spacing.
+
+Cards and preview panels use compact internal padding rather than large external margins, creating a dense but orderly product showcase beneath the airy hero. The overall rhythm should feel precise and grid-aligned, with borders and dividers doing more work than decorative spacing.
+
+## Elevation & Depth
+
+The interface is mostly flat, relying on contrast, borders, and color to establish hierarchy. Depth appears sparingly in the primary blue button, where an inset top edge and subtle shadow make the action feel clickable without becoming glossy. Product cards and the embedded editor screenshot may use soft, low-opacity shadows, but the design generally avoids dramatic elevation.
+
+Use tonal separation and faint borders before shadow. When depth is needed, keep it shallow and architectural rather than soft and diffuse.
+
+## Shapes
+
+The shape language is disciplined and modestly rounded. `rounded.sm` is the default for buttons, cards, and inputs, producing a light 4px corner that keeps the interface sharp and technical. Larger pill forms are reserved for chips and tiny badges via `rounded.full`, while most containers should remain visually rectangular.
+
+The result should feel engineered, not playful: clean corners, tight geometry, and almost no ornamental curvature.
+
+## Components
+
+Buttons are compact and text-forward. `button-primary` should use the blue fill, white text, and a 36px height with balanced horizontal padding; it is the strongest visual element in the system. `button-primary-hover` should deepen the blue slightly, while `button-secondary` stays white with black text and a minimal outline/shadow treatment. `button-link` is plain text with underline and no container chrome, used for low-emphasis actions.
+
+Cards should remain white, lightly bordered or shadowed, and padded at 16px. Keep their surfaces quiet so content and code screenshots remain the focus. Inputs should match the card surface, use the body text style, and maintain the same small radius so form controls integrate cleanly with the page.
+
+Chips and small badges should be pill-shaped, compact, and low-contrast, using muted or tertiary backgrounds. Tooltips should use a dark background with light text and modest padding to stay legible without drawing too much attention. Navbar items should be simple text links with minimal chrome, while the logo and primary download action remain the strongest anchors in the header.
+
+## Do's and Don'ts
+
+- Do keep the page bright, minimal, and highly legible.
+- Do reserve `primary` blue for the most important action, links, and emphasis.
+- Do use the serif headline family for editorial marketing copy and the Writer family for UI text.
+- Do keep corners small and consistent, especially on buttons, cards, and inputs.
+- Don't introduce heavy shadows, gradients, or glassmorphism.
+- Don't use multiple competing accent colors; the system should feel blue-led and restrained.
+- Don't over-round containers or make buttons pill-shaped unless they are chips or badges.
+- Don't center every block with equal weight; preserve a clear hierarchy between hero, features, and product preview.

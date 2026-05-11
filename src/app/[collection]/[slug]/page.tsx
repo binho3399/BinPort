@@ -84,7 +84,12 @@ export default async function ContentDetailPage({
         <p style={{ margin: 0 }}>{item.frontmatter.summary}</p>
         <small>{item.readingMinutes} min read</small>
         {demoUrl ? (
-          <TrackLink href={demoUrl} label="Open demo" eventName="open_project_demo" />
+          <TrackLink
+            href={demoUrl}
+            label="Open demo"
+            eventName="open_project_demo"
+            variant="primary"
+          />
         ) : null}
         {repoUrl ? <a href={repoUrl}>View repository</a> : null}
       </article>
