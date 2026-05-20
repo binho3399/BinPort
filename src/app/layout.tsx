@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Serif } from "next/font/google";
+import { Inter, Outfit } from "next/font/google";
 import { Nav } from "@/components/Nav";
 import { siteConfig } from "@/config/site";
 import "./globals.css";
 
-const fontDisplay = IBM_Plex_Serif({
+const fontDisplay = Outfit({
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
+  weight: ["300", "400", "500", "600", "700"],
   variable: "--font-display",
   display: "swap"
 });
 
-const fontSans = IBM_Plex_Sans({
+const fontSans = Inter({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
+  weight: ["300", "400", "500", "600", "700"],
   variable: "--font-sans",
   display: "swap"
 });
@@ -48,10 +48,35 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className={`${fontSans.variable} ${fontDisplay.variable}`}>
-      <body suppressHydrationWarning>
+    <html lang="vi" className={`${fontSans.variable} ${fontDisplay.variable}`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('theme');
+                  if (!theme) {
+                    theme = 'dark';
+                  }
+                  document.documentElement.setAttribute('data-theme', theme);
+                } catch (e) {}
+              })();
+            `
+          }}
+        />
+      </head>
+      <body className="antialiased min-h-screen text-slate-100 pb-24" suppressHydrationWarning>
+        {/* Animated background auroras */}
+        <div className="aurora-container">
+          <div className="aurora-blob-1"></div>
+          <div className="aurora-blob-2"></div>
+          <div className="aurora-blob-3"></div>
+        </div>
+
         <Nav />
         {children}
+        
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}

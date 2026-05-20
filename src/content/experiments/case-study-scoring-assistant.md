@@ -1,27 +1,27 @@
 ---
-title: "Case Study Scoring Assistant"
+title: "Trợ lý Đánh giá Nghiên cứu Điển hình"
 slug: "case-study-scoring-assistant"
-summary: "Prototype tool that scores case study completeness before publishing."
-tags: ["vibe-coding", "quality", "content-system"]
+summary: "Nguyên mẫu công cụ đánh giá mức độ hoàn thiện của các bài viết nghiên cứu điển hình trước khi xuất bản."
+tags: ["vibe-coding", "chất lượng", "hệ thống nội dung"]
 featured: true
 publishedAt: "2026-03-28"
-hypothesis: "A pre-publish scoring tool increases content quality consistency."
-buildScope: "Local scoring interface with checklist weights"
+hypothesis: "Công cụ chấm điểm trước khi xuất bản giúp tăng tính nhất quán về mặt chất lượng nội dung."
+buildScope: "Giao diện chấm điểm cục bộ với trọng số danh mục kiểm tra"
 techStack: ["Next.js", "OpenAI API", "Zod"]
 demoUrl: "https://demo.example.com/case-study-score"
 repoUrl: "https://github.com/example/case-study-score"
 ---
-## Hypothesis
-Structured quality feedback reduces weak portfolio entries.
+## Giả thuyết
+Các phản hồi chất lượng có cấu trúc giúp giảm thiểu các bài đăng portfolio kém chất lượng.
 
-## Build
-The tool parses frontmatter and body, then scores clarity, evidence, and narrative.
+## Xây dựng
+Công cụ phân tích siêu dữ liệu (frontmatter) và nội dung chi tiết, sau đó chấm điểm mức độ rõ ràng, minh chứng và văn phong kể chuyện.
 
-## What worked
-Writers improved section completeness before review.
+## Những gì hoạt động tốt
+Người viết đã cải thiện đáng kể mức độ đầy đủ của các phần trước khi gửi đi đánh giá.
 
-## What failed
-Automated tone feedback was too generic without domain-specific prompts.
+## Những gì chưa tốt
+Phản hồi tự động về văn phong quá chung chung nếu thiếu các câu lệnh dành riêng cho từng lĩnh vực chuyên môn.
 
-## Next iteration
-Add project-type presets for fintech, SaaS, and AI workflows.
+## Cải tiến tiếp theo
+Bổ sung cấu hình mẫu dự án chuyên biệt cho Fintech, SaaS và các quy trình AI.

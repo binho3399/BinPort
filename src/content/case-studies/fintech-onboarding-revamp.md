@@ -1,44 +1,44 @@
 ---
-title: "Fintech Onboarding Revamp"
+title: "Tái thiết kế Quy trình Cập nhật Thông tin Fintech"
 slug: "fintech-onboarding-revamp"
-summary: "Redesigned onboarding flow to improve first-deposit conversion and reduce support friction."
-tags: ["fintech", "onboarding", "conversion"]
+summary: "Thiết kế lại quy trình đăng ký tài khoản và cập nhật thông tin (onboarding) nhằm gia tăng tỷ lệ chuyển đổi nạp tiền lần đầu và giảm tải ma sát cho bộ phận hỗ trợ khách hàng."
+tags: ["fintech", "onboarding", "tỷ lệ chuyển đổi"]
 featured: true
 publishedAt: "2026-04-03"
-role: "Lead Product Designer"
-timeline: "4 months"
-impact: "+21% first-deposit conversion, -34% onboarding support tickets"
+role: "Thiết kế trưởng Sản phẩm"
+timeline: "4 tháng"
+impact: "Tăng 21% tỷ lệ chuyển đổi nạp tiền lần đầu, Giảm 34% số lượng yêu cầu hỗ trợ đăng ký"
 tools: ["Figma", "Amplitude", "Maze", "Notion"]
 visibility: "public"
-domain: "Fintech"
-capabilityTags: ["Research", "Strategy", "UX/UI", "Prototyping"]
+domain: "Công nghệ Tài chính (Fintech)"
+capabilityTags: ["Nghiên cứu", "Chiến lược", "UX/UI", "Xây dựng nguyên mẫu"]
 ---
-## Context
-Consumer fintech app had strong acquisition but low activation in the first week.
+## Bối cảnh
+Ứng dụng fintech tiêu dùng có lượng đăng ký mới mạnh mẽ nhưng tỷ lệ kích hoạt tài khoản trong tuần đầu tiên lại rất thấp.
 
-## Problem
-New users were blocked by unclear identity verification steps and unclear progress.
+## Vấn đề cần giải quyết
+Người dùng mới bị tắc nghẽn ở các bước xác minh danh tính không rõ ràng và không biết tiến trình thực hiện của mình.
 
-## Role and constraints
-I led product design with one PM and five engineers. Compliance requirements limited how much we could simplify KYC.
+## Vai trò và Ràng buộc
+Tôi dẫn dắt đội ngũ thiết kế sản phẩm cùng với một PM và năm kỹ sư phần mềm. Các yêu cầu tuân thủ pháp lý hạn chế khả năng tối giản hóa quy trình xác thực danh tính khách hàng (KYC).
 
-## Strategic artifacts
-- Problem framing document aligned legal, operations, and product risks.
-- JTBD map split user intent between "quick sign-up" and "account trust setup".
-- North-star metric focused on first successful deposit within 72 hours.
+## Hiện vật Chiến lược (Strategic Artifacts)
+- Tài liệu định nghĩa vấn đề giúp thống nhất rủi ro giữa các bộ phận pháp lý, vận hành và sản phẩm.
+- Bản đồ JTBD (Jobs-To-Be-Done) phân tách nhu cầu người dùng giữa "đăng ký nhanh" và "thiết lập tài khoản tin cậy".
+- Chỉ số định hướng (North-star metric) tập trung vào giao dịch nạp tiền thành công đầu tiên trong vòng 72 giờ.
 
-## Design artifacts
-- Rebuilt onboarding architecture into three progressive phases.
-- Added contextual education cards only at moments of confusion.
-- Introduced a reusable status component to surface verification state.
+## Hiện vật Thiết kế (Design Artifacts)
+- Tái cấu trúc quy trình onboarding thành ba giai đoạn lũy tiến rõ ràng.
+- Bổ sung các thẻ hướng dẫn theo ngữ cảnh xuất hiện đúng lúc người dùng gặp bối rối.
+- Giới thiệu một thành phần trạng thái có thể tái sử dụng để hiển thị tiến trình xác thực.
 
-## Proof artifacts
-- Before and after funnel showed meaningful drop-off recovery at document upload.
-- Stakeholder quote: "This is the first onboarding review where legal approved without multiple rounds."
-- Shipped in release v5.11 with phased rollout.
+## Hiện vật Thực chứng (Proof Artifacts)
+- Biểu đồ phễu trước và sau cải tiến ghi nhận tỷ lệ bỏ cuộc giảm rõ rệt tại bước tải lên tài liệu pháp lý.
+- Trích dẫn từ đối tác: "Đây là lần đầu tiên quy trình đăng ký được phòng pháp chế phê duyệt ngay lập tức mà không cần qua nhiều vòng chỉnh sửa."
+- Đã xuất bản chính thức trong phiên bản v5.11 với lộ trình triển khai từng giai đoạn.
 
-## Decision narrative
-We chose progressive disclosure over single-screen completion. Trade-off: one extra step for some users; gain: significantly lower error rate and abandonment.
+## Câu chuyện Quyết định (Decision Narrative)
+Chúng tôi chọn phương pháp tiết lộ thông tin lũy tiến (progressive disclosure) thay vì hoàn thành trên một màn hình duy nhất. Đánh đổi: thêm một bước nhỏ đối với một số người dùng; lợi ích: giảm tỷ lệ lỗi nhập liệu và tỷ lệ rời bỏ quy trình một cách rõ rệt.
 
-## Outcome and learnings
-Outcome improved conversion and support efficiency while keeping compliance intact. Key learning: compliance-heavy flows still benefit from interaction pacing and trust signals.
+## Kết quả và Bài học
+Kết quả giúp cải thiện tỷ lệ chuyển đổi và hiệu quả hỗ trợ trong khi vẫn đảm bảo tuân thủ tuyệt đối các quy định pháp luật. Bài học cốt lõi: các quy trình nặng tính pháp lý vẫn có thể tối ưu hóa thông qua nhịp điệu tương tác hợp lý và các tín hiệu xây dựng lòng tin.

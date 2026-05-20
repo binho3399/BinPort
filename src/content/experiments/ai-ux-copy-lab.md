@@ -1,27 +1,27 @@
 ---
-title: "AI UX Copy Lab"
+title: "Phòng thí nghiệm Bản viết AI UX"
 slug: "ai-ux-copy-lab"
-summary: "Experimented with LLM-assisted UX writing flows for onboarding and empty states."
+summary: "Thử nghiệm với quy trình viết nội dung UX được hỗ trợ bởi LLM cho quá trình đăng ký tài khoản và các trạng thái trống."
 tags: ["vibe-coding", "ai", "ux-writing"]
 featured: true
 publishedAt: "2026-03-14"
-hypothesis: "Prompt-guided copy generation can shorten UX writing cycles with quality safeguards."
-buildScope: "Prompt templates and copy evaluation mini app"
+hypothesis: "Tạo bản viết có hướng dẫn bằng prompt có thể rút ngắn chu kỳ viết UX với các bộ lọc bảo vệ chất lượng."
+buildScope: "Các mẫu prompt mẫu và ứng dụng nhỏ đánh giá chất lượng bản viết"
 techStack: ["React", "TypeScript", "Vercel AI SDK"]
 demoUrl: "https://demo.example.com/ux-copy-lab"
 repoUrl: "https://github.com/example/ux-copy-lab"
 ---
-## Hypothesis
-Teams can draft better UX copy faster when prompts include context constraints.
+## Giả thuyết
+Các đội ngũ có thể soạn thảo nội dung UX tốt hơn và nhanh hơn khi các prompt đi kèm các ràng buộc cụ thể về ngữ cảnh.
 
-## Build
-Built a mini app to generate, compare, and score copy options.
+## Xây dựng
+Đã xây dựng một ứng dụng nhỏ để tạo, so sánh và chấm điểm các phương án viết nội dung khác nhau.
 
-## What worked
-Prompt templates produced stronger first drafts and faster review cycles.
+## Những gì hoạt động tốt
+Các mẫu prompt tạo ra các bản thảo đầu tiên chất lượng tốt hơn và rút ngắn chu kỳ đánh giá phản hồi một cách đáng kể.
 
-## What failed
-Generic prompts generated brand-inconsistent tone.
+## Những gì chưa tốt
+Các câu lệnh chung chung tạo ra văn phong không đồng bộ với bản sắc thương hiệu.
 
-## Next iteration
-Integrate style guide rules directly into prompt context.
+## Cải tiến tiếp theo
+Tích hợp trực tiếp các quy tắc hướng dẫn phong cách thương hiệu (style guide) vào ngữ cảnh prompt.
