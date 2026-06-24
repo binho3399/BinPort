@@ -20,3 +20,6 @@ output/
 .playwright-cli/
 cloned-sites/*
 !cloned-sites/.gitignore
+
+# Claude Code local settings
+.claude/settings.local.json
