@@ -1,4 +1,5 @@
 import './globals.css';
+import PersistentExperience from '../components/PersistentExperience';
 
 export const metadata = {
   title: 'Hiroto Sato',
@@ -13,7 +14,9 @@ export default function RootLayout({ children }) {
         <link rel="preload" href="https://use.typekit.net/nof0axs.css" as="style" />
         <link rel="stylesheet" href="https://use.typekit.net/nof0axs.css" />
       </head>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        <PersistentExperience>{children}</PersistentExperience>
+      </body>
     </html>
   );
 }

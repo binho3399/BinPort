@@ -1,5 +1,5 @@
-import ExperienceShell from '../../components/ExperienceShell';
+import ProjectsPage from '../../components/pages/ProjectsPage';
 
 export default function Page() {
-  return <ExperienceShell />;
+  return <ProjectsPage />;
 }
