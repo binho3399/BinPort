@@ -2,11 +2,16 @@
 
 import { useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
-import { aboutContent, aboutLanguages, contactLinks } from '../../lib/siteContent';
+import {
+  aboutContent,
+  aboutLanguages,
+  contactLinks,
+  type AboutLanguage,
+} from '../../lib/siteContent';
 import BackButton from './BackButton';
 
 export default function AboutPage() {
-  const [lang, setLang] = useState(aboutLanguages[0]);
+  const [lang, setLang] = useState<AboutLanguage>(aboutLanguages[0]);
   const copy = aboutContent[lang];
 
   return (

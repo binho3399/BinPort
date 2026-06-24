@@ -3,7 +3,9 @@ export const routeIds = {
   projects: 'projects',
   about: 'about',
   contact: 'contact',
-};
+} as const;
+
+export type RouteId = (typeof routeIds)[keyof typeof routeIds];
 
 export const routes = [
   { href: '/', label: 'Home', id: routeIds.home },
@@ -12,6 +14,6 @@ export const routes = [
   { href: '/contact', label: 'Contact', id: routeIds.contact },
 ];
 
-export function getRouteId(pathname) {
+export function getRouteId(pathname: string): RouteId {
   return routes.find((route) => route.href === pathname)?.id ?? routeIds.home;
 }

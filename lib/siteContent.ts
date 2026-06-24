@@ -24,7 +24,9 @@ export const homeContent = {
   ],
 };
 
-export const aboutLanguages = ['en', 'ja'];
+export const aboutLanguages = ['en', 'ja'] as const;
+
+export type AboutLanguage = (typeof aboutLanguages)[number];
 
 export const aboutContent = {
   en: {
@@ -47,7 +49,16 @@ export const aboutContent = {
     ],
     contactLabel: 'コンタクト',
   },
-};
+} satisfies Record<
+  AboutLanguage,
+  {
+    eyebrow: string;
+    heading: string;
+    body: string;
+    meta: Array<{ label: string; value: string }>;
+    contactLabel: string;
+  }
+>;
 
 export const contactContent = {
   eyebrow: 'Contact',

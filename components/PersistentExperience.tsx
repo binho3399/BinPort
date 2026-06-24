@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import Cursor from './Cursor';
@@ -41,10 +42,10 @@ function PageTransition() {
   );
 }
 
-export default function PersistentExperience({ children }) {
+export default function PersistentExperience({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const route = getRouteId(pathname);
-  const page = useRef(null);
+  const page = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const handleCursorReset = () => {

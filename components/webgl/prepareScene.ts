@@ -6,6 +6,15 @@ import {
   makeShowreelTexture,
   makeVideoTexture,
 } from './textures';
+import type { PreparedSignalScene, TrafficLight } from './types';
+
+type SignalMaterial = THREE.MeshStandardMaterial;
+type SignalMesh = THREE.Mesh<THREE.BufferGeometry, SignalMaterial | SignalMaterial[]>;
+type ShaderWithFragment = { fragmentShader: string };
+
+function asSignalMesh(object: THREE.Object3D): SignalMesh | null {
+  return (object as SignalMesh).isMesh ? (object as SignalMesh) : null;
+}
 
 const SHOWREEL_CACHE_KEY = 'showreel-1.16-1.04';
 const SHOWREEL_FRAGMENT = `#include <map_fragment>
@@ -16,7 +25,7 @@ const SHOWREEL_FRAGMENT = `#include <map_fragment>
       diffuseColor.rgb = clamp(showreelColor, 0.0, 0.88);
     `;
 
-function removeProfileMaterialGroups(object) {
+function removeProfileMaterialGroups(object: SignalMesh) {
   if (!Array.isArray(object.material)) return false;
   const profileMaterialIndexes = new Set(
     object.material
@@ -27,7 +36,7 @@ function removeProfileMaterialGroups(object) {
   const geometry = object.geometry.clone();
   geometry.clearGroups();
   object.geometry.groups.forEach((group) => {
-    if (!profileMaterialIndexes.has(group.materialIndex)) {
+    if (group.materialIndex === undefined || !profileMaterialIndexes.has(group.materialIndex)) {
       geometry.addGroup(group.start, group.count, group.materialIndex);
     }
   });
@@ -35,7 +44,8 @@ function removeProfileMaterialGroups(object) {
   return true;
 }
 
-function applyProjectsMaterial(object, texture) {
+function applyProjectsMaterial(object: SignalMesh, texture: THREE.Texture | null | undefined) {
+  if (Array.isArray(object.material)) return;
   const name = object.material.name;
   object.material = object.material.clone();
   object.material.map = texture || object.material.map;
@@ -51,7 +61,8 @@ function applyProjectsMaterial(object, texture) {
   object.material.name = name;
 }
 
-function applyContactMaterial(object, texture) {
+function applyContactMaterial(object: SignalMesh, texture: THREE.Texture | null | undefined) {
+  if (Array.isArray(object.material)) return;
   const name = object.material.name;
   object.material = object.material.clone();
   object.material.map = texture || object.material.map;
@@ -67,7 +78,8 @@ function applyContactMaterial(object, texture) {
   object.material.name = name;
 }
 
-function applyShowreelMaterial(object, texture) {
+function applyShowreelMaterial(object: SignalMesh, texture: THREE.Texture | null) {
+  if (Array.isArray(object.material)) return;
   const name = object.material.name;
   object.material = object.material.clone();
   object.material.map = texture;
@@ -79,7 +91,7 @@ function applyShowreelMaterial(object, texture) {
   object.material.metalness = 0;
   object.material.toneMapped = false;
   object.material.side = THREE.DoubleSide;
-  object.material.onBeforeCompile = (shader) => {
+  object.material.onBeforeCompile = (shader: ShaderWithFragment) => {
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <map_fragment>',
       SHOWREEL_FRAGMENT,
@@ -90,7 +102,12 @@ function applyShowreelMaterial(object, texture) {
   object.material.name = name;
 }
 
-function applyTrafficLightMaterial(object, name, trafficLights) {
+function applyTrafficLightMaterial(
+  object: SignalMesh,
+  name: string,
+  trafficLights: TrafficLight[],
+) {
+  if (Array.isArray(object.material)) return;
   object.material = object.material.clone();
   object.material.color.set('#050505');
   object.material.emissive.set('#050505');
@@ -106,38 +123,43 @@ function applyTrafficLightMaterial(object, name, trafficLights) {
   });
 }
 
-export function prepareSignalScene(scene) {
+export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
   const clone = scene.clone(true);
   const projectsSign = makeAnimatedCanvasTexture();
   const contactSign = makeAnimatedCanvasTexture();
   const showreel = makeVideoTexture('/videos/hirotos_showreel.mp4') || makeShowreelTexture();
-  const trafficLights = [];
-  const objectsToRemove = [];
+  const trafficLights: TrafficLight[] = [];
+  const objectsToRemove: THREE.Object3D[] = [];
 
   if (projectsSign?.ctx)
     projectsSign.scrollWidth = drawProjectsTexture(projectsSign.ctx, projectsSign.canvas, 0);
   if (contactSign?.ctx) drawContactTexture(contactSign.ctx, contactSign.canvas, 0);
 
-  clone.traverse((object) => {
+  clone.traverse((object: THREE.Object3D) => {
     if ((object.name || '').toLowerCase().includes('text')) {
       objectsToRemove.push(object);
       return;
     }
-    if (!object.isMesh) return;
+    const mesh = asSignalMesh(object);
+    if (!mesh) return;
     object.castShadow = true;
     object.receiveShadow = true;
 
-    if (!removeProfileMaterialGroups(object) && object.material?.name === 'hiroto-profile') {
+    if (
+      !removeProfileMaterialGroups(mesh) &&
+      !Array.isArray(mesh.material) &&
+      mesh.material?.name === 'hiroto-profile'
+    ) {
       objectsToRemove.push(object);
       return;
     }
 
-    const name = object.material?.name;
-    if (name === 'to_projects') applyProjectsMaterial(object, projectsSign?.texture);
-    if (name === 'to_contact') applyContactMaterial(object, contactSign?.texture);
-    if (name === 'hirotos_showreel') applyShowreelMaterial(object, showreel);
-    if (['light1', 'light2', 'light3'].includes(name)) {
-      applyTrafficLightMaterial(object, name, trafficLights);
+    const name = Array.isArray(mesh.material) ? undefined : mesh.material?.name;
+    if (name === 'to_projects') applyProjectsMaterial(mesh, projectsSign?.texture);
+    if (name === 'to_contact') applyContactMaterial(mesh, contactSign?.texture);
+    if (name === 'hirotos_showreel') applyShowreelMaterial(mesh, showreel);
+    if (name && ['light1', 'light2', 'light3'].includes(name)) {
+      applyTrafficLightMaterial(mesh, name, trafficLights);
     }
   });
 

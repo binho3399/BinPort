@@ -1,7 +1,25 @@
+type DrawTrackedTextOptions = {
+  x: number;
+  y: number;
+  font: string;
+  color: string;
+  align?: 'left' | 'center' | 'right';
+  letterSpacing?: number;
+  maxWidth?: number;
+};
+
 export function drawTrackedText(
-  ctx,
-  text,
-  { x, y, font, color, align = 'center', letterSpacing = 0, maxWidth = Infinity },
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  {
+    x,
+    y,
+    font,
+    color,
+    align = 'center',
+    letterSpacing = 0,
+    maxWidth = Infinity,
+  }: DrawTrackedTextOptions,
 ) {
   ctx.save();
   ctx.font = font;

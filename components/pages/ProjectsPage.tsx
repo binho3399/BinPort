@@ -1,5 +1,8 @@
+import type { CSSProperties } from 'react';
 import { projects } from '../../lib/projects';
 import BackButton from './BackButton';
+
+type ProjectCardStyle = CSSProperties & { '--delay': string };
 
 export default function ProjectsPage() {
   return (
@@ -15,7 +18,7 @@ export default function ProjectsPage() {
               key={project.title}
               href={project.href}
               data-cursor-stalker-label="Open"
-              style={{ '--delay': `${index * 0.045}s` }}
+              style={{ '--delay': `${index * 0.045}s` } as ProjectCardStyle}
             >
               <img src={project.image} alt="" draggable="false" />
               <div>

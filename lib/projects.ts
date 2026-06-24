@@ -1,4 +1,12 @@
-export const projects = [
+export type Project = {
+  title: string;
+  year: string;
+  type: string;
+  image: string;
+  href: string;
+};
+
+export const projects: Project[] = [
   {
     title: 'Showreel',
     year: '2026',

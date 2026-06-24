@@ -6,7 +6,7 @@ import { Suspense } from 'react';
 import * as THREE from 'three';
 import SignalModel from './webgl/SignalModel';
 
-export default function WebGLScene({ interactive }) {
+export default function WebGLScene({ interactive }: { interactive: boolean }) {
   return (
     <div className="webgl-background" aria-hidden="true">
       <Canvas

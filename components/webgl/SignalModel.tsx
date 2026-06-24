@@ -1,17 +1,24 @@
 'use client';
 
-import { useFrame, useThree } from '@react-three/fiber';
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import * as THREE from 'three';
 import { prepareSignalScene } from './prepareScene';
 import { drawContactTexture, drawProjectsTexture } from './textures';
+import type { AnimatedTexturesState, TrafficLight } from './types';
 import { usePointerScroll } from './usePointerScroll';
 
-export default function SignalModel({ interactive }) {
-  const group = useRef(null);
-  const cameraRef = useRef(null);
+function getObjectMaterialName(object: THREE.Object3D) {
+  const mesh = object as THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>;
+  if (!mesh.isMesh || Array.isArray(mesh.material)) return null;
+  return mesh.material.name;
+}
+
+export default function SignalModel({ interactive }: { interactive: boolean }) {
+  const group = useRef<THREE.Object3D | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const scroll = useRef(0);
   const scrollTarget = useRef(0);
   const shake = useRef(0);
@@ -19,10 +26,10 @@ export default function SignalModel({ interactive }) {
   const router = useRouter();
   const { camera: defaultCamera, gl, set: stateSetCamera } = useThree();
   const { scene, animations } = useGLTF('/models/model.glb');
-  const actionRef = useRef(null);
-  const mixerRef = useRef(null);
-  const animatedTexturesRef = useRef(null);
-  const trafficLightsRef = useRef([]);
+  const actionRef = useRef<THREE.AnimationAction | null>(null);
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const animatedTexturesRef = useRef<AnimatedTexturesState | null>(null);
+  const trafficLightsRef = useRef<TrafficLight[]>([]);
 
   const resetScroll = useCallback(() => {
     scroll.current = 0;
@@ -60,9 +67,9 @@ export default function SignalModel({ interactive }) {
     };
   }, [animations, preparedScene]);
 
-  const handlePointerLabel = (event) => {
+  const handlePointerLabel = (event: ThreeEvent<PointerEvent>) => {
     if (!interactive) return;
-    const materialName = event.object?.material?.name;
+    const materialName = getObjectMaterialName(event.object);
     const label =
       materialName === 'to_projects'
         ? 'Projects'
@@ -76,9 +83,9 @@ export default function SignalModel({ interactive }) {
     document.body.style.cursor = '';
   };
 
-  const handleClick = (event) => {
+  const handleClick = (event: ThreeEvent<MouseEvent>) => {
     if (!interactive) return;
-    const materialName = event.object?.material?.name;
+    const materialName = getObjectMaterialName(event.object);
     if (materialName === 'to_projects') router.push('/projects');
     if (materialName === 'to_contact') router.push('/contact');
   };
@@ -95,10 +102,10 @@ export default function SignalModel({ interactive }) {
         );
         animated.contactSign.texture.needsUpdate = true;
       }
-      if (animated.projectsSign?.ctx && animated.projectsSign.scrollWidth > 0) {
+      const scrollWidth = animated.projectsSign?.scrollWidth ?? 0;
+      if (animated.projectsSign?.ctx && scrollWidth > 0) {
         const step = Math.min(delta, 1 / 30);
-        animated.projectsOffset =
-          (animated.projectsOffset + 100 * step) % animated.projectsSign.scrollWidth;
+        animated.projectsOffset = (animated.projectsOffset + 100 * step) % scrollWidth;
         animated.projectsSign.scrollWidth = drawProjectsTexture(
           animated.projectsSign.ctx,
           animated.projectsSign.canvas,
@@ -134,6 +141,7 @@ export default function SignalModel({ interactive }) {
       mixer?.update(0);
       return;
     }
+    if (!mixer) return;
     const duration = action.getClip().duration || 1;
     const smoothing = 1 - Math.exp(-delta / 0.14);
     scroll.current += (scrollTarget.current - scroll.current) * smoothing;
@@ -155,8 +163,10 @@ export default function SignalModel({ interactive }) {
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
-    const camera = preparedScene.getObjectByName('Camera');
-    if (!camera?.isPerspectiveCamera) return undefined;
+    const cameraObject = preparedScene.getObjectByName('Camera');
+    if (!(cameraObject as THREE.PerspectiveCamera | undefined)?.isPerspectiveCamera)
+      return undefined;
+    const camera = cameraObject as THREE.PerspectiveCamera;
     const baseFov = camera.userData.baseFov ?? camera.fov;
     camera.userData.baseFov = baseFov;
     const apply = () => {

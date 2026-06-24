@@ -1,0 +1,27 @@
+import type * as THREE from 'three';
+
+export type AnimatedCanvasTexture = {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  texture: THREE.CanvasTexture;
+  scrollWidth?: number;
+};
+
+export type AnimatedTexturesState = {
+  projectsSign: AnimatedCanvasTexture | null;
+  contactSign: AnimatedCanvasTexture | null;
+  projectsOffset: number;
+  contactTime: number;
+};
+
+export type TrafficLight = {
+  material: THREE.MeshStandardMaterial;
+  idleColor: THREE.Color;
+  activeColor: THREE.Color;
+};
+
+export type PreparedSignalScene = {
+  clone: THREE.Object3D;
+  animatedTextures: AnimatedTexturesState;
+  trafficLights: TrafficLight[];
+};

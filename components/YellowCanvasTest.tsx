@@ -8,8 +8,8 @@ import {
 } from './profileSignCanvas';
 
 export default function YellowCanvasTest() {
-  const fullCanvasRef = useRef(null);
-  const signCanvasRef = useRef(null);
+  const fullCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const signCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef(0);
   const startedAtRef = useRef(0);
   const timeRef = useRef(0);
@@ -26,13 +26,17 @@ export default function YellowCanvasTest() {
   );
 
   useEffect(() => {
-    const canvases = [fullCanvasRef.current, signCanvasRef.current].filter(Boolean);
+    const canvases = [fullCanvasRef.current, signCanvasRef.current].flatMap((canvas) =>
+      canvas ? [canvas] : [],
+    );
     const contexts = canvases
       .map((canvas) => ({ canvas, ctx: canvas.getContext('2d') }))
-      .filter((item) => item.ctx);
+      .filter((item): item is { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } =>
+        Boolean(item.ctx),
+      );
     if (!contexts.length) return undefined;
 
-    const render = (now) => {
+    const render = (now: number) => {
       if (!startedAtRef.current) startedAtRef.current = now - timeRef.current * 1000;
       if (runningRef.current) timeRef.current = (now - startedAtRef.current) / 1000;
       let nextFrame = getProfileTextFrame(timeRef.current);

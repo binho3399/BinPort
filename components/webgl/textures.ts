@@ -2,13 +2,18 @@ import * as THREE from 'three';
 import { webglText } from '../../lib/siteContent';
 import { scrambleText } from '../profileSignCanvas';
 import { drawTrackedText } from './canvasText';
+import type { AnimatedCanvasTexture } from './types';
 
-export function makeAnimatedCanvasTexture(width = 1024, height = 1024) {
+export function makeAnimatedCanvasTexture(
+  width = 1024,
+  height = 1024,
+): AnimatedCanvasTexture | null {
   if (typeof document === 'undefined') return null;
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.flipY = false;
@@ -20,7 +25,11 @@ export function makeAnimatedCanvasTexture(width = 1024, height = 1024) {
   return { canvas, ctx, texture };
 }
 
-export function drawContactTexture(ctx, canvas, time) {
+export function drawContactTexture(
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  time: number,
+) {
   const step = Math.floor(time / 3.65);
   const progress = Math.min((time % 3.65) / 1.25, 1);
   const currentText = webglText.contactLabels[step % webglText.contactLabels.length];
@@ -49,7 +58,11 @@ export function drawContactTexture(ctx, canvas, time) {
   }
 }
 
-export function drawProjectsTexture(ctx, canvas, offset) {
+export function drawProjectsTexture(
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  offset: number,
+) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#133afd';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -63,7 +76,7 @@ export function drawProjectsTexture(ctx, canvas, offset) {
   return width;
 }
 
-export function makeVideoTexture(src) {
+export function makeVideoTexture(src: string): THREE.VideoTexture | null {
   if (typeof document === 'undefined') return null;
   const video = document.createElement('video');
   video.src = src;
@@ -84,12 +97,13 @@ export function makeVideoTexture(src) {
   return texture;
 }
 
-export function makeShowreelTexture() {
+export function makeShowreelTexture(): THREE.CanvasTexture | null {
   if (typeof document === 'undefined') return null;
   const canvas = document.createElement('canvas');
   canvas.width = 1024;
   canvas.height = 1024;
   const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
 
   const gradient = ctx.createLinearGradient(0, 0, 0, 1024);
   gradient.addColorStop(0, '#c8f7fb');

@@ -6,7 +6,12 @@ import { signalEvents } from '../lib/events';
 
 const DEFAULT_LABEL = 'Open';
 
-function getLabel(target) {
+type CursorEnterDetail = {
+  label?: string;
+  showArrow?: boolean;
+};
+
+function getLabel(target: HTMLElement) {
   const explicit = target.dataset.cursorStalkerLabel?.trim();
   if (explicit) return explicit;
   const aria = target.getAttribute('aria-label')?.trim();
@@ -15,11 +20,11 @@ function getLabel(target) {
 }
 
 export default function Cursor() {
-  const root = useRef(null);
-  const shape = useRef(null);
-  const label = useRef(null);
-  const arrow = useRef(null);
-  const activeTarget = useRef(null);
+  const root = useRef<HTMLDivElement | null>(null);
+  const shape = useRef<SVGRectElement | null>(null);
+  const label = useRef<SVGTextElement | null>(null);
+  const arrow = useRef<SVGPathElement | null>(null);
+  const activeTarget = useRef<HTMLElement | null>(null);
   const isExternal = useRef(false);
   const width = useRef(18);
   const height = useRef(18);
@@ -51,7 +56,7 @@ export default function Cursor() {
       rect.setAttribute('ry', String(Math.max(0, radius - 1)));
     };
 
-    const resize = (nextWidth, nextHeight) => {
+    const resize = (nextWidth: number, nextHeight: number) => {
       gsap.to(width, {
         current: nextWidth,
         duration: 0.48,
@@ -75,7 +80,7 @@ export default function Cursor() {
       });
     };
 
-    const show = (nextLabel, showArrow = true) => {
+    const show = (nextLabel: string, showArrow = true) => {
       text.textContent = nextLabel;
       const nextWidth = Math.max(78, Math.min(280, Math.ceil(text.getComputedTextLength() + 58)));
       resize(nextWidth, 34);
@@ -123,7 +128,7 @@ export default function Cursor() {
       });
     };
 
-    const getPosition = (event) => ({
+    const getPosition = (event: PointerEvent) => ({
       x: Math.max(
         8,
         Math.min(event.clientX - width.current / 2 - 3, window.innerWidth - width.current - 8),
@@ -134,7 +139,7 @@ export default function Cursor() {
       ),
     });
 
-    const onMove = (event) => {
+    const onMove = (event: PointerEvent) => {
       if (activeTarget.current && !activeTarget.current.isConnected) hide();
       const position = getPosition(event);
       if (hasPointer) {
@@ -146,10 +151,13 @@ export default function Cursor() {
       }
     };
 
-    const onOver = (event) => {
-      const target = event.target?.closest(
-        '[data-cursor-stalker-label]:not([aria-disabled="true"])',
-      );
+    const onOver = (event: PointerEvent) => {
+      const target =
+        event.target instanceof Element
+          ? event.target.closest<HTMLElement>(
+              '[data-cursor-stalker-label]:not([aria-disabled="true"])',
+            )
+          : null;
       if (target && activeTarget.current !== target) {
         if (!hasPointer) {
           hasPointer = true;
@@ -161,16 +169,22 @@ export default function Cursor() {
       }
     };
 
-    const onOut = (event) => {
+    const onOut = (event: PointerEvent) => {
       const target = activeTarget.current;
       if (!target) return;
       const related = event.relatedTarget;
-      if ((related && target.contains(related)) || !target.contains(event.target)) return;
+      if (
+        (related instanceof Node && target.contains(related)) ||
+        !(event.target instanceof Node) ||
+        !target.contains(event.target)
+      )
+        return;
       hide();
     };
 
-    const onCursorEnter = (event) => {
-      const { label: nextLabel, showArrow = true } = event.detail ?? {};
+    const onCursorEnter = (event: Event) => {
+      const { label: nextLabel, showArrow = true } =
+        (event as CustomEvent<CursorEnterDetail>).detail ?? {};
       activeTarget.current = null;
       isExternal.current = true;
       show(nextLabel?.trim() || DEFAULT_LABEL, showArrow);

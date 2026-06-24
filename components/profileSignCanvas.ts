@@ -13,14 +13,34 @@ function runtimeNow() {
   return typeof performance === 'undefined' ? Date.now() : performance.now();
 }
 
-function scrambleChar(seed) {
+type ScrambleFrame = {
+  time: number;
+  step: number;
+  cycleTime: number;
+  progress: number;
+  currentText: string;
+  nextText: string;
+  renderedText: string;
+};
+
+function scrambleChar(seed: number) {
   const index =
     Math.abs(Math.floor(10000 * Math.sin(999.13 * seed + 0.04 * runtimeNow()))) %
     SCRAMBLE_CHARS.length;
   return SCRAMBLE_CHARS[index];
 }
 
-function tweenScramble({ currentText, nextText, progress, seed }) {
+function tweenScramble({
+  currentText,
+  nextText,
+  progress,
+  seed,
+}: {
+  currentText: string;
+  nextText: string;
+  progress: number;
+  seed: number;
+}) {
   const length = Math.max(currentText.length, nextText.length);
   const current = currentText.padEnd(length, ' ');
   const next = nextText.padEnd(length, ' ');
@@ -46,11 +66,16 @@ function tweenScramble({ currentText, nextText, progress, seed }) {
     .trimEnd();
 }
 
-export function scrambleText(currentText, nextText, progress, seed) {
+export function scrambleText(
+  currentText: string,
+  nextText: string,
+  progress: number,
+  seed: number,
+) {
   return tweenScramble({ currentText, nextText, progress, seed });
 }
 
-export function getProfileTextFrame(time) {
+export function getProfileTextFrame(time: number): ScrambleFrame {
   const step = Math.floor(time / PROFILE_CYCLE_DURATION);
   const cycleTime = time % PROFILE_CYCLE_DURATION;
   const progress =
@@ -65,7 +90,11 @@ export function getProfileTextFrame(time) {
   return { time, step, cycleTime, progress, currentText, nextText, renderedText };
 }
 
-export function drawProfileTexture(ctx, canvas, time) {
+export function drawProfileTexture(
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  time: number,
+) {
   const frame = getProfileTextFrame(time);
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);

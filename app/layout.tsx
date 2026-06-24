@@ -1,4 +1,5 @@
 import './globals.css';
+import type { ReactNode } from 'react';
 import PersistentExperience from '../components/PersistentExperience';
 import { siteMeta } from '../lib/siteContent';
 
@@ -8,7 +9,7 @@ export const metadata = {
   icons: { icon: siteMeta.favicon },
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
