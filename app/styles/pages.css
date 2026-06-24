@@ -1,0 +1,204 @@
+.projects-page {
+  height: 100svh;
+  padding: 104px var(--ui-edge-x) 112px;
+  overflow: hidden;
+}
+
+.projects-gallery {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.project-card {
+  position: relative;
+  min-height: 420px;
+  overflow: hidden;
+  background: #e9e6df;
+  transform-origin: center;
+}
+
+.project-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.52s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform: scale(1.015);
+}
+
+.project-card:hover img {
+  transform: scale(1.06);
+}
+
+.project-card div {
+  position: absolute;
+  inset: auto 12px 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(14px);
+}
+
+.project-card span,
+.project-card small,
+.project-card p {
+  color: #0b0b0a85;
+  font-size: max(11px, min(0.733vw, 7.15px + 0.25655vw));
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.project-card h2 {
+  margin: 7px 0 5px;
+  color: #0b0b0a;
+  font-size: max(18px, min(1.7vw, 22px));
+  font-weight: 500;
+  line-height: 1;
+}
+
+.project-card p {
+  margin: 0 0 8px;
+}
+
+.about-page,
+.contact-page {
+  display: grid;
+  align-items: center;
+}
+
+.about-language-toggle {
+  display: inline-flex;
+  justify-self: start;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.about-language-toggle button {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  color: #0b0b0a6b;
+  background: transparent;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  transition:
+    color 0.18s,
+    transform 0.18s;
+}
+
+.about-language-toggle button:hover {
+  color: #0b0b0a;
+  transform: translateY(-1px);
+}
+
+.about-language-toggle button[aria-pressed='true'] {
+  color: #0b0b0a;
+}
+
+.about-page__content,
+.contact-page__content {
+  place-self: center;
+  width: min(max(760px, 494px + 18.2vw), 100%);
+  margin-top: clamp(-48px, -4vh, -18px);
+}
+
+.about-page__content .page-shell__intro,
+.contact-page__content .page-shell__intro {
+  width: min(max(680px, 442px + 16.2842vw), 100%);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.about-page__content .page-shell__intro h1,
+.contact-page__content .page-shell__intro h1 {
+  font-size: max(34px, min(5.2vw, 49.4px + 1.82vw));
+  line-height: 0.96;
+}
+
+.about-page__body {
+  width: min(max(620px, 403px + 16.275vw), 100%);
+  margin: clamp(28px, 5vh, 48px) auto 0;
+  padding-top: clamp(16px, 2.4vw, 26px);
+  border-top: 1px solid #0b0b0a24;
+}
+
+.about-page__body > p {
+  margin: 0;
+  color: #0b0b0a9e;
+  font-size: max(14px, min(1.2vw, 10.4px + 0.42vw));
+  line-height: 1.65;
+  text-align: center;
+}
+
+.about-page__meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(14px, 2vw, 26px);
+  margin: clamp(28px, 5vh, 48px) 0 0;
+}
+
+.about-page__meta div {
+  padding-top: 10px;
+  border-top: 1px solid #0b0b0a24;
+}
+
+.about-page__meta dt,
+.about-page__meta dd {
+  margin: 0;
+  font-size: max(12px, min(0.8vw, 7.8px + 0.28vw));
+  line-height: 1.3;
+  letter-spacing: 0.018em;
+  text-transform: uppercase;
+}
+
+.about-page__meta dt {
+  color: #0b0b0a6b;
+}
+.about-page__meta dd {
+  margin-top: 8px;
+  color: #0b0b0ac2;
+}
+
+.about-page__meta a,
+.contact-page__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.46em;
+  color: inherit;
+  pointer-events: auto;
+  text-decoration: none;
+  transition:
+    color 0.18s,
+    opacity 0.18s;
+}
+
+.contact-page__content {
+  width: min(max(700px, 455px + 16.7632vw), 100%);
+}
+
+.contact-page__body {
+  width: min(max(560px, 364px + 14.7vw), 100%);
+}
+
+.contact-page__links {
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: clamp(2px, 0.45vw, 6px);
+  margin: clamp(28px, 5vh, 48px) auto 0;
+  padding-top: clamp(12px, 1.6vw, 18px);
+  border-top: 1px solid #0b0b0a29;
+}
+
+.contact-page__links a {
+  justify-content: center;
+  width: fit-content;
+  max-width: calc(100% - clamp(28px, 3vw, 38px));
+  min-height: clamp(32px, 3.6vw, 40px);
+  color: #0b0b0a;
+  font-size: max(18px, min(1.8vw, 15.6px + 0.63vw));
+  font-weight: 500;
+  line-height: 1;
+  text-align: center;
+  overflow-wrap: anywhere;
+}

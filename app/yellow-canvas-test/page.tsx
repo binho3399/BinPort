@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import YellowCanvasTest from '../../components/YellowCanvasTest';
 
 export const metadata = {
@@ -5,5 +6,7 @@ export const metadata = {
 };
 
 export default function Page() {
+  if (process.env.NODE_ENV === 'production') notFound();
+
   return <YellowCanvasTest />;
 }

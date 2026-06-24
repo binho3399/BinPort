@@ -1,0 +1,55 @@
+:root {
+  --background: #fff;
+  --foreground: #10100f;
+  --muted: #10100fad;
+  --line: #10100f24;
+  --accent: #8f6200;
+  --ui-gutter-x: clamp(14px, 2.6vw, 44px);
+  --ui-gutter-y: clamp(18px, 2.8vw, 40px);
+  --ui-edge-x: var(--ui-gutter-x);
+}
+
+@font-face {
+  font-family: 'gazzetta-variable';
+  src: url('/fonts/typekit/gazzetta-variable-normal.woff2') format('woff2');
+  font-display: auto;
+  font-style: normal;
+  font-weight: 100 900;
+  font-stretch: normal;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--background);
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  color: var(--foreground);
+  background: var(--background);
+  font-family: helvetica-neue-lt-pro, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+}
