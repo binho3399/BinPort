@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
+import { signalEvents } from '../lib/events';
 
 const DEFAULT_LABEL = 'Open';
 
@@ -190,9 +191,9 @@ export default function Cursor() {
     window.addEventListener('pointermove', onMove);
     document.addEventListener('pointerover', onOver);
     document.addEventListener('pointerout', onOut);
-    window.addEventListener('signal-pole:cursor-enter', onCursorEnter);
-    window.addEventListener('signal-pole:cursor-leave', onCursorLeave);
-    window.addEventListener('signal-pole:cursor-reset', hide);
+    window.addEventListener(signalEvents.cursorEnter, onCursorEnter);
+    window.addEventListener(signalEvents.cursorLeave, onCursorLeave);
+    window.addEventListener(signalEvents.cursorReset, hide);
     document.documentElement.addEventListener('pointerleave', onPointerLeave);
 
     return () => {
@@ -202,9 +203,9 @@ export default function Cursor() {
       window.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerover', onOver);
       document.removeEventListener('pointerout', onOut);
-      window.removeEventListener('signal-pole:cursor-enter', onCursorEnter);
-      window.removeEventListener('signal-pole:cursor-leave', onCursorLeave);
-      window.removeEventListener('signal-pole:cursor-reset', hide);
+      window.removeEventListener(signalEvents.cursorEnter, onCursorEnter);
+      window.removeEventListener(signalEvents.cursorLeave, onCursorLeave);
+      window.removeEventListener(signalEvents.cursorReset, hide);
       document.documentElement.removeEventListener('pointerleave', onPointerLeave);
     };
   }, []);

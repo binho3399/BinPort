@@ -1,4 +1,5 @@
 import { ArrowUpRight } from 'lucide-react';
+import { contactContent, contactLinks } from '../../lib/siteContent';
 import BackButton from './BackButton';
 
 export default function ContactPage() {
@@ -10,15 +11,15 @@ export default function ContactPage() {
         </header>
         <div className="contact-page__content reveal">
           <div className="page-shell__intro">
-            <p>Contact</p>
-            <h1>Get in touch.</h1>
+            <p>{contactContent.eyebrow}</p>
+            <h1>{contactContent.heading}</h1>
           </div>
           <div className="contact-page__links">
-            <a href="mailto:hello@hirotos.com" data-cursor-stalker-label="Mail">
-              hello@hirotos.com <ArrowUpRight />
+            <a href={`mailto:${contactLinks.email}`} data-cursor-stalker-label="Mail">
+              {contactLinks.email} <ArrowUpRight />
             </a>
             <a
-              href="https://www.linkedin.com/in/hiroto-sato-2414b23b7"
+              href={contactLinks.linkedin}
               target="_blank"
               rel="noreferrer"
               data-cursor-stalker-label="LinkedIn"

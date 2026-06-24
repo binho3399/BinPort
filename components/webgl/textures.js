@@ -1,9 +1,7 @@
 import * as THREE from 'three';
+import { webglText } from '../../lib/siteContent';
 import { scrambleText } from '../profileSignCanvas';
 import { drawTrackedText } from './canvasText';
-
-const CONTACT_LABELS = ['コンタクト', 'CONTACT'];
-const PROJECTS_TEXT = 'PROJECTS ARCHIVE / PROJECTS ARCHIVE / PROJECTS ARCHIVE / ';
 
 export function makeAnimatedCanvasTexture(width = 1024, height = 1024) {
   if (typeof document === 'undefined') return null;
@@ -25,8 +23,8 @@ export function makeAnimatedCanvasTexture(width = 1024, height = 1024) {
 export function drawContactTexture(ctx, canvas, time) {
   const step = Math.floor(time / 3.65);
   const progress = Math.min((time % 3.65) / 1.25, 1);
-  const currentText = CONTACT_LABELS[step % CONTACT_LABELS.length];
-  const nextText = CONTACT_LABELS[(step + 1) % CONTACT_LABELS.length];
+  const currentText = webglText.contactLabels[step % webglText.contactLabels.length];
+  const nextText = webglText.contactLabels[(step + 1) % webglText.contactLabels.length];
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -58,9 +56,9 @@ export function drawProjectsTexture(ctx, canvas, offset) {
   ctx.font = '400 72px/1 helvetica-neue-lt-pro, sans-serif';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#f7f5ef';
-  const width = Math.max(ctx.measureText(PROJECTS_TEXT).width, 1);
+  const width = Math.max(ctx.measureText(webglText.projectsMarquee).width, 1);
   for (let x = -offset; x < canvas.width + width; x += width) {
-    ctx.fillText(PROJECTS_TEXT, x, canvas.height / 2);
+    ctx.fillText(webglText.projectsMarquee, x, canvas.height / 2);
   }
   return width;
 }

@@ -1,10 +1,11 @@
 import './globals.css';
 import PersistentExperience from '../components/PersistentExperience';
+import { siteMeta } from '../lib/siteContent';
 
 export const metadata = {
-  title: 'Hiroto Sato',
-  description: 'Portfolio site of Hiroto Sato.',
-  icons: { icon: '/favicon.ico' },
+  title: siteMeta.title,
+  description: siteMeta.description,
+  icons: { icon: siteMeta.favicon },
 };
 
 export default function RootLayout({ children }) {

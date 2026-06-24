@@ -6,20 +6,9 @@ import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import Cursor from './Cursor';
 import WebGLScene from './WebGLScene';
-
-const routes = [
-  ['/', 'Home', 'home'],
-  ['/projects', 'Projects', 'projects'],
-  ['/about', 'About', 'about'],
-  ['/contact', 'Contact', 'contact'],
-];
-
-function getRouteId(pathname) {
-  if (pathname === '/projects') return 'projects';
-  if (pathname === '/about') return 'about';
-  if (pathname === '/contact') return 'contact';
-  return 'home';
-}
+import { signalEvents } from '../lib/events';
+import { getRouteId, routeIds, routes } from '../lib/routes';
+import { profile } from '../lib/siteContent';
 
 function Preloader() {
   return (
@@ -28,7 +17,7 @@ function Preloader() {
         <path d="M0 100V0h100v100H0Z" />
       </svg>
       <div className="preloader__inner">
-        <span className="preloader__text">HO BINH</span>
+        <span className="preloader__text">{profile.displayName}</span>
       </div>
     </div>
   );
@@ -61,12 +50,12 @@ export default function PersistentExperience({ children }) {
     const handleCursorReset = () => {
       document.body.style.cursor = '';
     };
-    window.addEventListener('signal-pole:cursor-reset', handleCursorReset);
-    return () => window.removeEventListener('signal-pole:cursor-reset', handleCursorReset);
+    window.addEventListener(signalEvents.cursorReset, handleCursorReset);
+    return () => window.removeEventListener(signalEvents.cursorReset, handleCursorReset);
   }, []);
 
   const handleNavigate = () => {
-    window.dispatchEvent(new CustomEvent('signal-pole:cursor-reset'));
+    window.dispatchEvent(new CustomEvent(signalEvents.cursorReset));
   };
 
   useEffect(() => {
@@ -103,11 +92,11 @@ export default function PersistentExperience({ children }) {
       data-route={route}
       data-transitioning="false"
     >
-      <WebGLScene interactive={route === 'home'} />
+      <WebGLScene interactive={route === routeIds.home} />
       <Preloader />
       <div className="route-current">{children}</div>
       <nav className="site-nav" aria-label="Primary">
-        {routes.map(([href, label, id]) => (
+        {routes.map(({ href, label, id }) => (
           <Link
             key={id}
             href={href}

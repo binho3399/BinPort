@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { signalEvents } from '../../lib/events';
 
 export function usePointerScroll({ interactive, gl, scrollTarget, onReset }) {
   useEffect(() => {
@@ -44,14 +45,14 @@ export function usePointerScroll({ interactive, gl, scrollTarget, onReset }) {
     element.addEventListener('touchmove', touchMove, { passive: false });
     element.addEventListener('touchend', reset);
     element.addEventListener('touchcancel', reset);
-    window.addEventListener('signal-pole:reset-camera-scroll', reset);
+    window.addEventListener(signalEvents.resetCameraScroll, reset);
     return () => {
       element.removeEventListener('wheel', onWheel);
       element.removeEventListener('touchstart', touchStart);
       element.removeEventListener('touchmove', touchMove);
       element.removeEventListener('touchend', reset);
       element.removeEventListener('touchcancel', reset);
-      window.removeEventListener('signal-pole:reset-camera-scroll', reset);
+      window.removeEventListener(signalEvents.resetCameraScroll, reset);
     };
   }, [gl, interactive, scrollTarget, onReset]);
 }

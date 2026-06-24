@@ -1,8 +1,9 @@
+import { profile } from '../lib/siteContent';
 import { drawTrackedText } from './webgl/canvasText';
 
 const SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&/<>-_[]{}';
 
-export const PROFILE_LABELS = ['HO BINH', 'PRODUCT DEVELOPER'];
+export const PROFILE_LABELS = profile.profileLabels;
 export const PROFILE_CYCLE_DURATION = 3.65;
 export const PROFILE_TRANSITION_DURATION = 1.25;
 export const PROFILE_HOLD_DURATION = PROFILE_CYCLE_DURATION - PROFILE_TRANSITION_DURATION;
