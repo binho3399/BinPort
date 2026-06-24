@@ -11,7 +11,9 @@ function runtimeNow() {
 }
 
 function scrambleChar(seed) {
-  const index = Math.abs(Math.floor(10000 * Math.sin(999.13 * seed + 0.04 * runtimeNow()))) % SCRAMBLE_CHARS.length;
+  const index =
+    Math.abs(Math.floor(10000 * Math.sin(999.13 * seed + 0.04 * runtimeNow()))) %
+    SCRAMBLE_CHARS.length;
   return SCRAMBLE_CHARS[index];
 }
 
@@ -28,18 +30,31 @@ function tweenScramble({ currentText, nextText, progress, seed }) {
     if (progress >= 1 || index < revealCount) return next[index];
     if (progress < 0.448) {
       if (current[index] === ' ') return ' ';
-      const chance = Math.abs(10000 * Math.sin(127.1 * (seed + 19 * index + Math.floor(18 * runtimeNow())))) % 1;
-      return chance < 0.18 + 0.42 * (progress / 0.448) ? scrambleChar(seed + 13 * index) : current[index];
+      const chance =
+        Math.abs(10000 * Math.sin(127.1 * (seed + 19 * index + Math.floor(18 * runtimeNow())))) % 1;
+      return chance < 0.18 + 0.42 * (progress / 0.448)
+        ? scrambleChar(seed + 13 * index)
+        : current[index];
     }
     if (next[index] === ' ' && current[index] === ' ') return ' ';
     return scrambleChar(seed + 13 * index);
-  }).join('').trimEnd();
+  })
+    .join('')
+    .trimEnd();
 }
 
-function drawTrackedText(ctx, text, { x, y, font, color, align = 'center', letterSpacing = 0, maxWidth = Infinity }) {
+function drawTrackedText(
+  ctx,
+  text,
+  { x, y, font, color, align = 'center', letterSpacing = 0, maxWidth = Infinity },
+) {
   ctx.save();
   ctx.font = font;
-  const width = Array.from(text).reduce((sum, char, index) => sum + ctx.measureText(char).width + (index === text.length - 1 ? 0 : letterSpacing), 0);
+  const width = Array.from(text).reduce(
+    (sum, char, index) =>
+      sum + ctx.measureText(char).width + (index === text.length - 1 ? 0 : letterSpacing),
+    0,
+  );
   const scaleX = Number.isFinite(maxWidth) ? Math.min(1, maxWidth / Math.max(width, 1)) : 1;
   let cursor = align === 'center' ? -width / 2 : align === 'right' ? -width : 0;
   ctx.translate(x, y);
@@ -60,10 +75,14 @@ export function scrambleText(currentText, nextText, progress, seed) {
 export function getProfileTextFrame(time) {
   const step = Math.floor(time / PROFILE_CYCLE_DURATION);
   const cycleTime = time % PROFILE_CYCLE_DURATION;
-  const progress = cycleTime < PROFILE_HOLD_DURATION ? 0 : Math.min((cycleTime - PROFILE_HOLD_DURATION) / PROFILE_TRANSITION_DURATION, 1);
+  const progress =
+    cycleTime < PROFILE_HOLD_DURATION
+      ? 0
+      : Math.min((cycleTime - PROFILE_HOLD_DURATION) / PROFILE_TRANSITION_DURATION, 1);
   const currentText = PROFILE_LABELS[step % PROFILE_LABELS.length];
   const nextText = PROFILE_LABELS[(step + 1) % PROFILE_LABELS.length];
-  const renderedText = progress <= 0 ? currentText : scrambleText(currentText, nextText, progress, 47 * step + 9);
+  const renderedText =
+    progress <= 0 ? currentText : scrambleText(currentText, nextText, progress, 47 * step + 9);
 
   return { time, step, cycleTime, progress, currentText, nextText, renderedText };
 }

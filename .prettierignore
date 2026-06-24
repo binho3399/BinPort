@@ -1,0 +1,13 @@
+.next/
+node_modules/
+out/
+dist/
+build/
+output/
+.playwright-cli/
+.codegraph/
+cloned-sites/
+package-lock.json
+public/models/
+public/videos/
+public/projects/

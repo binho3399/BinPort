@@ -1,7 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { drawProfileTexture, getProfileTextFrame, PROFILE_CYCLE_DURATION } from './profileSignCanvas';
+import {
+  drawProfileTexture,
+  getProfileTextFrame,
+  PROFILE_CYCLE_DURATION,
+} from './profileSignCanvas';
 
 export default function YellowCanvasTest() {
   const fullCanvasRef = useRef(null);
@@ -13,14 +17,19 @@ export default function YellowCanvasTest() {
   const [running, setRunning] = useState(true);
   const [frame, setFrame] = useState(() => getProfileTextFrame(0));
 
-  const config = useMemo(() => ({
-    width: 1024,
-    height: 1024,
-  }), []);
+  const config = useMemo(
+    () => ({
+      width: 1024,
+      height: 1024,
+    }),
+    [],
+  );
 
   useEffect(() => {
     const canvases = [fullCanvasRef.current, signCanvasRef.current].filter(Boolean);
-    const contexts = canvases.map((canvas) => ({ canvas, ctx: canvas.getContext('2d') })).filter((item) => item.ctx);
+    const contexts = canvases
+      .map((canvas) => ({ canvas, ctx: canvas.getContext('2d') }))
+      .filter((item) => item.ctx);
     if (!contexts.length) return undefined;
 
     const render = (now) => {
@@ -61,17 +70,38 @@ export default function YellowCanvasTest() {
     <main className="yellow-canvas-test">
       <section className="yellow-canvas-test__panel">
         <div className="yellow-canvas-test__toolbar">
-          <button type="button" onClick={toggle}>{running ? 'Pause' : 'Resume'}</button>
-          <button type="button" onClick={reset}>Reset</button>
-          <span>{frame.currentText} -&gt; {frame.nextText}</span>
+          <button type="button" onClick={toggle}>
+            {running ? 'Pause' : 'Resume'}
+          </button>
+          <button type="button" onClick={reset}>
+            Reset
+          </button>
+          <span>
+            {frame.currentText} -&gt; {frame.nextText}
+          </span>
           <span>{frame.progress.toFixed(3)}</span>
-          <span>{Math.floor(frame.time % PROFILE_CYCLE_DURATION).toString().padStart(2, '0')}s</span>
+          <span>
+            {Math.floor(frame.time % PROFILE_CYCLE_DURATION)
+              .toString()
+              .padStart(2, '0')}
+            s
+          </span>
         </div>
         <div className="yellow-canvas-test__preview yellow-canvas-test__preview--full">
-          <canvas ref={fullCanvasRef} width={config.width} height={config.height} aria-label="Yellow canvas preview" />
+          <canvas
+            ref={fullCanvasRef}
+            width={config.width}
+            height={config.height}
+            aria-label="Yellow canvas preview"
+          />
         </div>
         <div className="yellow-canvas-test__preview yellow-canvas-test__preview--sign">
-          <canvas ref={signCanvasRef} width={config.width} height={config.height} aria-hidden="true" />
+          <canvas
+            ref={signCanvasRef}
+            width={config.width}
+            height={config.height}
+            aria-hidden="true"
+          />
         </div>
       </section>
     </main>

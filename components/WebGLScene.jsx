@@ -53,10 +53,18 @@ function makeAnimatedCanvasTexture(width = 1024, height = 1024) {
   return { canvas, ctx, texture };
 }
 
-function drawTrackedText(ctx, text, { x, y, font, color, align = 'center', letterSpacing = 0, maxWidth = Infinity }) {
+function drawTrackedText(
+  ctx,
+  text,
+  { x, y, font, color, align = 'center', letterSpacing = 0, maxWidth = Infinity },
+) {
   ctx.save();
   ctx.font = font;
-  const width = Array.from(text).reduce((sum, char, index) => sum + ctx.measureText(char).width + (index === text.length - 1 ? 0 : letterSpacing), 0);
+  const width = Array.from(text).reduce(
+    (sum, char, index) =>
+      sum + ctx.measureText(char).width + (index === text.length - 1 ? 0 : letterSpacing),
+    0,
+  );
   const scaleX = Number.isFinite(maxWidth) ? Math.min(1, maxWidth / Math.max(width, 1)) : 1;
   let cursor = align === 'center' ? -width / 2 : align === 'right' ? -width : 0;
   ctx.translate(x, y);
@@ -85,7 +93,7 @@ function drawContactTexture(ctx, canvas, time) {
     color: '#0047bd',
   });
   ctx.fillStyle = '#0047bd';
-  for (let x = -560 - (118 * time) % 560; x < 1584; x += 560) {
+  for (let x = -560 - ((118 * time) % 560); x < 1584; x += 560) {
     ctx.beginPath();
     ctx.moveTo(x, 664);
     ctx.lineTo(x + 160, 552);
@@ -113,7 +121,16 @@ function drawProjectsTexture(ctx, canvas, offset) {
   return width;
 }
 
-function makeSignTexture({ width = 1024, height = 256, background, color = '#11110f', text, font = '800 92px Arial Narrow, Arial, sans-serif', rotate = 0, tracking = 0 }) {
+function makeSignTexture({
+  width = 1024,
+  height = 256,
+  background,
+  color = '#11110f',
+  text,
+  font = '800 92px Arial Narrow, Arial, sans-serif',
+  rotate = 0,
+  tracking = 0,
+}) {
   if (typeof document === 'undefined') return null;
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -131,10 +148,13 @@ function makeSignTexture({ width = 1024, height = 256, background, color = '#111
     Promise.race([
       document.fonts.load(font, text),
       new Promise((resolve) => window.setTimeout(resolve, 5000)),
-    ]).then(() => document.fonts.ready).then(() => {
-      drawSignTexture(ctx, config);
-      texture.needsUpdate = true;
-    }).catch(() => {});
+    ])
+      .then(() => document.fonts.ready)
+      .then(() => {
+        drawSignTexture(ctx, config);
+        texture.needsUpdate = true;
+      })
+      .catch(() => {});
   }
 
   return texture;
@@ -161,14 +181,21 @@ function makeVideoTexture(src) {
   return texture;
 }
 
-function fitTextureToUv(texture, { minU, maxU, minV, maxV }, { flipX = false, flipY = false } = {}) {
+function fitTextureToUv(
+  texture,
+  { minU, maxU, minV, maxV },
+  { flipX = false, flipY = false } = {},
+) {
   if (!texture) return texture;
   const repeatX = 1 / (maxU - minU);
   const repeatY = 1 / (maxV - minV);
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
   texture.repeat.set(flipX ? -repeatX : repeatX, flipY ? -repeatY : repeatY);
-  texture.offset.set(flipX ? 1 + minU * repeatX : -minU * repeatX, flipY ? 1 + minV * repeatY : -minV * repeatY);
+  texture.offset.set(
+    flipX ? 1 + minU * repeatX : -minU * repeatX,
+    flipY ? 1 + minV * repeatY : -minV * repeatY,
+  );
   texture.needsUpdate = true;
   return texture;
 }
@@ -228,7 +255,8 @@ function SignalModel({ interactive }) {
     };
     const onWheel = (event) => {
       const mode = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
-      const delta = (Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY) * mode;
+      const delta =
+        (Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY) * mode;
       event.preventDefault();
       addDelta(delta);
     };
@@ -284,7 +312,8 @@ function SignalModel({ interactive }) {
     const trafficLights = [];
     const objectsToRemove = [];
 
-    if (projectsSign?.ctx) projectsSign.scrollWidth = drawProjectsTexture(projectsSign.ctx, projectsSign.canvas, 0);
+    if (projectsSign?.ctx)
+      projectsSign.scrollWidth = drawProjectsTexture(projectsSign.ctx, projectsSign.canvas, 0);
     if (contactSign?.ctx) drawContactTexture(contactSign.ctx, contactSign.canvas, 0);
 
     clone.traverse((object) => {
@@ -298,7 +327,9 @@ function SignalModel({ interactive }) {
 
       if (Array.isArray(object.material)) {
         const profileMaterialIndexes = new Set(
-          object.material.map((material, index) => (material?.name === 'hiroto-profile' ? index : -1)).filter((index) => index >= 0),
+          object.material
+            .map((material, index) => (material?.name === 'hiroto-profile' ? index : -1))
+            .filter((index) => index >= 0),
         );
         if (profileMaterialIndexes.size > 0) {
           const geometry = object.geometry.clone();
@@ -358,13 +389,16 @@ function SignalModel({ interactive }) {
         object.material.toneMapped = false;
         object.material.side = THREE.DoubleSide;
         object.material.onBeforeCompile = (shader) => {
-          shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+          shader.fragmentShader = shader.fragmentShader.replace(
+            '#include <map_fragment>',
+            `#include <map_fragment>
       vec3 showreelColor = diffuseColor.rgb;
       float showreelLuma = dot(showreelColor, vec3(0.299, 0.587, 0.114));
       showreelColor = mix(vec3(showreelLuma), showreelColor, 1.04);
       showreelColor = (showreelColor - 0.5) * 1.16 + 0.5;
       diffuseColor.rgb = clamp(showreelColor, 0.0, 0.88);
-    `);
+    `,
+          );
         };
         object.material.customProgramCacheKey = () => 'showreel-1.16-1.04';
         object.material.needsUpdate = true;
@@ -380,7 +414,9 @@ function SignalModel({ interactive }) {
         trafficLights.push({
           material: object.material,
           idleColor: new THREE.Color('#050505'),
-          activeColor: new THREE.Color(name === 'light1' ? '#ff2b1f' : name === 'light2' ? '#ffd21f' : '#12d7a8'),
+          activeColor: new THREE.Color(
+            name === 'light1' ? '#ff2b1f' : name === 'light2' ? '#ffd21f' : '#12d7a8',
+          ),
         });
       }
     });
@@ -411,7 +447,12 @@ function SignalModel({ interactive }) {
   const handlePointerLabel = (event) => {
     if (!interactive) return;
     const materialName = event.object?.material?.name;
-    const label = materialName === 'to_projects' ? 'Projects' : materialName === 'to_contact' ? 'Contact' : null;
+    const label =
+      materialName === 'to_projects'
+        ? 'Projects'
+        : materialName === 'to_contact'
+          ? 'Contact'
+          : null;
     if (label) document.body.style.cursor = 'pointer';
   };
 
@@ -431,13 +472,22 @@ function SignalModel({ interactive }) {
     if (animated) {
       if (animated.contactSign?.ctx) {
         animated.contactTime += delta;
-        drawContactTexture(animated.contactSign.ctx, animated.contactSign.canvas, animated.contactTime);
+        drawContactTexture(
+          animated.contactSign.ctx,
+          animated.contactSign.canvas,
+          animated.contactTime,
+        );
         animated.contactSign.texture.needsUpdate = true;
       }
       if (animated.projectsSign?.ctx && animated.projectsSign.scrollWidth > 0) {
         const step = Math.min(delta, 1 / 30);
-        animated.projectsOffset = (animated.projectsOffset + 100 * step) % animated.projectsSign.scrollWidth;
-        animated.projectsSign.scrollWidth = drawProjectsTexture(animated.projectsSign.ctx, animated.projectsSign.canvas, animated.projectsOffset);
+        animated.projectsOffset =
+          (animated.projectsOffset + 100 * step) % animated.projectsSign.scrollWidth;
+        animated.projectsSign.scrollWidth = drawProjectsTexture(
+          animated.projectsSign.ctx,
+          animated.projectsSign.canvas,
+          animated.projectsOffset,
+        );
         animated.projectsSign.texture.needsUpdate = true;
       }
     }
@@ -447,7 +497,13 @@ function SignalModel({ interactive }) {
       const cycle = 3.6;
       const lightTime = state.clock.elapsedTime % cycle;
       const activeIndex = Math.floor((lightTime / cycle) * trafficLights.length);
-      const pulse = 0.74 + 0.26 * Math.sin((lightTime % (cycle / trafficLights.length)) / (cycle / trafficLights.length) * Math.PI);
+      const pulse =
+        0.74 +
+        0.26 *
+          Math.sin(
+            ((lightTime % (cycle / trafficLights.length)) / (cycle / trafficLights.length)) *
+              Math.PI,
+          );
       trafficLights.forEach((light, index) => {
         const active = index === activeIndex ? 1 : 0;
         light.material.color.copy(light.idleColor).lerp(light.activeColor, active);
@@ -489,7 +545,9 @@ function SignalModel({ interactive }) {
     camera.userData.baseFov = baseFov;
     const apply = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
-      camera.fov = window.matchMedia('(max-width: 620px)').matches ? Math.min(baseFov + 3, 72) : baseFov;
+      camera.fov = window.matchMedia('(max-width: 620px)').matches
+        ? Math.min(baseFov + 3, 72)
+        : baseFov;
       camera.updateProjectionMatrix();
     };
     cameraRef.current = camera;
@@ -527,10 +585,18 @@ export default function WebGLScene({ interactive }) {
           gl.toneMappingExposure = 2.04;
         }}
       >
-        <color attach="background" args={["#ffffff"]} />
+        <color attach="background" args={['#ffffff']} />
         <ambientLight intensity={0.18} />
         <hemisphereLight color="#ffffff" groundColor="#ddd8cf" intensity={2.15} />
-        <directionalLight castShadow color="#fff7ed" position={[4.8, 6.2, 4.2]} intensity={1.1} shadow-bias={-0.00012} shadow-mapSize-height={2048} shadow-mapSize-width={2048} />
+        <directionalLight
+          castShadow
+          color="#fff7ed"
+          position={[4.8, 6.2, 4.2]}
+          intensity={1.1}
+          shadow-bias={-0.00012}
+          shadow-mapSize-height={2048}
+          shadow-mapSize-width={2048}
+        />
         <Suspense fallback={null}>
           <SignalModel interactive={interactive} />
           <Environment preset="city" environmentIntensity={0.42} />

@@ -51,9 +51,27 @@ export default function Cursor() {
     };
 
     const resize = (nextWidth, nextHeight) => {
-      gsap.to(width, { current: nextWidth, duration: 0.48, ease: 'expo.out', overwrite: 'auto', onUpdate: updateShape });
-      gsap.to(height, { current: nextHeight, duration: 0.48, ease: 'expo.out', overwrite: 'auto', onUpdate: updateShape });
-      gsap.to(element, { width: nextWidth, height: nextHeight, duration: 0.48, ease: 'expo.out', overwrite: 'auto' });
+      gsap.to(width, {
+        current: nextWidth,
+        duration: 0.48,
+        ease: 'expo.out',
+        overwrite: 'auto',
+        onUpdate: updateShape,
+      });
+      gsap.to(height, {
+        current: nextHeight,
+        duration: 0.48,
+        ease: 'expo.out',
+        overwrite: 'auto',
+        onUpdate: updateShape,
+      });
+      gsap.to(element, {
+        width: nextWidth,
+        height: nextHeight,
+        duration: 0.48,
+        ease: 'expo.out',
+        overwrite: 'auto',
+      });
     };
 
     const show = (nextLabel, showArrow = true) => {
@@ -62,9 +80,25 @@ export default function Cursor() {
       resize(nextWidth, 34);
       gsap.to(element, { autoAlpha: 1, duration: 0.18, ease: 'power2.out', overwrite: 'auto' });
       gsap.to(text, { autoAlpha: 1, duration: 0.18, ease: 'power2.out', overwrite: 'auto' });
-      gsap.to(arrowPath, { autoAlpha: showArrow ? 1 : 0, duration: 0.18, ease: 'power2.out', overwrite: 'auto' });
-      gsap.to(arrowPath, { x: nextWidth - 78, duration: 0.48, ease: 'expo.out', overwrite: 'auto' });
-      gsap.to(element, { rotate: 0, scale: 1, duration: 0.36, ease: 'back.out(1.6)', overwrite: 'auto' });
+      gsap.to(arrowPath, {
+        autoAlpha: showArrow ? 1 : 0,
+        duration: 0.18,
+        ease: 'power2.out',
+        overwrite: 'auto',
+      });
+      gsap.to(arrowPath, {
+        x: nextWidth - 78,
+        duration: 0.48,
+        ease: 'expo.out',
+        overwrite: 'auto',
+      });
+      gsap.to(element, {
+        rotate: 0,
+        scale: 1,
+        duration: 0.36,
+        ease: 'back.out(1.6)',
+        overwrite: 'auto',
+      });
     };
 
     const hide = () => {
@@ -72,14 +106,31 @@ export default function Cursor() {
       isExternal.current = false;
       resize(18, 18);
       gsap.to(element, { autoAlpha: 0, duration: 0.16, ease: 'power2.out', overwrite: 'auto' });
-      gsap.to([text, arrowPath], { autoAlpha: 0, duration: 0.14, ease: 'power2.out', overwrite: 'auto' });
+      gsap.to([text, arrowPath], {
+        autoAlpha: 0,
+        duration: 0.14,
+        ease: 'power2.out',
+        overwrite: 'auto',
+      });
       gsap.to(arrowPath, { x: 0, duration: 0.3, ease: 'power3.out', overwrite: 'auto' });
-      gsap.to(element, { rotate: -16, scale: 1, duration: 0.36, ease: 'power3.out', overwrite: 'auto' });
+      gsap.to(element, {
+        rotate: -16,
+        scale: 1,
+        duration: 0.36,
+        ease: 'power3.out',
+        overwrite: 'auto',
+      });
     };
 
     const getPosition = (event) => ({
-      x: Math.max(8, Math.min(event.clientX - width.current / 2 - 3, window.innerWidth - width.current - 8)),
-      y: Math.max(8, Math.min(event.clientY - height.current - 1, window.innerHeight - height.current - 8)),
+      x: Math.max(
+        8,
+        Math.min(event.clientX - width.current / 2 - 3, window.innerWidth - width.current - 8),
+      ),
+      y: Math.max(
+        8,
+        Math.min(event.clientY - height.current - 1, window.innerHeight - height.current - 8),
+      ),
     });
 
     const onMove = (event) => {
@@ -95,7 +146,9 @@ export default function Cursor() {
     };
 
     const onOver = (event) => {
-      const target = event.target?.closest('[data-cursor-stalker-label]:not([aria-disabled="true"])');
+      const target = event.target?.closest(
+        '[data-cursor-stalker-label]:not([aria-disabled="true"])',
+      );
       if (target && activeTarget.current !== target) {
         if (!hasPointer) {
           hasPointer = true;
@@ -160,7 +213,14 @@ export default function Cursor() {
     <div ref={root} className="mouse-stalker" aria-hidden="true">
       <svg className="mouse-stalker__svg" role="presentation">
         <rect ref={shape} className="mouse-stalker__shape" />
-        <text ref={label} className="mouse-stalker__label" x="15" y="50%" dy="0.14em" dominantBaseline="middle" />
+        <text
+          ref={label}
+          className="mouse-stalker__label"
+          x="15"
+          y="50%"
+          dy="0.14em"
+          dominantBaseline="middle"
+        />
         <path ref={arrow} className="mouse-stalker__arrow" d="M58 11 L66 17 L58 23 M48 17 H65" />
       </svg>
     </div>
