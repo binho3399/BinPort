@@ -173,17 +173,6 @@ function fitTextureToUv(texture, { minU, maxU, minV, maxV }, { flipX = false, fl
   return texture;
 }
 
-function hideProfileMaterial(material) {
-  if (!material || material.name !== 'hiroto-profile') return false;
-  material.map = null;
-  material.emissiveMap = null;
-  material.transparent = true;
-  material.opacity = 0;
-  material.visible = false;
-  material.needsUpdate = true;
-  return true;
-}
-
 function makeShowreelTexture() {
   if (typeof document === 'undefined') return null;
   const canvas = document.createElement('canvas');
@@ -293,21 +282,40 @@ function SignalModel({ interactive }) {
     const contactSign = makeAnimatedCanvasTexture();
     const showreel = makeVideoTexture('/videos/hirotos_showreel.mp4') || makeShowreelTexture();
     const trafficLights = [];
+    const objectsToRemove = [];
 
     if (projectsSign?.ctx) projectsSign.scrollWidth = drawProjectsTexture(projectsSign.ctx, projectsSign.canvas, 0);
     if (contactSign?.ctx) drawContactTexture(contactSign.ctx, contactSign.canvas, 0);
 
     clone.traverse((object) => {
-      if (object.name === 'Text') {
-        object.visible = false;
+      if ((object.name || '').toLowerCase().includes('text')) {
+        objectsToRemove.push(object);
         return;
       }
       if (!object.isMesh) return;
       object.castShadow = true;
       object.receiveShadow = true;
 
-      const materials = Array.isArray(object.material) ? object.material : [object.material];
-      if (materials.some(hideProfileMaterial)) return;
+      if (Array.isArray(object.material)) {
+        const profileMaterialIndexes = new Set(
+          object.material.map((material, index) => (material?.name === 'hiroto-profile' ? index : -1)).filter((index) => index >= 0),
+        );
+        if (profileMaterialIndexes.size > 0) {
+          const geometry = object.geometry.clone();
+          geometry.clearGroups();
+          object.geometry.groups.forEach((group) => {
+            if (!profileMaterialIndexes.has(group.materialIndex)) {
+              geometry.addGroup(group.start, group.count, group.materialIndex);
+            }
+          });
+          object.geometry = geometry;
+        }
+      } else {
+        if (object.material?.name === 'hiroto-profile') {
+          objectsToRemove.push(object);
+          return;
+        }
+      }
 
       const name = object.material?.name;
       if (name === 'to_projects') {
@@ -376,6 +384,7 @@ function SignalModel({ interactive }) {
         });
       }
     });
+    objectsToRemove.forEach((object) => object.parent?.remove(object));
     animatedTexturesRef.current = { projectsSign, contactSign, projectsOffset: 0, contactTime: 0 };
     trafficLightsRef.current = trafficLights;
     return clone;
