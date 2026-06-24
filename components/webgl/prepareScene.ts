@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { drawProfileTexture } from '../profileSignCanvas';
 import {
   drawContactTexture,
   drawProjectsTexture,
@@ -78,6 +79,23 @@ function applyContactMaterial(object: SignalMesh, texture: THREE.Texture | null 
   object.material.name = name;
 }
 
+function applyProfileMaterial(object: SignalMesh, texture: THREE.Texture | null | undefined) {
+  if (Array.isArray(object.material)) return;
+  const name = object.material.name;
+  object.material = object.material.clone();
+  object.material.map = texture || object.material.map;
+  object.material.emissiveMap = texture || object.material.emissiveMap;
+  object.material.color.set('#ffffff');
+  object.material.emissive.set('#ffffff');
+  object.material.emissiveIntensity = 0.72;
+  object.material.metalness = 0;
+  object.material.roughness = 0.54;
+  object.material.toneMapped = false;
+  object.material.side = THREE.DoubleSide;
+  object.material.needsUpdate = true;
+  object.material.name = name;
+}
+
 function applyShowreelMaterial(object: SignalMesh, texture: THREE.Texture | null) {
   if (Array.isArray(object.material)) return;
   const name = object.material.name;
@@ -127,6 +145,7 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
   const clone = scene.clone(true);
   const projectsSign = makeAnimatedCanvasTexture();
   const contactSign = makeAnimatedCanvasTexture();
+  const profileSign = makeAnimatedCanvasTexture();
   const showreel = makeVideoTexture('/videos/hirotos_showreel.mp4') || makeShowreelTexture();
   const trafficLights: TrafficLight[] = [];
   const objectsToRemove: THREE.Object3D[] = [];
@@ -134,6 +153,7 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
   if (projectsSign?.ctx)
     projectsSign.scrollWidth = drawProjectsTexture(projectsSign.ctx, projectsSign.canvas, 0);
   if (contactSign?.ctx) drawContactTexture(contactSign.ctx, contactSign.canvas, 0);
+  if (profileSign?.ctx) drawProfileTexture(profileSign.ctx, profileSign.canvas, 0);
 
   clone.traverse((object: THREE.Object3D) => {
     if ((object.name || '').toLowerCase().includes('text')) {
@@ -145,26 +165,37 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
     object.castShadow = true;
     object.receiveShadow = true;
 
-    if (
-      !removeProfileMaterialGroups(mesh) &&
-      !Array.isArray(mesh.material) &&
-      mesh.material?.name === 'hiroto-profile'
-    ) {
-      objectsToRemove.push(object);
-      return;
-    }
+    removeProfileMaterialGroups(mesh);
 
     const name = Array.isArray(mesh.material) ? undefined : mesh.material?.name;
+    if (name === 'hiroto-profile') applyProfileMaterial(mesh, profileSign?.texture);
     if (name === 'to_projects') applyProjectsMaterial(mesh, projectsSign?.texture);
     if (name === 'to_contact') applyContactMaterial(mesh, contactSign?.texture);
     if (name === 'hirotos_showreel') applyShowreelMaterial(mesh, showreel);
     if (name && ['light1', 'light2', 'light3'].includes(name)) {
       applyTrafficLightMaterial(mesh, name, trafficLights);
     }
+
+    // Handle multi-material meshes — apply per-material overrides
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    materials.forEach((mat) => {
+      if (!mat) return;
+      if (mat.name === 'Material.002') {
+        mat.toneMapped = false;
+        mat.needsUpdate = true;
+      }
+    });
   });
 
   objectsToRemove.forEach((object) => object.parent?.remove(object));
 
-  const animatedTextures = { projectsSign, contactSign, projectsOffset: 0, contactTime: 0 };
+  const animatedTextures = {
+    projectsSign,
+    contactSign,
+    profileSign,
+    projectsOffset: 0,
+    contactTime: 0,
+    profileTime: 0,
+  };
   return { clone, animatedTextures, trafficLights };
 }

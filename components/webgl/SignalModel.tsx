@@ -5,6 +5,7 @@ import { useGLTF } from '@react-three/drei';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import * as THREE from 'three';
+import { drawProfileTexture } from '../profileSignCanvas';
 import { prepareSignalScene } from './prepareScene';
 import { drawContactTexture, drawProjectsTexture } from './textures';
 import type { AnimatedTexturesState, TrafficLight } from './types';
@@ -101,6 +102,15 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
           animated.contactTime,
         );
         animated.contactSign.texture.needsUpdate = true;
+      }
+      if (animated.profileSign?.ctx) {
+        animated.profileTime += delta;
+        drawProfileTexture(
+          animated.profileSign.ctx,
+          animated.profileSign.canvas,
+          animated.profileTime,
+        );
+        animated.profileSign.texture.needsUpdate = true;
       }
       const scrollWidth = animated.projectsSign?.scrollWidth ?? 0;
       if (animated.projectsSign?.ctx && scrollWidth > 0) {

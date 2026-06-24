@@ -10,8 +10,10 @@ export type AnimatedCanvasTexture = {
 export type AnimatedTexturesState = {
   projectsSign: AnimatedCanvasTexture | null;
   contactSign: AnimatedCanvasTexture | null;
+  profileSign: AnimatedCanvasTexture | null;
   projectsOffset: number;
   contactTime: number;
+  profileTime: number;
 };
 
 export type TrafficLight = {
