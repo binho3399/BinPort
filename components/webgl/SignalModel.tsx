@@ -49,7 +49,7 @@ function getIntersectionMaterialName(
 const SIGN_FACE_DIRECTION = {
   'hiroto-profile': 'front',
   to_projects: 'front',
-  to_contact: 'either',
+  to_contact: 'back',
 } as const;
 
 type SignMaterialName = keyof typeof SIGN_FACE_DIRECTION;
@@ -139,6 +139,7 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
 
   const prepared = useMemo(() => prepareSignalScene(scene), [scene]);
   const preparedScene = prepared.clone;
+  const signMeshes = prepared.signMeshes;
 
   useEffect(() => {
     animatedTexturesRef.current = prepared.animatedTextures;
@@ -241,8 +242,10 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
     if (interactive && isCanvasHovered.current) {
       const activeCamera = cameraRef.current ?? (state.camera as THREE.PerspectiveCamera);
       raycaster.setFromCamera(hoverPointer.current, activeCamera);
+      const intersections = signMeshes.flatMap((mesh) => raycaster.intersectObject(mesh, false));
+      intersections.sort((a, b) => a.distance - b.distance);
       const materialName = getFrontFacingMaterialName(
-        raycaster.intersectObject(preparedScene, true),
+        intersections,
         ['hiroto-profile', 'to_projects', 'to_contact'],
         activeCamera,
       );

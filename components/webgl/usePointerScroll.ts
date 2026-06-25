@@ -25,6 +25,7 @@ export function usePointerScroll({
       scrollTarget.current += (delta / viewportFactor) * strength;
     };
     let touchPoint: TouchPoint | null = null;
+    let dragPoint: TouchPoint | null = null;
     const onWheel = (event: WheelEvent) => {
       const mode = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
       const delta =
@@ -51,23 +52,51 @@ export function usePointerScroll({
       addDelta(delta, 1.9);
       touchPoint = next;
     };
+    const touchEnd = () => {
+      touchPoint = null;
+    };
+    const pointerDown = (event: PointerEvent) => {
+      if (event.pointerType === 'touch') return;
+      dragPoint = { x: event.clientX, y: event.clientY };
+      element.setPointerCapture(event.pointerId);
+    };
+    const pointerMove = (event: PointerEvent) => {
+      if (!dragPoint || event.pointerType === 'touch') return;
+      const dx = dragPoint.x - event.clientX;
+      const dy = dragPoint.y - event.clientY;
+      const delta = Math.abs(dx) > Math.abs(dy) ? dx : dy;
+      addDelta(delta, 1.4);
+      dragPoint = { x: event.clientX, y: event.clientY };
+    };
+    const pointerUp = (event: PointerEvent) => {
+      if (event.pointerType === 'touch') return;
+      dragPoint = null;
+      element.releasePointerCapture(event.pointerId);
+    };
     const reset = () => {
       touchPoint = null;
+      dragPoint = null;
       onReset();
     };
     const element = gl.domElement;
     element.addEventListener('wheel', onWheel, { passive: false });
     element.addEventListener('touchstart', touchStart, { passive: true });
     element.addEventListener('touchmove', touchMove, { passive: false });
-    element.addEventListener('touchend', reset);
-    element.addEventListener('touchcancel', reset);
+    element.addEventListener('touchend', touchEnd);
+    element.addEventListener('touchcancel', touchEnd);
+    element.addEventListener('pointerdown', pointerDown);
+    element.addEventListener('pointermove', pointerMove);
+    element.addEventListener('pointerup', pointerUp);
     window.addEventListener(signalEvents.resetCameraScroll, reset);
     return () => {
       element.removeEventListener('wheel', onWheel);
       element.removeEventListener('touchstart', touchStart);
       element.removeEventListener('touchmove', touchMove);
-      element.removeEventListener('touchend', reset);
-      element.removeEventListener('touchcancel', reset);
+      element.removeEventListener('touchend', touchEnd);
+      element.removeEventListener('touchcancel', touchEnd);
+      element.removeEventListener('pointerdown', pointerDown);
+      element.removeEventListener('pointermove', pointerMove);
+      element.removeEventListener('pointerup', pointerUp);
       window.removeEventListener(signalEvents.resetCameraScroll, reset);
     };
   }, [gl, interactive, scrollTarget, onReset]);
