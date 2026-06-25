@@ -19,7 +19,7 @@ export const contactLinks = {
 export const homeContent = {
   ariaLabel: 'Signal Pole',
   meta: [
-    { label: 'Base', value: 'Tokyo, Japan' },
+    { label: 'Base', value: 'HO CHI MINH, VIET NAM' },
     { label: 'Focus', value: 'Creative development / Motion / 3D modeling' },
     { label: 'Index', value: 'Portfolio 2026' },
   ],
