@@ -102,7 +102,6 @@ export default function PersistentExperience({ children }: { children: ReactNode
             key={id}
             href={href}
             aria-current={route === id ? 'page' : undefined}
-            data-cursor-stalker-label={label}
             onClick={handleNavigate}
           >
             {label}
