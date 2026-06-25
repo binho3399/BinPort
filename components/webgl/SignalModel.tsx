@@ -3,6 +3,7 @@
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
+
 import { useRouter } from 'next/navigation';
 import * as THREE from 'three';
 import { drawProfileTexture } from '../profileSignCanvas';
@@ -10,11 +11,105 @@ import { prepareSignalScene } from './prepareScene';
 import { drawContactTexture, drawProjectsTexture } from './textures';
 import type { AnimatedTexturesState, TrafficLight } from './types';
 import { usePointerScroll } from './usePointerScroll';
+import { signalEvents } from '../../lib/events';
 
-function getObjectMaterialName(object: THREE.Object3D) {
-  const mesh = object as THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>;
-  if (!mesh.isMesh || Array.isArray(mesh.material)) return null;
-  return mesh.material.name;
+function getIntersectionMaterial(
+  intersection: THREE.Intersection<THREE.Object3D>,
+): THREE.Material | null {
+  const mesh = intersection.object as THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>;
+  if (!mesh.isMesh) return null;
+
+  if (!Array.isArray(mesh.material)) return mesh.material;
+
+  const faceMaterialIndex = intersection.face?.materialIndex;
+  if (typeof faceMaterialIndex === 'number') {
+    return mesh.material[faceMaterialIndex] ?? null;
+  }
+
+  if (typeof intersection.faceIndex !== 'number') return null;
+
+  const triangleOffset = intersection.faceIndex * 3;
+  const hitGroup = mesh.geometry.groups.find(
+    (group) => triangleOffset >= group.start && triangleOffset < group.start + group.count,
+  );
+
+  return typeof hitGroup?.materialIndex === 'number' ? mesh.material[hitGroup.materialIndex] ?? null : null;
+}
+
+function getIntersectionMaterialName(
+  intersection: THREE.Intersection<THREE.Object3D>,
+  materialNames: readonly SignMaterialName[],
+): SignMaterialName | null {
+  const material = getIntersectionMaterial(intersection);
+  if (!material) return null;
+
+  return materialNames.find((materialName) => material.name === materialName) ?? null;
+}
+
+const SIGN_FACE_DIRECTION = {
+  'hiroto-profile': 'front',
+  to_projects: 'front',
+  to_contact: 'either',
+} as const;
+
+type SignMaterialName = keyof typeof SIGN_FACE_DIRECTION;
+
+const SURFACE_DISTANCE_EPSILON = 0.01;
+const SIGN_HIT_BOUNDS: Record<SignMaterialName, { minU: number; maxU: number; minV: number; maxV: number }> = {
+  'hiroto-profile': { minU: 0.08, maxU: 0.92, minV: 0.08, maxV: 0.92 },
+  to_projects: { minU: 0.12, maxU: 0.87, minV: 0.2, maxV: 0.8 },
+  to_contact: { minU: 0.08, maxU: 0.92, minV: 0.12, maxV: 0.88 },
+};
+
+function isWithinInteractiveUv(
+  intersection: THREE.Intersection<THREE.Object3D>,
+  materialName: SignMaterialName,
+) {
+  const uv = intersection.uv;
+  if (!uv) return false;
+
+  const { minU, maxU, minV, maxV } = SIGN_HIT_BOUNDS[materialName];
+  return uv.x >= minU && uv.x <= maxU && uv.y >= minV && uv.y <= maxV;
+}
+
+function isFrontFacingIntersection(
+  intersection: THREE.Intersection<THREE.Object3D>,
+  camera: THREE.Camera,
+  materialName: keyof typeof SIGN_FACE_DIRECTION,
+) {
+  if (!intersection.face) return false;
+
+  const worldNormal = intersection.face.normal
+    .clone()
+    .transformDirection(intersection.object.matrixWorld)
+    .normalize();
+  const toCamera = camera.position.clone().sub(intersection.point).normalize();
+
+  const dot = worldNormal.dot(toCamera);
+  const direction = SIGN_FACE_DIRECTION[materialName];
+  if (direction === 'either') return Math.abs(dot) > 0.05;
+  return direction === 'front' ? dot > 0 : dot < 0;
+}
+
+function getFrontFacingMaterialName(
+  intersections: THREE.Intersection<THREE.Object3D>[],
+  materialNames: readonly SignMaterialName[],
+  camera: THREE.Camera,
+): string | null {
+  const closestDistance = intersections[0]?.distance;
+  if (typeof closestDistance !== 'number') return null;
+
+  const hit = intersections.find((intersection) => {
+    if (Math.abs(intersection.distance - closestDistance) > SURFACE_DISTANCE_EPSILON) return false;
+
+    const materialName = getIntersectionMaterialName(intersection, materialNames);
+    return materialName
+      ? isFrontFacingIntersection(intersection, camera, materialName) &&
+          isWithinInteractiveUv(intersection, materialName)
+      : false;
+  });
+
+  return hit ? getIntersectionMaterialName(hit, materialNames) : null;
 }
 
 export default function SignalModel({ interactive }: { interactive: boolean }) {
@@ -25,7 +120,7 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
   const shake = useRef(0);
   const shakeClock = useRef(0);
   const router = useRouter();
-  const { camera: defaultCamera, gl, set: stateSetCamera } = useThree();
+  const { camera: defaultCamera, gl, raycaster, set: stateSetCamera } = useThree();
   const { scene, animations } = useGLTF('/models/model.glb');
   const actionRef = useRef<THREE.AnimationAction | null>(null);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
@@ -68,30 +163,92 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
     };
   }, [animations, preparedScene]);
 
-  const handlePointerLabel = (event: ThreeEvent<PointerEvent>) => {
-    if (!interactive) return;
-    const materialName = getObjectMaterialName(event.object);
-    const label =
-      materialName === 'to_projects'
-        ? 'Projects'
-        : materialName === 'to_contact'
-          ? 'Contact'
-          : null;
-    if (label) document.body.style.cursor = 'pointer';
+  const activeLabel = useRef<string | null>(null);
+  const isCanvasHovered = useRef(false);
+  const hoverPointer = useRef(new THREE.Vector2());
+
+  const dispatchCursorLabel = useCallback((label: string | null) => {
+    if (activeLabel.current === label) return;
+    activeLabel.current = label;
+    document.body.style.cursor = label ? 'pointer' : '';
+    if (label) {
+      window.dispatchEvent(new CustomEvent(signalEvents.cursorEnter, { detail: { label, showArrow: true } }));
+    } else {
+      window.dispatchEvent(new CustomEvent(signalEvents.cursorLeave));
+    }
+  }, []);
+
+  const getMaterialLabel = (materialName: string | null): string | null => {
+    if (materialName === 'to_projects') return 'Projects';
+    if (materialName === 'to_contact') return 'Contact';
+    if (materialName === 'hiroto-profile') return 'About';
+    return null;
   };
 
-  const handlePointerOut = () => {
-    document.body.style.cursor = '';
+  const touchStart = useRef<{ id: number; x: number; y: number } | null>(null);
+
+  const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
+    if (!interactive) return;
+    if (event.nativeEvent.pointerType !== 'touch') return;
+    touchStart.current = {
+      id: event.nativeEvent.pointerId,
+      x: event.nativeEvent.clientX,
+      y: event.nativeEvent.clientY,
+    };
   };
 
-  const handleClick = (event: ThreeEvent<MouseEvent>) => {
-    if (!interactive) return;
-    const materialName = getObjectMaterialName(event.object);
+  const handlePointerUp = (event: ThreeEvent<PointerEvent>) => {
+    if (!interactive || event.nativeEvent.pointerType !== 'touch') return;
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start || start.id !== event.nativeEvent.pointerId) return;
+    const dist = Math.hypot(
+      event.nativeEvent.clientX - start.x,
+      event.nativeEvent.clientY - start.y,
+    );
+    if (dist > 12) return;
+    const materialName = getFrontFacingMaterialName(
+      event.intersections,
+      ['hiroto-profile', 'to_projects', 'to_contact'],
+      cameraRef.current ?? defaultCamera,
+    );
+    if (!materialName) return;
+    if (materialName === 'hiroto-profile') router.push('/about');
     if (materialName === 'to_projects') router.push('/projects');
     if (materialName === 'to_contact') router.push('/contact');
   };
 
+  const handleClick = (event: ThreeEvent<MouseEvent>) => {
+    if (!interactive) return;
+    if ((event.nativeEvent as PointerEvent).pointerType === 'touch') return;
+    const materialName = getFrontFacingMaterialName(
+      event.intersections,
+      ['hiroto-profile', 'to_projects', 'to_contact'],
+      cameraRef.current ?? defaultCamera,
+    );
+    if (!materialName) return;
+    if (materialName === 'hiroto-profile') router.push('/about');
+    if (materialName === 'to_projects') router.push('/projects');
+    if (materialName === 'to_contact') router.push('/contact');
+  };
+
+  const handlePointerMissed = useCallback(() => {
+    dispatchCursorLabel(null);
+    window.dispatchEvent(new CustomEvent(signalEvents.resetCameraScroll));
+  }, [dispatchCursorLabel]);
+
   useFrame((state, delta) => {
+    if (interactive && isCanvasHovered.current) {
+      const activeCamera = cameraRef.current ?? (state.camera as THREE.PerspectiveCamera);
+      raycaster.setFromCamera(hoverPointer.current, activeCamera);
+      const materialName = getFrontFacingMaterialName(
+        raycaster.intersectObject(preparedScene, true),
+        ['hiroto-profile', 'to_projects', 'to_contact'],
+        activeCamera,
+      );
+      dispatchCursorLabel(getMaterialLabel(materialName));
+    }
+
     const animated = animatedTexturesRef.current;
     if (animated) {
       if (animated.contactSign?.ctx) {
@@ -196,13 +353,55 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
     };
   }, [defaultCamera, preparedScene, stateSetCamera]);
 
+  useEffect(() => {
+    const element = gl.domElement;
+
+    const updateHoverPointer = (event: PointerEvent) => {
+      const bounds = element.getBoundingClientRect();
+      if (bounds.width === 0 || bounds.height === 0) return;
+
+      hoverPointer.current.set(
+        ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
+        -(((event.clientY - bounds.top) / bounds.height) * 2 - 1),
+      );
+    };
+
+    const handlePointerEnter = (event: PointerEvent) => {
+      if (event.pointerType === 'touch') return;
+      isCanvasHovered.current = true;
+      updateHoverPointer(event);
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerType === 'touch') return;
+      isCanvasHovered.current = true;
+      updateHoverPointer(event);
+    };
+
+    const handlePointerLeave = () => {
+      isCanvasHovered.current = false;
+      dispatchCursorLabel(null);
+    };
+
+    element.addEventListener('pointerenter', handlePointerEnter);
+    element.addEventListener('pointermove', handlePointerMove);
+    element.addEventListener('pointerleave', handlePointerLeave);
+
+    return () => {
+      element.removeEventListener('pointerenter', handlePointerEnter);
+      element.removeEventListener('pointermove', handlePointerMove);
+      element.removeEventListener('pointerleave', handlePointerLeave);
+    };
+  }, [dispatchCursorLabel, gl.domElement]);
+
   return (
     <primitive
       ref={group}
       object={preparedScene}
       onClick={handleClick}
-      onPointerMove={handlePointerLabel}
-      onPointerOut={handlePointerOut}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerMissed={handlePointerMissed}
     />
   );
 }
