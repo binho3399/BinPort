@@ -265,7 +265,14 @@ function StatsPanel({ stats }: { stats: Stats }) {
         <span style={styles.statLabel}>By kind</span>
         <div style={styles.kindRow}>
           {stats.nodeKinds.map(({ kind, count }) => (
-            <span key={kind} style={{ ...styles.kindBadge, background: kindColor(kind) + '33', borderColor: kindColor(kind) }}>
+            <span
+              key={kind}
+              style={{
+                ...styles.kindBadge,
+                background: kindColor(kind) + '33',
+                borderColor: kindColor(kind),
+              }}
+            >
               <span style={{ color: kindColor(kind) }}>{kind}</span>
               <span style={styles.kindCount}>{count}</span>
             </span>
@@ -276,7 +283,14 @@ function StatsPanel({ stats }: { stats: Stats }) {
         <span style={styles.statLabel}>Edges by kind</span>
         <div style={styles.kindRow}>
           {stats.edgeKinds.map(({ kind, count }) => (
-            <span key={kind} style={{ ...styles.kindBadge, background: (EDGE_COLOR[kind] ?? '#888') + '33', borderColor: EDGE_COLOR[kind] ?? '#888' }}>
+            <span
+              key={kind}
+              style={{
+                ...styles.kindBadge,
+                background: (EDGE_COLOR[kind] ?? '#888') + '33',
+                borderColor: EDGE_COLOR[kind] ?? '#888',
+              }}
+            >
               <span style={{ color: EDGE_COLOR[kind] ?? '#888' }}>{kind}</span>
               <span style={styles.kindCount}>{count}</span>
             </span>
@@ -291,12 +305,10 @@ function StatsPanel({ stats }: { stats: Stats }) {
 
 function NodeDetailPanel({
   detail,
-  allNodes,
   onSelectNode,
   onClose,
 }: {
   detail: NodeDetail;
-  allNodes: GraphNode[];
   onSelectNode: (id: string) => void;
   onClose: () => void;
 }) {
@@ -306,27 +318,34 @@ function NodeDetailPanel({
   return (
     <div style={styles.detailPanel}>
       <div style={styles.detailHeader}>
-        <span style={{ ...styles.kindChip, background: kindColor(node.kind) + '33', borderColor: kindColor(node.kind), color: kindColor(node.kind) }}>
+        <span
+          style={{
+            ...styles.kindChip,
+            background: kindColor(node.kind) + '33',
+            borderColor: kindColor(node.kind),
+            color: kindColor(node.kind),
+          }}
+        >
           {node.kind}
         </span>
         <span style={styles.detailName}>{node.name}</span>
-        <button onClick={onClose} style={styles.closeBtn} aria-label="Close">✕</button>
+        <button onClick={onClose} style={styles.closeBtn} aria-label="Close">
+          ✕
+        </button>
       </div>
 
       <div style={styles.detailMeta}>
-        <span style={styles.metaItem}>📁 {node.file_path}:{node.start_line}</span>
+        <span style={styles.metaItem}>
+          📁 {node.file_path}:{node.start_line}
+        </span>
         {node.is_exported ? <span style={styles.metaItem}>✦ exported</span> : null}
         {node.is_async ? <span style={styles.metaItem}>⚡ async</span> : null}
         {node.visibility ? <span style={styles.metaItem}>{node.visibility}</span> : null}
       </div>
 
-      {node.signature && (
-        <pre style={styles.signature}>{node.signature}</pre>
-      )}
+      {node.signature && <pre style={styles.signature}>{node.signature}</pre>}
 
-      {node.docstring && (
-        <p style={styles.docstring}>{node.docstring}</p>
-      )}
+      {node.docstring && <p style={styles.docstring}>{node.docstring}</p>}
 
       {inEdges.length > 0 && (
         <div style={styles.edgeSection}>
@@ -399,20 +418,19 @@ export default function CodeGraphUI() {
     if (k) params.set('kind', k);
     if (f) params.set('file', f);
     const res = await fetch(`/api/codegraph/nodes?${params}`);
-    const data = await res.json() as { nodes: GraphNode[] };
+    const data = (await res.json()) as { nodes: GraphNode[] };
     return data.nodes;
   }, []);
 
   const fetchEdges = useCallback(async (nodeIds: string[]) => {
     const params = new URLSearchParams({ nodeIds: nodeIds.join(',') });
     const res = await fetch(`/api/codegraph/edges?${params}`);
-    const data = await res.json() as { edges: GraphEdge[] };
+    const data = (await res.json()) as { edges: GraphEdge[] };
     return data.edges;
   }, []);
 
   // Initial load
   useEffect(() => {
-    setLoading(true);
     Promise.all([
       fetch('/api/codegraph/stats').then((r) => r.json() as Promise<Stats>),
       fetchNodes('', '', ''),
@@ -441,7 +459,7 @@ export default function CodeGraphUI() {
   const handleSelectNode = useCallback(async (id: string) => {
     setSelectedId(id);
     const res = await fetch(`/api/codegraph/node/${encodeURIComponent(id)}`);
-    const data = await res.json() as NodeDetail;
+    const data = (await res.json()) as NodeDetail;
     setDetail(data);
   }, []);
 
@@ -451,7 +469,9 @@ export default function CodeGraphUI() {
     <div style={styles.root}>
       <header style={styles.header}>
         <span style={styles.headerTitle}>CodeGraph</span>
-        <span style={styles.headerSub}>{nodes.length} nodes · {edges.length} edges</span>
+        <span style={styles.headerSub}>
+          {nodes.length} nodes · {edges.length} edges
+        </span>
         <div style={styles.tabs}>
           {(['graph', 'stats'] as const).map((t) => (
             <button
@@ -480,7 +500,9 @@ export default function CodeGraphUI() {
           >
             <option value="">All kinds</option>
             {nodeKinds.map((k) => (
-              <option key={k} value={k}>{k}</option>
+              <option key={k} value={k}>
+                {k}
+              </option>
             ))}
           </select>
           <select
@@ -490,7 +512,9 @@ export default function CodeGraphUI() {
           >
             <option value="">All files</option>
             {allFiles.map((f) => (
-              <option key={f} value={f}>{f}</option>
+              <option key={f} value={f}>
+                {f}
+              </option>
             ))}
           </select>
         </div>
@@ -515,9 +539,11 @@ export default function CodeGraphUI() {
             {detail && (
               <NodeDetailPanel
                 detail={detail}
-                allNodes={nodes}
                 onSelectNode={handleSelectNode}
-                onClose={() => { setDetail(null); setSelectedId(null); }}
+                onClose={() => {
+                  setDetail(null);
+                  setSelectedId(null);
+                }}
               />
             )}
           </div>

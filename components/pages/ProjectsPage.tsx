@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import Image from 'next/image';
 import { projects } from '../../lib/projects';
 import BackButton from './BackButton';
 
@@ -20,7 +21,13 @@ export default function ProjectsPage() {
               data-cursor-stalker-label="Open"
               style={{ '--delay': `${index * 0.045}s` } as ProjectCardStyle}
             >
-              <img src={project.image} alt="" draggable="false" />
+              <Image
+                src={project.image}
+                alt={`${project.title} preview`}
+                width={1600}
+                height={900}
+                draggable={false}
+              />
               <div>
                 <span>{String(index + 1).padStart(2, '0')}</span>
                 <h2>{project.title}</h2>

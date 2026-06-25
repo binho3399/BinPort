@@ -12,6 +12,7 @@ const config = [
       'output/**',
       '.playwright-cli/**',
       '.codegraph/**',
+      '.claude/**',
       'cloned-sites/**',
     ],
   },

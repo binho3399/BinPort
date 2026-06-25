@@ -6,6 +6,7 @@ build/
 output/
 .playwright-cli/
 .codegraph/
+.claude/
 cloned-sites/
 package-lock.json
 public/models/

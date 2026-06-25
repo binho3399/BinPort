@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '../../../../lib/codegraph-db';
+import { getDb, hasCodegraphDb } from '../../../../lib/codegraph-db';
 
 export function GET() {
+  if (!hasCodegraphDb()) {
+    return NextResponse.json({ error: 'CodeGraph database unavailable' }, { status: 404 });
+  }
+
   const db = getDb();
 
   const nodeKinds = db

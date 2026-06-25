@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, type DbNode, type DbEdge } from '../../../../../lib/codegraph-db';
+import { getDb, hasCodegraphDb, type DbNode, type DbEdge } from '../../../../../lib/codegraph-db';
 
 export function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   return params.then(({ id }) => {
+    if (!hasCodegraphDb()) {
+      return NextResponse.json({ error: 'CodeGraph database unavailable' }, { status: 404 });
+    }
+
     const db = getDb();
     const nodeId = decodeURIComponent(id);
 

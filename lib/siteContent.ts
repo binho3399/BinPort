@@ -1,6 +1,7 @@
 export const siteMeta = {
-  title: 'Hiroto Sato',
-  description: 'Portfolio site of Hiroto Sato.',
+  title: 'HO BINH',
+  description:
+    'Portfolio site focused on product development, motion, and interactive 3D experiences.',
   favicon: '/favicon.ico',
 };
 
@@ -31,21 +32,21 @@ export type AboutLanguage = (typeof aboutLanguages)[number];
 export const aboutContent = {
   en: {
     eyebrow: 'About',
-    heading: 'Creative developer building interactive web experiences.',
-    body: 'I design and implement digital experiences that naturally connect motion, WebGL, 3D modeling, and interface behavior. I specialize in interactive front-end development that brings visual expression and a tactile sense of interaction together.',
+    heading: 'Product developer building interactive web experiences.',
+    body: 'I design and implement digital experiences that connect motion, WebGL, 3D modeling, and interface behavior. My work focuses on turning visual systems into tactile, interactive products.',
     meta: [
-      { label: 'Name', value: 'Hiroto Sato' },
-      { label: 'Role', value: 'Creative Developer' },
+      { label: 'Name', value: 'HO BINH' },
+      { label: 'Role', value: 'Product Developer' },
     ],
     contactLabel: 'Contact',
   },
   ja: {
     eyebrow: 'About',
-    heading: 'インタラクティブなWeb体験をつくるクリエイティブデベロッパー。',
-    body: 'モーション、WebGL、3Dモデリング、インターフェースを組み合わせ、自然に連動するデジタル体験を設計・実装しています。視覚表現と操作感をつなぐ、インタラクティブなフロントエンド制作を得意としています。',
+    heading: 'インタラクティブなWeb体験をつくるプロダクトデベロッパー。',
+    body: 'モーション、WebGL、3Dモデリング、インターフェースを組み合わせ、自然に連動するデジタル体験を設計・実装しています。視覚的なシステムを、手触りのあるプロダクト体験へ変換することを重視しています。',
     meta: [
-      { label: '名前', value: '佐藤ヒロト' },
-      { label: '職業', value: 'クリエイティブデベロッパー' },
+      { label: '名前', value: 'HO BINH' },
+      { label: '職業', value: 'プロダクトデベロッパー' },
     ],
     contactLabel: 'コンタクト',
   },

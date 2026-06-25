@@ -1,12 +1,20 @@
+import fs from 'node:fs';
 import Database from 'better-sqlite3';
-import path from 'path';
+import path from 'node:path';
 
 let db: ReturnType<typeof Database> | null = null;
 
+export function getDbPath() {
+  return path.join(process.cwd(), '.codegraph', 'codegraph.db');
+}
+
+export function hasCodegraphDb() {
+  return fs.existsSync(getDbPath());
+}
+
 export function getDb() {
   if (!db) {
-    const dbPath = path.join(process.cwd(), '.codegraph', 'codegraph.db');
-    db = new Database(dbPath, { readonly: true });
+    db = new Database(getDbPath(), { readonly: true });
   }
   return db;
 }
