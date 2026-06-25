@@ -26,4 +26,5 @@ export type PreparedSignalScene = {
   clone: THREE.Object3D;
   animatedTextures: AnimatedTexturesState;
   trafficLights: TrafficLight[];
+  signMeshes: THREE.Object3D[];
 };
