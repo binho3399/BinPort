@@ -23,8 +23,8 @@ next-env.d.ts
 output/
 .playwright-cli/
 .npm-cache/
-cloned-sites/*
-!cloned-sites/.gitignore
+.cloned-sites/*
+!.cloned-sites/.gitignore
 
 # Claude Code
 .claude/

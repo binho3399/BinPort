@@ -13,7 +13,7 @@ const config = [
       '.playwright-cli/**',
       '.codegraph/**',
       '.claude/**',
-      'cloned-sites/**',
+      '.cloned-sites/**',
     ],
   },
   ...nextVitals,

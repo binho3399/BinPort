@@ -84,7 +84,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-self: end;
   gap: clamp(12px, 2vw, 28px);
-  width: min(720px, 100vw - clamp(28px, 5.2vw, 88px));
+  width: min(540px, 100vw - clamp(28px, 5.2vw, 88px));
   margin: 0;
   padding: 0;
   color: #0b0b0a;
@@ -115,6 +115,7 @@
 .home-profile dd {
   margin-top: 7px;
   color: #0b0b0a;
+  white-space: pre-line;
 }
 
 .route-current {

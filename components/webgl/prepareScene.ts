@@ -169,9 +169,18 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
     removeProfileMaterialGroups(mesh);
 
     const name = Array.isArray(mesh.material) ? undefined : mesh.material?.name;
-    if (name === 'hiroto-profile') { applyProfileMaterial(mesh, profileSign?.texture); signMeshes.push(mesh); }
-    if (name === 'to_projects') { applyProjectsMaterial(mesh, projectsSign?.texture); signMeshes.push(mesh); }
-    if (name === 'to_contact') { applyContactMaterial(mesh, contactSign?.texture); signMeshes.push(mesh); }
+    if (name === 'hiroto-profile') {
+      applyProfileMaterial(mesh, profileSign?.texture);
+      signMeshes.push(mesh);
+    }
+    if (name === 'to_projects') {
+      applyProjectsMaterial(mesh, projectsSign?.texture);
+      signMeshes.push(mesh);
+    }
+    if (name === 'to_contact') {
+      applyContactMaterial(mesh, contactSign?.texture);
+      signMeshes.push(mesh);
+    }
     if (name === 'hirotos_showreel') applyShowreelMaterial(mesh, showreel);
     if (name && ['light1', 'light2', 'light3'].includes(name)) {
       applyTrafficLightMaterial(mesh, name, trafficLights);

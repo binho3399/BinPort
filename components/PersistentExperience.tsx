@@ -67,6 +67,11 @@ export default function PersistentExperience({ children }: { children: ReactNode
           { yPercent: 55, autoAlpha: 0 },
           { yPercent: 0, autoAlpha: 1, duration: 0.8, stagger: 0.055, ease: 'power3.out' },
         );
+        gsap.fromTo(
+          '.home-rotate-hint',
+          { y: 10, autoAlpha: 0 },
+          { y: 0, autoAlpha: 1, delay: 0.28, duration: 0.64, ease: 'power3.out' },
+        );
       } else {
         gsap.fromTo(
           '.reveal',
@@ -108,6 +113,11 @@ export default function PersistentExperience({ children }: { children: ReactNode
           </Link>
         ))}
       </nav>
+      {route === routeIds.home ? (
+        <div className="home-rotate-hint" aria-hidden="true">
+          <span>Scroll to rotate model 3D</span>
+        </div>
+      ) : null}
       <Cursor />
       <PageTransition />
     </div>

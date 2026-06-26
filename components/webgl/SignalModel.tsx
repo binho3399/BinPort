@@ -16,7 +16,10 @@ import { signalEvents } from '../../lib/events';
 function getIntersectionMaterial(
   intersection: THREE.Intersection<THREE.Object3D>,
 ): THREE.Material | null {
-  const mesh = intersection.object as THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>;
+  const mesh = intersection.object as THREE.Mesh<
+    THREE.BufferGeometry,
+    THREE.Material | THREE.Material[]
+  >;
   if (!mesh.isMesh) return null;
 
   if (!Array.isArray(mesh.material)) return mesh.material;
@@ -33,7 +36,9 @@ function getIntersectionMaterial(
     (group) => triangleOffset >= group.start && triangleOffset < group.start + group.count,
   );
 
-  return typeof hitGroup?.materialIndex === 'number' ? mesh.material[hitGroup.materialIndex] ?? null : null;
+  return typeof hitGroup?.materialIndex === 'number'
+    ? (mesh.material[hitGroup.materialIndex] ?? null)
+    : null;
 }
 
 function getIntersectionMaterialName(
@@ -55,7 +60,10 @@ const SIGN_FACE_DIRECTION = {
 type SignMaterialName = keyof typeof SIGN_FACE_DIRECTION;
 
 const SURFACE_DISTANCE_EPSILON = 0.01;
-const SIGN_HIT_BOUNDS: Record<SignMaterialName, { minU: number; maxU: number; minV: number; maxV: number }> = {
+const SIGN_HIT_BOUNDS: Record<
+  SignMaterialName,
+  { minU: number; maxU: number; minV: number; maxV: number }
+> = {
   'hiroto-profile': { minU: 0.08, maxU: 0.92, minV: 0.08, maxV: 0.92 },
   to_projects: { minU: 0.12, maxU: 0.87, minV: 0.2, maxV: 0.8 },
   to_contact: { minU: 0.08, maxU: 0.92, minV: 0.12, maxV: 0.88 },
@@ -172,7 +180,9 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
     activeLabel.current = label;
     document.body.style.cursor = label ? 'pointer' : '';
     if (label) {
-      window.dispatchEvent(new CustomEvent(signalEvents.cursorEnter, { detail: { label, showArrow: true } }));
+      window.dispatchEvent(
+        new CustomEvent(signalEvents.cursorEnter, { detail: { label, showArrow: true } }),
+      );
     } else {
       window.dispatchEvent(new CustomEvent(signalEvents.cursorLeave));
     }
@@ -248,7 +258,8 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
         ['hiroto-profile', 'to_projects', 'to_contact'],
         activeCamera,
       );
-      dispatchCursorLabel(getMaterialLabel(materialName));
+      const signLabel = getMaterialLabel(materialName);
+      dispatchCursorLabel(signLabel);
     }
 
     const animated = animatedTexturesRef.current;

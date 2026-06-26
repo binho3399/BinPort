@@ -83,7 +83,10 @@ export default function Cursor() {
     const show = (nextLabel: string, showArrow = true) => {
       text.textContent = nextLabel;
       const nextWidth = Math.max(78, Math.min(280, Math.ceil(text.getComputedTextLength() + 58)));
-      resize(nextWidth, 34);
+      const nextHeight = 34;
+      text.setAttribute('x', '15');
+      text.setAttribute('text-anchor', 'start');
+      resize(nextWidth, nextHeight);
       gsap.to(element, { autoAlpha: 1, duration: 0.18, ease: 'power2.out', overwrite: 'auto' });
       gsap.to(text, { autoAlpha: 1, duration: 0.18, ease: 'power2.out', overwrite: 'auto' });
       gsap.to(arrowPath, {

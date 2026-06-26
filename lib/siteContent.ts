@@ -20,7 +20,7 @@ export const homeContent = {
   ariaLabel: 'Signal Pole',
   meta: [
     { label: 'Base', value: 'HO CHI MINH, VIET NAM' },
-    { label: 'Focus', value: 'Creative development / Motion / 3D modeling' },
+    { label: 'Focus', value: 'UXUI DESIGN,\nWEB/APP DEV AI' },
     { label: 'Index', value: 'Portfolio 2026' },
   ],
 };

@@ -7,7 +7,7 @@ output/
 .playwright-cli/
 .codegraph/
 .claude/
-cloned-sites/
+.cloned-sites/
 package-lock.json
 public/models/
 public/videos/
