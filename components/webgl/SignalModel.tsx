@@ -87,7 +87,6 @@ function isFrontFacingIntersection(
 
   const dot = worldNormal.dot(toCamera);
   const direction = SIGN_FACE_DIRECTION[materialName];
-  if (direction === 'either') return Math.abs(dot) > 0.05;
   return direction === 'front' ? dot > 0 : dot < 0;
 }
 
