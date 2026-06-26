@@ -45,8 +45,8 @@ export function usePointerScroll({
         touchPoint = next;
         return;
       }
-      const dx = prev.x - next.x;
-      const dy = prev.y - next.y;
+      const dx = next.x - prev.x;
+      const dy = next.y - prev.y;
       const delta = Math.abs(dx) > Math.abs(dy) ? dx : dy;
       event.preventDefault();
       addDelta(delta, 1.9);
@@ -62,8 +62,8 @@ export function usePointerScroll({
     };
     const pointerMove = (event: PointerEvent) => {
       if (!dragPoint || event.pointerType === 'touch') return;
-      const dx = dragPoint.x - event.clientX;
-      const dy = dragPoint.y - event.clientY;
+      const dx = event.clientX - dragPoint.x;
+      const dy = event.clientY - dragPoint.y;
       const delta = Math.abs(dx) > Math.abs(dy) ? dx : dy;
       addDelta(delta, 1.4);
       dragPoint = { x: event.clientX, y: event.clientY };
