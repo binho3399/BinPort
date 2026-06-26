@@ -61,3 +61,18 @@ npm run format       # Prettier write
 - Before commit or after shared shell/WebGL/CSS changes, run `npm run build`.
 - For visual parity work, prefer a production check: `npm run build`, then `npx next start -p <free-port>`, then Playwright/browser screenshots against `http://localhost:<port>`.
 - If a port is already occupied, inspect and reuse/choose another port rather than killing unrelated processes.
+
+## Edge Cases
+
+- If a WebGL screenshot is blank or stale, check the browser origin, console, `/models/model.glb` network status, canvas client size, and drawing buffer size before changing Three.js code.
+- If a visual parity request names a local clone, inspect that reference first. If no local clone is named, use `https://www.hirotos.com/` as the visual reference for homepage parity.
+- If changing shared shell, cursor, WebGL, route transitions, or global CSS, assume every route can be affected and verify at least `/`, `/projects`, `/about`, and `/contact` when practical.
+- If only one route or component is requested, do not refactor shared shell code unless the issue is proven to originate there.
+- If homepage text, profile content, project copy, or metadata appears different from the reference, keep local content stable unless the user explicitly asks for copy changes.
+- If Playwright or browser checks use `127.0.0.1` and visuals behave oddly, retry with `http://localhost:<port>` before debugging app code.
+- If a port is occupied, inspect the process and choose another free port instead of killing unrelated processes.
+- If `.codegraph/` exists, use CodeGraph for code-location questions before broad `rg` searches. If it does not exist or the database is unavailable, skip CodeGraph without trying to rebuild it.
+- If `app/codegraph/page.tsx` returns `notFound()` in production, treat that as intentional behavior unless the task is specifically about CodeGraph tooling.
+- If lint/type-check/build failures appear after a focused change, first determine whether the failure is related to the edited files before widening the task.
+- If a requested change conflicts with fixed full-viewport layout requirements, preserve the clone-like structure unless the user explicitly asks for a different interaction model.
+- If visual verification differs between development and production mode, trust production-mode checks more for parity decisions.
