@@ -1,4 +1,4 @@
-import BgTestStage from '../../components/BgTestStage';
+import BgTestStage from '../../../components/BgTestStage';
 
 export const metadata = {
   title: 'Background Test',

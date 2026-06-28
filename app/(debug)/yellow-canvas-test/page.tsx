@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import YellowCanvasTest from '../../components/YellowCanvasTest';
+import YellowCanvasTest from '../../../components/YellowCanvasTest';
 
 export const metadata = {
   title: 'Yellow Canvas Test',

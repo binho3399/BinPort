@@ -14,6 +14,7 @@ const config = [
       '.codegraph/**',
       '.claude/**',
       '.cloned-sites/**',
+      'cloned-sites/**',
     ],
   },
   ...nextVitals,

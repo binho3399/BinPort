@@ -25,6 +25,7 @@ output/
 .npm-cache/
 .cloned-sites/*
 !.cloned-sites/.gitignore
+cloned-sites/
 
 # Claude Code
 .claude/
