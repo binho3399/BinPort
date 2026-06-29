@@ -9,7 +9,12 @@ import * as THREE from 'three';
 import { drawProfileTexture } from '../profileSignCanvas';
 import { prepareSignalScene } from './prepareScene';
 import { drawContactTexture, drawProjectsTexture } from './textures';
-import type { AnimatedTexturesState, TrafficLight } from './types';
+import type {
+  AnimatedTexturesState,
+  InteractiveSignMaterialName,
+  InteractiveSignSurface,
+  TrafficLight,
+} from './types';
 import { usePointerScroll } from './usePointerScroll';
 import { signalEvents } from '../../lib/events';
 
@@ -54,19 +59,34 @@ function getIntersectionMaterialName(
 const SIGN_FACE_DIRECTION = {
   'hiroto-profile': 'front',
   to_projects: 'front',
-  to_contact: 'back',
-} as const;
+  to_contact: 'front',
+} as const satisfies Record<InteractiveSignMaterialName, 'front' | 'back'>;
 
-type SignMaterialName = keyof typeof SIGN_FACE_DIRECTION;
+type SignMaterialName = InteractiveSignMaterialName;
 
-const SURFACE_DISTANCE_EPSILON = 0.01;
+const CONTACT_TEXTURE_INTERVAL = 1 / 24;
+const PROFILE_TEXTURE_INTERVAL = 1 / 24;
+const PROJECTS_TEXTURE_INTERVAL = 1 / 24;
+const INITIAL_SCROLL_PROGRESS = 0;
+const OCCLUSION_EPSILON = 0.003;
+const FACE_SIDE_DOT_THRESHOLD = 0.08;
+const SIGN_FACE_SIDE_DOT_THRESHOLDS: Record<SignMaterialName, number> = {
+  'hiroto-profile': FACE_SIDE_DOT_THRESHOLD,
+  to_projects: FACE_SIDE_DOT_THRESHOLD,
+  to_contact: 0.18,
+};
+const SIGN_MATERIAL_NAMES: readonly SignMaterialName[] = [
+  'hiroto-profile',
+  'to_projects',
+  'to_contact',
+];
 const SIGN_HIT_BOUNDS: Record<
   SignMaterialName,
   { minU: number; maxU: number; minV: number; maxV: number }
 > = {
   'hiroto-profile': { minU: 0.08, maxU: 0.92, minV: 0.08, maxV: 0.92 },
   to_projects: { minU: 0.12, maxU: 0.87, minV: 0.2, maxV: 0.8 },
-  to_contact: { minU: 0.08, maxU: 0.92, minV: 0.12, maxV: 0.88 },
+  to_contact: { minU: 0.12, maxU: 0.88, minV: 0.16, maxV: 0.84 },
 };
 
 function isWithinInteractiveUv(
@@ -80,9 +100,9 @@ function isWithinInteractiveUv(
   return uv.x >= minU && uv.x <= maxU && uv.y >= minV && uv.y <= maxV;
 }
 
-function isFrontFacingIntersection(
+function isIntendedCanvasSideIntersection(
   intersection: THREE.Intersection<THREE.Object3D>,
-  camera: THREE.Camera,
+  rayDirection: THREE.Vector3,
   materialName: keyof typeof SIGN_FACE_DIRECTION,
 ) {
   if (!intersection.face) return false;
@@ -91,39 +111,86 @@ function isFrontFacingIntersection(
     .clone()
     .transformDirection(intersection.object.matrixWorld)
     .normalize();
-  const toCamera = camera.position.clone().sub(intersection.point).normalize();
-
-  const dot = worldNormal.dot(toCamera);
+  const dot = worldNormal.dot(rayDirection);
   const direction = SIGN_FACE_DIRECTION[materialName];
-  return direction === 'front' ? dot > 0 : dot < 0;
+  const threshold = SIGN_FACE_SIDE_DOT_THRESHOLDS[materialName];
+  return direction === 'front' ? dot < -threshold : dot > threshold;
 }
 
-function getFrontFacingMaterialName(
+type InteractiveCanvasHit = {
+  intersection: THREE.Intersection<THREE.Object3D>;
+  materialName: SignMaterialName;
+  surface: InteractiveSignSurface;
+};
+
+function isObjectWithinRoot(object: THREE.Object3D, root: THREE.Object3D) {
+  let current: THREE.Object3D | null = object;
+  while (current) {
+    if (current === root) return true;
+    current = current.parent;
+  }
+  return false;
+}
+
+function getSurfaceForIntersection(
+  intersection: THREE.Intersection<THREE.Object3D>,
+  materialName: SignMaterialName,
+  surfaces: readonly InteractiveSignSurface[],
+) {
+  return (
+    surfaces.find(
+      (surface) => surface.mesh === intersection.object && surface.materialName === materialName,
+    ) ?? null
+  );
+}
+
+function isCanvasHitOccluded(
+  hit: InteractiveCanvasHit,
+  intersections: THREE.Intersection<THREE.Object3D>[],
+) {
+  for (const intersection of intersections) {
+    if (intersection === hit.intersection) return false;
+    if (intersection.distance >= hit.intersection.distance - OCCLUSION_EPSILON) return false;
+
+    if (intersection.object === hit.surface.mesh) continue;
+    if (isObjectWithinRoot(intersection.object, hit.surface.root)) continue;
+
+    return true;
+  }
+
+  return false;
+}
+
+function getInteractiveCanvasHit(
   intersections: THREE.Intersection<THREE.Object3D>[],
   materialNames: readonly SignMaterialName[],
-  camera: THREE.Camera,
-): string | null {
-  const closestDistance = intersections[0]?.distance;
-  if (typeof closestDistance !== 'number') return null;
-
-  const hit = intersections.find((intersection) => {
-    if (Math.abs(intersection.distance - closestDistance) > SURFACE_DISTANCE_EPSILON) return false;
-
+  surfaces: readonly InteractiveSignSurface[],
+  ray: THREE.Ray,
+): InteractiveCanvasHit | null {
+  const normalizedRayDirection = ray.direction.clone().normalize();
+  for (const intersection of intersections) {
     const materialName = getIntersectionMaterialName(intersection, materialNames);
-    return materialName
-      ? isFrontFacingIntersection(intersection, camera, materialName) &&
-          isWithinInteractiveUv(intersection, materialName)
-      : false;
-  });
+    if (!materialName) continue;
+    if (!isIntendedCanvasSideIntersection(intersection, normalizedRayDirection, materialName)) {
+      continue;
+    }
+    if (!isWithinInteractiveUv(intersection, materialName)) continue;
 
-  return hit ? getIntersectionMaterialName(hit, materialNames) : null;
+    const surface = getSurfaceForIntersection(intersection, materialName, surfaces);
+    if (!surface) continue;
+
+    const hit = { intersection, materialName, surface };
+    return isCanvasHitOccluded(hit, intersections) ? null : hit;
+  }
+
+  return null;
 }
 
 export default function SignalModel({ interactive }: { interactive: boolean }) {
   const group = useRef<THREE.Object3D | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const scroll = useRef(0);
-  const scrollTarget = useRef(0);
+  const scroll = useRef(INITIAL_SCROLL_PROGRESS);
+  const scrollTarget = useRef(INITIAL_SCROLL_PROGRESS);
   const shake = useRef(0);
   const shakeClock = useRef(0);
   const router = useRouter();
@@ -133,24 +200,29 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const animatedTexturesRef = useRef<AnimatedTexturesState | null>(null);
   const trafficLightsRef = useRef<TrafficLight[]>([]);
+  const hoverPointerDirty = useRef(false);
+  const textureFrameTimes = useRef({ contact: 0, profile: 0, projects: 0 });
 
   const resetScroll = useCallback(() => {
-    scroll.current = 0;
-    scrollTarget.current = 0;
+    scroll.current = INITIAL_SCROLL_PROGRESS;
+    scrollTarget.current = INITIAL_SCROLL_PROGRESS;
     shake.current = 0;
     shakeClock.current = 0;
-    mixerRef.current?.setTime(0);
+    const action = actionRef.current;
+    const duration = action?.getClip().duration || 1;
+    mixerRef.current?.setTime((((INITIAL_SCROLL_PROGRESS % 1) + 1) % 1) * duration);
   }, []);
 
   usePointerScroll({ interactive, gl, scrollTarget, onReset: resetScroll });
 
   const prepared = useMemo(() => prepareSignalScene(scene), [scene]);
   const preparedScene = prepared.clone;
-  const signMeshes = prepared.signMeshes;
+  const signSurfaces = prepared.signSurfaces;
 
   useEffect(() => {
     animatedTexturesRef.current = prepared.animatedTextures;
     trafficLightsRef.current = prepared.trafficLights;
+    textureFrameTimes.current = { contact: 0, profile: 0, projects: 0 };
   }, [prepared]);
 
   useEffect(() => {
@@ -195,6 +267,18 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
     return null;
   };
 
+  const getInteractiveMaterialNameFromRay = (ray: THREE.Ray) => {
+    raycaster.ray.copy(ray);
+    const intersections = raycaster.intersectObject(preparedScene, true);
+    intersections.sort((a, b) => a.distance - b.distance);
+    return getInteractiveCanvasHit(
+      intersections,
+      SIGN_MATERIAL_NAMES,
+      signSurfaces,
+      raycaster.ray,
+    )?.materialName;
+  };
+
   const touchStart = useRef<{ id: number; x: number; y: number } | null>(null);
 
   const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
@@ -217,11 +301,7 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
       event.nativeEvent.clientY - start.y,
     );
     if (dist > 12) return;
-    const materialName = getFrontFacingMaterialName(
-      event.intersections,
-      ['hiroto-profile', 'to_projects', 'to_contact'],
-      cameraRef.current ?? defaultCamera,
-    );
+    const materialName = getInteractiveMaterialNameFromRay(event.ray);
     if (!materialName) return;
     if (materialName === 'hiroto-profile') router.push('/about');
     if (materialName === 'to_projects') router.push('/projects');
@@ -231,11 +311,7 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
   const handleClick = (event: ThreeEvent<MouseEvent>) => {
     if (!interactive) return;
     if ((event.nativeEvent as PointerEvent).pointerType === 'touch') return;
-    const materialName = getFrontFacingMaterialName(
-      event.intersections,
-      ['hiroto-profile', 'to_projects', 'to_contact'],
-      cameraRef.current ?? defaultCamera,
-    );
+    const materialName = getInteractiveMaterialNameFromRay(event.ray);
     if (!materialName) return;
     if (materialName === 'hiroto-profile') router.push('/about');
     if (materialName === 'to_projects') router.push('/projects');
@@ -248,50 +324,70 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
   }, [dispatchCursorLabel]);
 
   useFrame((state, delta) => {
-    if (interactive && isCanvasHovered.current) {
+    if (
+      interactive &&
+      isCanvasHovered.current &&
+      Math.abs(scrollTarget.current - scroll.current) > 0.0005
+    ) {
+      hoverPointerDirty.current = true;
+    }
+
+    if (interactive && isCanvasHovered.current && hoverPointerDirty.current) {
+      hoverPointerDirty.current = false;
       const activeCamera = cameraRef.current ?? (state.camera as THREE.PerspectiveCamera);
       raycaster.setFromCamera(hoverPointer.current, activeCamera);
-      const intersections = signMeshes.flatMap((mesh) => raycaster.intersectObject(mesh, false));
+      const intersections = raycaster.intersectObject(preparedScene, true);
       intersections.sort((a, b) => a.distance - b.distance);
-      const materialName = getFrontFacingMaterialName(
+      const materialName = getInteractiveCanvasHit(
         intersections,
-        ['hiroto-profile', 'to_projects', 'to_contact'],
-        activeCamera,
-      );
-      const signLabel = getMaterialLabel(materialName);
+        SIGN_MATERIAL_NAMES,
+        signSurfaces,
+        raycaster.ray,
+      )?.materialName;
+      const signLabel = getMaterialLabel(materialName ?? null);
       dispatchCursorLabel(signLabel);
     }
 
     const animated = animatedTexturesRef.current;
     if (animated) {
+      const frameTimes = textureFrameTimes.current;
       if (animated.contactSign?.ctx) {
         animated.contactTime += delta;
-        drawContactTexture(
-          animated.contactSign.ctx,
-          animated.contactSign.canvas,
-          animated.contactTime,
-        );
-        animated.contactSign.texture.needsUpdate = true;
+        if (state.clock.elapsedTime - frameTimes.contact >= CONTACT_TEXTURE_INTERVAL) {
+          frameTimes.contact = state.clock.elapsedTime;
+          drawContactTexture(
+            animated.contactSign.ctx,
+            animated.contactSign.canvas,
+            animated.contactTime,
+          );
+          animated.contactSign.texture.needsUpdate = true;
+        }
       }
       if (animated.profileSign?.ctx) {
         animated.profileTime += delta;
-        drawProfileTexture(
-          animated.profileSign.ctx,
-          animated.profileSign.canvas,
-          animated.profileTime,
-        );
-        animated.profileSign.texture.needsUpdate = true;
+        if (state.clock.elapsedTime - frameTimes.profile >= PROFILE_TEXTURE_INTERVAL) {
+          frameTimes.profile = state.clock.elapsedTime;
+          drawProfileTexture(
+            animated.profileSign.ctx,
+            animated.profileSign.canvas,
+            animated.profileTime,
+          );
+          animated.profileSign.texture.needsUpdate = true;
+        }
       }
       const scrollWidth = animated.projectsSign?.scrollWidth ?? 0;
       if (animated.projectsSign?.ctx && scrollWidth > 0) {
-        const step = Math.min(delta, 1 / 30);
+        const step = Math.min(delta, 1 / 24);
         animated.projectsOffset = (animated.projectsOffset + 100 * step) % scrollWidth;
-        animated.projectsSign.scrollWidth = drawProjectsTexture(
-          animated.projectsSign.ctx,
-          animated.projectsSign.canvas,
-          animated.projectsOffset,
-        );
-        animated.projectsSign.texture.needsUpdate = true;
+        if (state.clock.elapsedTime - frameTimes.projects >= PROJECTS_TEXTURE_INTERVAL) {
+          frameTimes.projects = state.clock.elapsedTime;
+          animated.projectsSign.scrollWidth = drawProjectsTexture(
+            animated.projectsSign.ctx,
+            animated.projectsSign.canvas,
+            animated.projectsOffset,
+          );
+          animated.projectsSign.texture.needsUpdate = true;
+        }
       }
     }
 
@@ -377,6 +473,7 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
         ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
         -(((event.clientY - bounds.top) / bounds.height) * 2 - 1),
       );
+      hoverPointerDirty.current = true;
     };
 
     const handlePointerEnter = (event: PointerEvent) => {
@@ -393,6 +490,7 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
 
     const handlePointerLeave = () => {
       isCanvasHovered.current = false;
+      hoverPointerDirty.current = false;
       dispatchCursorLabel(null);
     };
 

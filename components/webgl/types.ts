@@ -22,9 +22,17 @@ export type TrafficLight = {
   activeColor: THREE.Color;
 };
 
+export type InteractiveSignMaterialName = 'hiroto-profile' | 'to_projects' | 'to_contact';
+
+export type InteractiveSignSurface = {
+  mesh: THREE.Object3D;
+  materialName: InteractiveSignMaterialName;
+  root: THREE.Object3D;
+};
+
 export type PreparedSignalScene = {
   clone: THREE.Object3D;
   animatedTextures: AnimatedTexturesState;
   trafficLights: TrafficLight[];
-  signMeshes: THREE.Object3D[];
+  signSurfaces: InteractiveSignSurface[];
 };

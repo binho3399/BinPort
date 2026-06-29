@@ -215,6 +215,7 @@ function PageTransition() {
 export default function PersistentExperience({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const route = getRouteId(pathname);
+  const isHomeRoute = route === routeIds.home;
   const page = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -230,6 +231,8 @@ export default function PersistentExperience({ children }: { children: ReactNode
   };
 
   useEffect(() => {
+    if (!route) return undefined;
+
     const ctx = gsap.context(() => {
       if (route === 'home') {
         gsap.fromTo(
@@ -265,10 +268,10 @@ export default function PersistentExperience({ children }: { children: ReactNode
     <div
       ref={page}
       className="persistent-experience is-page-ready is-entered is-page-surface-ready"
-      data-route={route}
+      data-route={route ?? 'unknown'}
       data-transitioning="false"
     >
-      <WebGLScene interactive={route === routeIds.home} />
+      <WebGLScene interactive={isHomeRoute} />
       <Preloader />
       <div className="route-current">{children}</div>
       <nav className="site-nav" aria-label="Primary">
@@ -283,7 +286,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
           </Link>
         ))}
       </nav>
-      {route === routeIds.home ? (
+      {isHomeRoute ? (
         <div className="home-rotate-hint" aria-hidden="true">
           <span>Scroll to rotate model 3D</span>
         </div>

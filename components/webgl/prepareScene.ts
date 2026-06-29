@@ -7,7 +7,7 @@ import {
   makeShowreelTexture,
   makeVideoTexture,
 } from './textures';
-import type { PreparedSignalScene, TrafficLight } from './types';
+import type { InteractiveSignMaterialName, PreparedSignalScene, TrafficLight } from './types';
 
 type SignalMaterial = THREE.MeshStandardMaterial;
 type SignalMesh = THREE.Mesh<THREE.BufferGeometry, SignalMaterial | SignalMaterial[]>;
@@ -24,7 +24,11 @@ const SHOWREEL_FRAGMENT = `#include <map_fragment>
       showreelColor = mix(vec3(showreelLuma), showreelColor, 1.04);
       showreelColor = (showreelColor - 0.5) * 1.16 + 0.5;
       diffuseColor.rgb = clamp(showreelColor, 0.0, 0.88);
-    `;
+	    `;
+
+function getInteractiveSignRoot(mesh: SignalMesh) {
+  return mesh.parent && mesh.parent.type !== 'Scene' ? mesh.parent : mesh;
+}
 
 function removeProfileMaterialGroups(object: SignalMesh) {
   if (!Array.isArray(object.material)) return false;
@@ -148,7 +152,7 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
   const profileSign = makeAnimatedCanvasTexture();
   const showreel = makeVideoTexture('/videos/hirotos_showreel.mp4') || makeShowreelTexture();
   const trafficLights: TrafficLight[] = [];
-  const signMeshes: THREE.Object3D[] = [];
+  const signSurfaces: PreparedSignalScene['signSurfaces'] = [];
   const objectsToRemove: THREE.Object3D[] = [];
 
   if (projectsSign?.ctx)
@@ -171,15 +175,27 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
     const name = Array.isArray(mesh.material) ? undefined : mesh.material?.name;
     if (name === 'hiroto-profile') {
       applyProfileMaterial(mesh, profileSign?.texture);
-      signMeshes.push(mesh);
+      signSurfaces.push({
+        mesh,
+        materialName: name satisfies InteractiveSignMaterialName,
+        root: getInteractiveSignRoot(mesh),
+      });
     }
     if (name === 'to_projects') {
       applyProjectsMaterial(mesh, projectsSign?.texture);
-      signMeshes.push(mesh);
+      signSurfaces.push({
+        mesh,
+        materialName: name satisfies InteractiveSignMaterialName,
+        root: getInteractiveSignRoot(mesh),
+      });
     }
     if (name === 'to_contact') {
       applyContactMaterial(mesh, contactSign?.texture);
-      signMeshes.push(mesh);
+      signSurfaces.push({
+        mesh,
+        materialName: name satisfies InteractiveSignMaterialName,
+        root: getInteractiveSignRoot(mesh),
+      });
     }
     if (name === 'hirotos_showreel') applyShowreelMaterial(mesh, showreel);
     if (name && ['light1', 'light2', 'light3'].includes(name)) {
@@ -207,5 +223,5 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
     contactTime: 0,
     profileTime: 0,
   };
-  return { clone, animatedTextures, trafficLights, signMeshes };
+  return { clone, animatedTextures, trafficLights, signSurfaces };
 }

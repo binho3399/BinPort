@@ -14,6 +14,6 @@ export const routes = [
   { href: '/contact', label: 'Contact', id: routeIds.contact },
 ];
 
-export function getRouteId(pathname: string): RouteId {
-  return routes.find((route) => route.href === pathname)?.id ?? routeIds.home;
+export function getRouteId(pathname: string): RouteId | null {
+  return routes.find((route) => route.href === pathname)?.id ?? null;
 }
