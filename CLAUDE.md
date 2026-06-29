@@ -85,3 +85,87 @@ Sau đó verify bằng Playwright/browser tại `http://localhost:<port>`.
 - 3D model tại `/models/model.glb` — cần dev server chạy để load
 - Nếu screenshot không thấy 3D model, kiểm tra origin, console, request `/models/model.glb` có `200 OK`, canvas client size, và drawing buffer size trước khi debug scene code.
 - CodeGraph UI chỉ render trong development mode và khi `.codegraph/codegraph.db` tồn tại.
+
+## CodeGraph Usage
+
+CodeGraph database (`.codegraph/codegraph.db`) chứa semantic graph của toàn bộ codebase — nodes (functions, classes, components, exports) và edges (calls, imports, dependencies). **Ưu tiên dùng CodeGraph** cho các task cần hiểu cross-file relationships thay vì manual grep/find.
+
+### Khi nào dùng CodeGraph
+
+- **Find all references**: tìm tất cả nơi gọi một function/component, hoặc import một module
+- **Trace call chains**: hiểu call graph từ entry point đến leaf functions
+- **Dependency analysis**: tìm unused exports, circular dependencies, hoặc impact analysis khi refactor
+- **Cross-file refactoring**: rename/move/delete symbols an toàn với full reference list
+- **Understand architecture**: visualize module boundaries, layer violations, component hierarchy
+
+### Cách query CodeGraph
+
+**REST API** (cần dev server chạy):
+
+```bash
+# Tìm nodes theo search term
+curl "http://localhost:3000/api/codegraph/nodes?search=WebGLScene"
+
+# Lọc theo kind
+curl "http://localhost:3000/api/codegraph/nodes?kind=function&file=lib/routes.ts"
+
+# Lấy edges của một node
+curl "http://localhost:3000/api/codegraph/edges?nodeIds=node-id-1,node-id-2"
+
+# Stats overview
+curl "http://localhost:3000/api/codegraph/stats"
+```
+
+**Direct DB query** (không cần dev server):
+
+```typescript
+import { getDb, hasCodegraphDb } from '@/lib/codegraph-db';
+
+if (hasCodegraphDb()) {
+  const db = getDb();
+  
+  // Tìm function callers
+  const callers = db.prepare(`
+    SELECT n.name, n.file_path, e.line 
+    FROM edges e 
+    JOIN nodes n ON e.source = n.id 
+    WHERE e.target = ? AND e.kind = 'call'
+  `).all(targetNodeId);
+  
+  // Tìm unused exports
+  const unused = db.prepare(`
+    SELECT n.id, n.name, n.file_path 
+    FROM nodes n 
+    WHERE n.is_exported = 1 
+    AND n.id NOT IN (SELECT target FROM edges WHERE kind = 'import')
+  `).all();
+}
+```
+
+### Schema Overview
+
+**nodes table**:
+- `id`, `kind` (function, class, component, variable, etc.)
+- `name`, `qualified_name`, `file_path`
+- `start_line`, `end_line`, `signature`, `docstring`
+- `is_exported`, `is_async`, `visibility`
+
+**edges table**:
+- `source`, `target` (node IDs)
+- `kind` (call, import, extends, implements, etc.)
+- `line` (line number trong source file)
+
+### Examples
+
+```bash
+# Workflow: refactor PersistentExperience component
+# Step 1: Tìm component definition
+curl "localhost:3000/api/codegraph/nodes?search=PersistentExperience&kind=component"
+
+# Step 2: Lấy node ID từ response, query edges
+curl "localhost:3000/api/codegraph/edges?nodeIds=<node-id>"
+
+# Step 3: Check all imports và calls để đảm bảo không break references
+```
+
+**Fallback**: Nếu `.codegraph/codegraph.db` không tồn tại hoặc outdated, dùng grep/find như bình thường và recommend user rebuild CodeGraph database.
