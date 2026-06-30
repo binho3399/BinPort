@@ -8,6 +8,8 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 800px;
 }
 
 .project-card {

@@ -184,3 +184,17 @@
   pointer-events: none;
   background: #fff;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition__next,
+  .page-transition__next-content {
+    filter: none;
+    transition: none;
+  }
+  .page-transition__next {
+    will-change: auto;
+  }
+  .page-transition__next-content {
+    will-change: auto;
+  }
+}

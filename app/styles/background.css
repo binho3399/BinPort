@@ -30,10 +30,12 @@
   background-repeat: repeat;
   background-size: 256px 256px;
   background-position: 0 0;
+  contain: layout paint style;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .film-grain {
     opacity: 0.04;
+    animation: none;
   }
 }

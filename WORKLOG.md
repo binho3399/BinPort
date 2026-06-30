@@ -124,3 +124,50 @@ Lịch sử các task đã thực hiện trong project. Mỗi task có table sum
 ### Bài học rút ra
 - Không xem được ảnh user gửi (model không hỗ trợ image input) → áp dụng tăng contrast tổng thể dựa trên code.
 - Tăng contrast theo 2 hướng: (1) opacity gradient mỗi blob, (2) chênh lệch tint giữa các depth layers để tách lớp.
+
+---
+
+## [2026-06-30] Task: Optimize homepage + codebase (Phase 0-5)
+
+**Files thay đổi:**
+- `public/models/model.glb` (sửa) — nén Meshopt, 842KB → 246KB (71% giảm, visually lossless)
+- `app/layout.tsx` (sửa) — async Typekit qua `next/script` lazyOnload + preconnect; thêm `viewport` export (themeColor)
+- `app/styles/base.css` (sửa) — `font-display: auto` → `swap` (chống FOIT)
+- `components/PersistentExperience.tsx` (sửa) — `dynamic(() => import('./WebGLScene'), { ssr:false })` code-split three.js; FilmGrain thay GSAP loop bằng CSS animation `steps(10)` 0.83s
+- `next.config.mjs` (sửa) — `experimental.optimizePackageImports` (three, drei, fiber, gsap, lucide-react), `compiler.removeConsole` (exclude error), `images.formats` (avif, webp)
+- `app/loading.tsx` (mới) — route loading skeleton minimal
+- `components/WebGLScene.tsx` (sửa) — RenderScheduler idle throttle 24fps home / 12fps non-home; adaptive shadow map 1024 home / 512 non-home
+- `components/SkyBackground.tsx` (sửa) — RAF throttle 60fps → 30fps (giảm 50% drawImage/frame)
+- `components/webgl/SignalModel.tsx` (sửa) — texture redraw interval 24fps home / 12fps non-home
+- `app/styles/shell.css` (sửa) — xóa permanent `will-change` trên `[data-text-reveal]`; `.mouse-stalker` will-change bỏ `width,height`; thêm `contain: layout paint style` trên `.webgl-background`, `.preloader`; mở rộng `prefers-reduced-motion` (nav, back-circle)
+- `app/styles/background.css` (sửa) — `contain: layout paint style` trên `.film-grain`; `animation: none` trong reduced-motion
+- `app/styles/page-shell.css` (sửa) — `prefers-reduced-motion` block cho page-transition (filter/transition/will-change reset)
+- `app/styles/pages.css` (sửa) — `content-visibility: auto` + `contain-intrinsic-size: auto 800px` trên `.projects-gallery`
+
+### Summary
+
+| # | Vấn đề / Yêu cầu | Giải pháp | Kết quả |
+|---|---|---|---|
+| 1 | Model 842KB load blocking homepage | Nén Meshopt via `@gltf-transform/cli meshopt` (visually lossless) | 842KB → 246KB raw, 106KB transfer (87% giảm transfer) |
+| 2 | Three.js 1.13MB trong initial bundle mọi route | `dynamic(() => import('./WebGLScene'), { ssr:false })` + loading fallback | Initial JS 1.13MB+ → 446KB rootMainFiles (60% giảm initial payload) |
+| 3 | Typekit CSS render-blocking trong `<head>` | `next/script` strategy="lazyOnload" + preconnect + preload | Non-blocking font load (FOUT thay FOIT) |
+| 4 | `font-display: auto` gây FOIT | `font-display: swap` | Text luôn visible khi font load |
+| 5 | FilmGrain GSAP tween 12fps mãi mãi trên main thread | CSS animation `steps(10)` 0.83s + `prefers-reduced-motion: none` | Bỏ 1 permanent main-thread loop |
+| 6 | SkyBackground RAF 60fps liên tục (~50 drawImage/frame) | Throttle 30fps, RAF schedule top-first, elapsed time giữ nguyên | Giảm 50% GPU draw work, cloud speed identical |
+| 7 | RenderScheduler idle 24fps trên mọi route | 24fps home / 12fps non-home (interactive prop) | Giảm render idle trên /about,/contact,/projects |
+| 8 | Shadow map 1024 trên mọi route | Adaptive 1024 home / 512 non-home | Giảm GPU fill cost non-home |
+| 9 | Texture redraw 24fps trên mọi route | 24fps home / 12fps non-home (textureInterval) | Giảm CPU useFrame non-home |
+| 10 | Permanent `will-change` trên ~8 element groups | Xóa rule; `.mouse-stalker` bỏ `width,height` | Giảm compositor layer memory |
+| 11 | 10 fixed layers không contain | `contain: layout paint style` trên webgl-bg, preloader, film-grain | Isolate rendering, giảm layout recalc |
+| 12 | `prefers-reduced-motion` incomplete | Mở rộng: nav, page-transition, film-grain animation | Accessibility đầy đủ |
+| 13 | Offscreen project cards render không cần | `content-visibility: auto` + `contain-intrinsic-size` trên gallery | Browser skip render offscreen cards |
+| 14 | Next config tối giản | `optimizePackageImports`, `removeConsole`, `images.formats` avif/webp | Bundle + image optimization |
+| 15 | Không có viewport export | `export const viewport` (themeColor #050505) | UX/meta |
+
+### Bài học rút ra
+- **Meshopt compression** qua `@gltf-transform/cli meshopt` giảm 71% file size visually lossless — tốt hơn Draco cho parity tuyệt đối. Drei v10.7.7 `useGLTF` auto-register `MeshoptDecoder` by default (`useMeshopt=true`), không cần code thêm.
+- **Turbopack code-split**: `dynamic({ ssr:false })` tách three.js vào dynamic chunk (1.04MB) — không nằm trong `rootMainFiles` (initial load). Initial payload giảm 60% dù total JS không đổi. Đo `rootMainFiles` trong `build-manifest.json`, không phải total chunks.
+- **3 lane song song** (fixer WebGL + fixer shell/config + designer CSS) với write scope không giao nhau → hoàn thành 15 thay đổi trong 1 round, chỉ cần reconcile + verify 1 lần.
+- **CSS animation thay GSAP loop**: `steps(10)` timing function + 10 keyframes = 12fps jitter, parity-safe ở opacity 0.06 + mix-blend overlay. Bỏ được permanent main-thread tween.
+- **`content-visibility: auto`** chỉ áp dụng cho below-the-fold content (`.projects-gallery`), không cho above-the-fold — tránh blank viewport.
+- **`contain: layout paint style`** trên fixed full-viewport layers (webgl-bg, preloader, film-grain) → isolate rendering, không ảnh hưởng visual.

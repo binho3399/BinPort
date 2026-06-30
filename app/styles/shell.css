@@ -5,6 +5,7 @@
   background: linear-gradient(to bottom, #b8dff0, #cce8f3, #e2f1f8, #f0f7fb);
   overscroll-behavior: none;
   touch-action: none;
+  contain: layout paint style;
 }
 
 .webgl-background canvas {
@@ -27,6 +28,7 @@
   transform-origin: bottom;
   opacity: 0;
   visibility: hidden;
+  contain: layout paint style;
 }
 
 .preloader__wave {
@@ -112,16 +114,7 @@
   background: #fff;
 }
 
-[data-text-reveal],
-[data-text-reveal-heading],
-[data-text-reveal-kicker],
-.page-shell__intro > p,
-.page-shell__intro > h1,
-.about-language-toggle > button,
-.about-page__body,
-.contact-page__links {
-  will-change: opacity, transform;
-}
+
 
 .site-nav {
   position: fixed;
@@ -218,7 +211,7 @@
   color: #0b0b0a;
   pointer-events: none;
   transform-origin: 50%;
-  will-change: transform, width, height, opacity;
+  will-change: transform, opacity;
 }
 
 .mouse-stalker__svg {
@@ -307,5 +300,10 @@
   .home-rotate-hint::before {
     animation: none;
     background-position: 0 0;
+  }
+  .site-nav a,
+  .site-nav button,
+  .back-circle-control {
+    transition: none;
   }
 }

@@ -8,6 +8,7 @@ import SignalModel from './webgl/SignalModel';
 import SkyBackground from './SkyBackground';
 
 const IDLE_RENDER_INTERVAL_MS = 1000 / 24;
+const IDLE_RENDER_INTERVAL_MS_NON_INTERACTIVE = 1000 / 12;
 const ACTIVE_RENDER_BURST_MS = 700;
 
 type WebGLSceneProps = {
@@ -56,7 +57,7 @@ function RenderScheduler({ interactive }: { interactive: boolean }) {
       'touchend',
     ];
 
-    const idleInterval = window.setInterval(invalidateIfVisible, IDLE_RENDER_INTERVAL_MS);
+    const idleInterval = window.setInterval(invalidateIfVisible, interactive ? IDLE_RENDER_INTERVAL_MS : IDLE_RENDER_INTERVAL_MS_NON_INTERACTIVE);
     window.addEventListener('resize', requestActiveRender);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     if (interactive) {
@@ -84,6 +85,7 @@ function RenderScheduler({ interactive }: { interactive: boolean }) {
 }
 
 export default function WebGLScene({ interactive }: WebGLSceneProps) {
+  const shadowMapSize = interactive ? 1024 : 512;
   return (
     <div className="webgl-background" aria-hidden="true">
       <div className="sky-layer">
@@ -110,8 +112,8 @@ export default function WebGLScene({ interactive }: WebGLSceneProps) {
             position={[4.8, 6.2, 4.2]}
             intensity={1.1}
             shadow-bias={-0.00012}
-            shadow-mapSize-height={1024}
-            shadow-mapSize-width={1024}
+            shadow-mapSize-height={shadowMapSize}
+            shadow-mapSize-width={shadowMapSize}
           />
           <Suspense fallback={null}>
             <SignalModel interactive={interactive} />

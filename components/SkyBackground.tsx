@@ -287,6 +287,7 @@ export default function SkyBackground() {
     let bgCanvas: HTMLCanvasElement | null = null;
     let rafId = 0;
     let startTime = 0;
+    let lastDrawTime = 0;
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -337,15 +338,18 @@ export default function SkyBackground() {
     };
 
     const animate = (time: number) => {
+      rafId = window.requestAnimationFrame(animate);
       if (!startTime) startTime = time;
+      if (time - lastDrawTime < 1000 / 30) return;
+      lastDrawTime = time;
       const elapsed = (time - startTime) / 1000;
       const offset = (elapsed * 0.015) % 1.2;
       drawScene(offset);
-      rafId = window.requestAnimationFrame(animate);
     };
 
     const start = () => {
       if (rafId) return;
+      lastDrawTime = 0;
       rafId = window.requestAnimationFrame(animate);
     };
     const stop = () => {

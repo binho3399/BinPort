@@ -64,9 +64,6 @@ const SIGN_FACE_DIRECTION = {
 
 type SignMaterialName = InteractiveSignMaterialName;
 
-const CONTACT_TEXTURE_INTERVAL = 1 / 24;
-const PROFILE_TEXTURE_INTERVAL = 1 / 24;
-const PROJECTS_TEXTURE_INTERVAL = 1 / 24;
 const INITIAL_SCROLL_PROGRESS = 0;
 const OCCLUSION_EPSILON = 0.003;
 const FACE_SIDE_DOT_THRESHOLD = 0.08;
@@ -187,6 +184,7 @@ function getInteractiveCanvasHit(
 }
 
 export default function SignalModel({ interactive }: { interactive: boolean }) {
+  const textureInterval = interactive ? 1 / 24 : 1 / 12;
   const group = useRef<THREE.Object3D | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const scroll = useRef(INITIAL_SCROLL_PROGRESS);
@@ -353,7 +351,7 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
       const frameTimes = textureFrameTimes.current;
       if (animated.contactSign?.ctx) {
         animated.contactTime += delta;
-        if (state.clock.elapsedTime - frameTimes.contact >= CONTACT_TEXTURE_INTERVAL) {
+        if (state.clock.elapsedTime - frameTimes.contact >= textureInterval) {
           frameTimes.contact = state.clock.elapsedTime;
           drawContactTexture(
             animated.contactSign.ctx,
@@ -365,7 +363,7 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
       }
       if (animated.profileSign?.ctx) {
         animated.profileTime += delta;
-        if (state.clock.elapsedTime - frameTimes.profile >= PROFILE_TEXTURE_INTERVAL) {
+        if (state.clock.elapsedTime - frameTimes.profile >= textureInterval) {
           frameTimes.profile = state.clock.elapsedTime;
           drawProfileTexture(
             animated.profileSign.ctx,
@@ -379,7 +377,7 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
       if (animated.projectsSign?.ctx && scrollWidth > 0) {
         const step = Math.min(delta, 1 / 24);
         animated.projectsOffset = (animated.projectsOffset + 100 * step) % scrollWidth;
-        if (state.clock.elapsedTime - frameTimes.projects >= PROJECTS_TEXTURE_INTERVAL) {
+        if (state.clock.elapsedTime - frameTimes.projects >= textureInterval) {
           frameTimes.projects = state.clock.elapsedTime;
           animated.projectsSign.scrollWidth = drawProjectsTexture(
             animated.projectsSign.ctx,
