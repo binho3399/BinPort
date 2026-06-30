@@ -107,11 +107,16 @@
   overflow: hidden;
 }
 
-.experience-page--about,
-.experience-page--contact {
+.experience-page--about {
   color: #0b0b0a;
   pointer-events: auto;
   background: #fff;
+}
+
+.experience-page--contact {
+  color: #0b0b0a;
+  pointer-events: auto;
+  background: transparent;
 }
 
 

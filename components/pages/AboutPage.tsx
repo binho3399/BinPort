@@ -33,7 +33,7 @@ export default function AboutPage() {
             ))}
           </div>
         </header>
-        <div className="about-page__content reveal">
+        <div className="about-page__content reveal" suppressHydrationWarning>
           <div className="page-shell__intro">
             <p>{copy.eyebrow}</p>
             <h1>{copy.heading}</h1>

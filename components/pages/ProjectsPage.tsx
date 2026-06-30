@@ -12,13 +12,14 @@ export default function ProjectsPage() {
         <header className="page-shell__header">
           <BackButton />
         </header>
-        <div className="projects-gallery reveal">
+        <div className="projects-gallery reveal" suppressHydrationWarning>
           {projects.map((project, index) => (
             <a
               className="project-card"
               key={project.title}
               href={project.href}
               data-cursor-stalker-label="Open"
+              suppressHydrationWarning
               style={{ '--delay': `${index * 0.045}s` } as ProjectCardStyle}
             >
               <Image

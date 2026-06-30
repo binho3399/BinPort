@@ -12,7 +12,7 @@ export const profile = {
 };
 
 export const contactLinks = {
-  email: 'hello@hirotos.com',
+  email: 'waungbinh@gmail.com',
   linkedin: 'https://www.linkedin.com/in/hiroto-sato-2414b23b7',
 };
 

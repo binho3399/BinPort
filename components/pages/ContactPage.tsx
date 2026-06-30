@@ -9,7 +9,7 @@ export default function ContactPage() {
         <header className="page-shell__header">
           <BackButton />
         </header>
-        <div className="contact-page__content reveal">
+        <div className="contact-page__content reveal" suppressHydrationWarning>
           <div className="page-shell__intro">
             <p>{contactContent.eyebrow}</p>
             <h1>{contactContent.heading}</h1>

@@ -250,6 +250,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
   const pathname = usePathname();
   const route = getRouteId(pathname);
   const isHomeRoute = route === routeIds.home;
+  const isContactRoute = route === routeIds.contact;
   const page = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -305,29 +306,35 @@ export default function PersistentExperience({ children }: { children: ReactNode
       data-route={route ?? 'unknown'}
       data-transitioning="false"
     >
-      <WebGLScene interactive={isHomeRoute} />
+      <WebGLScene interactive={isHomeRoute} cloudsOnly={isContactRoute} />
       <Preloader />
       <div className="route-current">{children}</div>
-      <nav className="site-nav" aria-label="Primary">
-        {routes.map(({ href, label, id }) => (
-          <Link
-            key={id}
-            href={href}
-            aria-current={route === id ? 'page' : undefined}
-            onClick={handleNavigate}
-          >
-            {label}
-          </Link>
-        ))}
-      </nav>
+      {isContactRoute ? null : (
+        <nav className="site-nav" aria-label="Primary">
+          {routes.map(({ href, label, id }) => (
+            <Link
+              key={id}
+              href={href}
+              aria-current={route === id ? 'page' : undefined}
+              onClick={handleNavigate}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+      )}
       {isHomeRoute ? (
         <div className="home-rotate-hint" aria-hidden="true">
           <span>Scroll to rotate model 3D</span>
         </div>
       ) : null}
-      <FilmGrain />
-      <Cursor />
-      <PageTransition />
+      {isContactRoute ? null : (
+        <>
+          <FilmGrain />
+          <Cursor />
+          <PageTransition />
+        </>
+      )}
     </div>
   );
 }
