@@ -1,5 +1,6 @@
 @import './styles/base.css';
 @import './styles/shell.css';
+@import './styles/background.css';
 @import './styles/page-shell.css';
 @import './styles/pages.css';
 @import './styles/debug.css';

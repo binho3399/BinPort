@@ -212,6 +212,35 @@ function PageTransition() {
   );
 }
 
+function FilmGrain() {
+  const grainRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!grainRef.current) return;
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) return;
+
+    const ctx = gsap.context(() => {
+      gsap.to({}, {
+        duration: 0.083,
+        repeat: -1,
+        onRepeat: () => {
+          if (grainRef.current) {
+            const x = Math.random() * 100;
+            const y = Math.random() * 100;
+            grainRef.current.style.backgroundPosition = `${x}px ${y}px`;
+          }
+        },
+      });
+    }, grainRef.current);
+
+    return () => ctx.revert();
+  }, []);
+
+  return <div ref={grainRef} className="film-grain" aria-hidden="true" />;
+}
+
 export default function PersistentExperience({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const route = getRouteId(pathname);
@@ -291,6 +320,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
           <span>Scroll to rotate model 3D</span>
         </div>
       ) : null}
+      <FilmGrain />
       <Cursor />
       <PageTransition />
     </div>

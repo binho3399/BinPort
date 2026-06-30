@@ -87,11 +87,9 @@
   );
 }
 
-.sky-bg-test__clouds {
+.sky-bg-test .sky-background__canvas {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
   display: block;
   pointer-events: none;
 }
