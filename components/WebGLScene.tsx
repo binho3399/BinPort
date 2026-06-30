@@ -2,6 +2,7 @@
 
 import { Canvas, useThree } from '@react-three/fiber';
 import { Environment, Preload } from '@react-three/drei';
+import { EffectComposer, SMAA } from '@react-three/postprocessing';
 import { Suspense, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import SignalModel from './webgl/SignalModel';
@@ -85,7 +86,7 @@ function RenderScheduler({ interactive }: { interactive: boolean }) {
 }
 
 export default function WebGLScene({ interactive }: WebGLSceneProps) {
-  const shadowMapSize = interactive ? 1024 : 512;
+  const shadowMapSize = 2048;
   return (
     <div className="webgl-background" aria-hidden="true">
       <div className="sky-layer">
@@ -93,8 +94,8 @@ export default function WebGLScene({ interactive }: WebGLSceneProps) {
       </div>
       <div className="webgl-canvas-wrap">
         <Canvas
-          shadows={{ type: THREE.PCFSoftShadowMap }}
-          dpr={[1, 1.5]}
+          shadows={{ type: THREE.PCFShadowMap }}
+          dpr={[1, 2]}
           frameloop="demand"
           camera={{ position: [0.02, 0.12, 4.18], fov: 30 }}
           gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
@@ -118,6 +119,9 @@ export default function WebGLScene({ interactive }: WebGLSceneProps) {
           <Suspense fallback={null}>
             <SignalModel interactive={interactive} />
             <Environment preset="city" environmentIntensity={0.42} />
+            <EffectComposer depthBuffer multisampling={8} resolutionScale={1}>
+              <SMAA />
+            </EffectComposer>
             <Preload all />
           </Suspense>
         </Canvas>

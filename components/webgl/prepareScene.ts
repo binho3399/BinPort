@@ -140,7 +140,7 @@ function applyTrafficLightMaterial(
     material: object.material,
     idleColor: new THREE.Color('#050505'),
     activeColor: new THREE.Color(
-      name === 'light1' ? '#ff2b1f' : name === 'light2' ? '#ffb627' : '#12d7a8',
+      name === 'light1' ? '#ff2b1f' : name === 'light2' ? '#ffd21f' : '#12d7a8',
     ),
   });
 }
@@ -202,17 +202,6 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
     if (name && ['light1', 'light2', 'light3'].includes(name)) {
       applyTrafficLightMaterial(mesh, name, trafficLights);
     }
-
-    // Handle multi-material meshes — apply per-material overrides
-    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    materials.forEach((mat) => {
-      if (!mat) return;
-      if (mat.name === 'Material.002') {
-        mat.color.set('#8fa3ab');
-        mat.toneMapped = false;
-        mat.needsUpdate = true;
-      }
-    });
   });
 
   objectsToRemove.forEach((object) => object.parent?.remove(object));
