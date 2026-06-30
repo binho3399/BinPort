@@ -6,7 +6,6 @@ export default function BackButton() {
     <Link
       className="back-circle-control"
       href="/"
-      data-cursor-stalker-label="Back"
       aria-label="Back to home"
     >
       <ChevronLeft size={20} />
