@@ -27,5 +27,9 @@ output/
 !.cloned-sites/.gitignore
 cloned-sites/
 
+# Playwright
+test-results/
+playwright-report/
+
 # Claude Code
 .claude/
