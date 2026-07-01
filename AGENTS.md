@@ -25,6 +25,10 @@ If there is no `.codegraph/` directory, skip CodeGraph entirely - indexing is th
 - Keep the homepage copy/content stable during parity work unless the user asks for copy changes. Most previous gaps were shell/layout, typography, fixed layers, cursor behavior, WebGL state, and route-transition behavior.
 - Judge visual parity in the browser, not by code similarity alone. The useful contract is the rendered DOM/CSS/runtime behavior.
 
+## Design System
+
+- **`DESIGN.md`** is the single source of truth for UI consistency. Consult it for colors, typography, spacing, layout patterns, component specs, animation, and responsive behavior. Do not invent new design values unless explicitly asked.
+
 ## Codebase Map
 
 - `app/` contains App Router pages, global CSS imports, dev-only CodeGraph routes/UI, and the `yellow-canvas-test` diagnostic page.

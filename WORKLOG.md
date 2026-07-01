@@ -164,6 +164,27 @@ Lịch sử các task đã thực hiện trong project. Mỗi task có table sum
 | 14 | Next config tối giản | `optimizePackageImports`, `removeConsole`, `images.formats` avif/webp | Bundle + image optimization |
 | 15 | Không có viewport export | `export const viewport` (themeColor #050505) | UX/meta |
 
+## [2026-07-01] Task: Tạo DESIGN.md + cập nhật references
+
+**Files thay đổi:**
+- `DESIGN.md` (mới) — comprehensive design system document: color palette, typography, spacing, layout, component patterns, animation, responsive breakpoints, CSS architecture, accessibility
+- `AGENTS.md` (sửa) — thêm section "Design System" tham chiếu DESIGN.md (trước Codebase Map)
+- `CLAUDE.md` (sửa) — thêm section "Design System" tham chiếu DESIGN.md (trước Parity / Visual Work)
+
+### Summary
+
+| # | Vấn đề / Yêu cầu | Giải pháp | Kết quả |
+|---|---|---|---|
+| 1 | Không có single source of truth cho design system — colors/typography/spacing phân tán trong 7 file CSS | Tạo `DESIGN.md` extract tất cả design tokens, patterns, conventions từ CSS vào một file có cấu trúc | 10 sections, ~250 lines, coverage toàn bộ design system |
+| 2 | Agents không biết có DESIGN.md để tham chiếu | Thêm section "Design System" vào đầu `AGENTS.md` (instructions tự load) và `CLAUDE.md` (context cho Claude) | Cả 2 file đều reference DESIGN.md là single source of truth |
+
+### Bài học rút ra
+- Khi extract design system từ CSS, cần đọc kỹ tất cả file (kể cả debug.css) để không miss token
+- Section ordering trong DESIGN.md nên theo: foundations (colors, typography, spacing) → patterns (layout, components) → behavior (animation, responsive) → architecture (CSS files) → accessibility
+- AGENTS.md nên để reference DESIGN.md trước Codebase Map vì design consistency ảnh hưởng mọi route và component
+
+---
+
 ### Bài học rút ra
 - **Meshopt compression** qua `@gltf-transform/cli meshopt` giảm 71% file size visually lossless — tốt hơn Draco cho parity tuyệt đối. Drei v10.7.7 `useGLTF` auto-register `MeshoptDecoder` by default (`useMeshopt=true`), không cần code thêm.
 - **Turbopack code-split**: `dynamic({ ssr:false })` tách three.js vào dynamic chunk (1.04MB) — không nằm trong `rootMainFiles` (initial load). Initial payload giảm 60% dù total JS không đổi. Đo `rootMainFiles` trong `build-manifest.json`, không phải total chunks.

@@ -48,6 +48,10 @@ Key files:
 - **3D**: React Three Fiber + Drei cho WebGL scene, GSAP cho animations
 - **Formatting**: Prettier (check CI), ESLint (next/core-web-vitals + typescript)
 
+## Design System
+
+- **`DESIGN.md`** là single source of truth cho UI consistency. Tham khảo file này cho: colors, typography, spacing, layout patterns, component specs, animation easing, responsive breakpoints. Không tự ý invent design values mới trừ khi được yêu cầu.
+
 ## Parity / Visual Work
 
 - Use `https://www.hirotos.com/` as the live homepage parity reference unless the user explicitly points to `.cloned-sites/` or another local reference.
