@@ -31,6 +31,17 @@
   contain: layout paint style;
 }
 
+.route-wave {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+}
+
 .preloader__wave {
   position: absolute;
   inset: 0;
@@ -69,6 +80,12 @@
 
 .persistent-experience[data-transitioning='true'] .site-nav {
   pointer-events: none;
+  opacity: 0;
+}
+
+.persistent-experience[data-transitioning='true'] .back-circle-control--shell {
+  pointer-events: none;
+  opacity: 0;
 }
 
 .experience-page {
@@ -88,21 +105,16 @@
   opacity: 1;
 }
 
-.experience-page--home {
+.is-page-ready .experience-page--home,
+.is-entered .experience-page--home,
+.is-page-surface-ready .experience-page--home {
   color: #0b0b0a;
   background: transparent;
   opacity: 1;
 }
 
-.experience-page--home .home-profile,
-.experience-page--home .home-meta > div {
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
 .experience-page--projects {
   pointer-events: auto;
-  background: #f7f5ef;
   overscroll-behavior: contain;
   overflow: hidden;
 }
@@ -110,7 +122,6 @@
 .experience-page--about {
   color: #0b0b0a;
   pointer-events: auto;
-  background: #fff;
 }
 
 .experience-page--contact {
@@ -131,6 +142,8 @@
   align-items: flex-end;
   gap: 8px;
   pointer-events: auto;
+  opacity: 1;
+  transition: opacity 0.18s;
 }
 
 .site-nav a,
@@ -206,6 +219,12 @@
   outline-offset: 4px;
 }
 
+.back-circle-control--shell {
+  position: sticky;
+  top: var(--ui-gutter-y);
+  left: var(--ui-edge-x);
+  z-index: 80;
+}
 .mouse-stalker {
   position: fixed;
   top: 0;

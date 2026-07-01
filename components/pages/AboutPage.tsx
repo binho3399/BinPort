@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
+import BackButton from './BackButton';
 import {
   aboutContent,
   aboutLanguages,
   contactLinks,
   type AboutLanguage,
 } from '../../lib/siteContent';
-import BackButton from './BackButton';
 
 export default function AboutPage() {
   const [lang, setLang] = useState<AboutLanguage>(aboutLanguages[0]);
@@ -25,7 +25,6 @@ export default function AboutPage() {
                 key={item}
                 type="button"
                 aria-pressed={lang === item}
-                data-cursor-stalker-label={item.toUpperCase()}
                 onClick={() => setLang(item)}
               >
                 {item.toUpperCase()}

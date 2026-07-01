@@ -6,7 +6,6 @@ import { EffectComposer, SMAA } from '@react-three/postprocessing';
 import { Suspense, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import SignalModel from './webgl/SignalModel';
-import SkyBackground from './SkyBackground';
 
 const IDLE_RENDER_INTERVAL_MS = 1000 / 24;
 const IDLE_RENDER_INTERVAL_MS_NON_INTERACTIVE = 1000 / 12;
@@ -14,7 +13,6 @@ const ACTIVE_RENDER_BURST_MS = 700;
 
 type WebGLSceneProps = {
   interactive: boolean;
-  cloudsOnly?: boolean;
 };
 
 function RenderScheduler({ interactive }: { interactive: boolean }) {
@@ -86,49 +84,42 @@ function RenderScheduler({ interactive }: { interactive: boolean }) {
   return null;
 }
 
-export default function WebGLScene({ interactive, cloudsOnly = false }: WebGLSceneProps) {
+export default function WebGLScene({ interactive }: WebGLSceneProps) {
   const shadowMapSize = 2048;
   return (
-    <div className="webgl-background" aria-hidden="true">
-      <div className="sky-layer">
-        <SkyBackground />
-      </div>
-      {cloudsOnly ? null : (
-        <div className="webgl-canvas-wrap">
-          <Canvas
-            shadows={{ type: THREE.PCFShadowMap }}
-            dpr={[1, 2]}
-            frameloop="demand"
-            camera={{ position: [0.02, 0.12, 4.18], fov: 30 }}
-            gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-            onCreated={({ gl }) => {
-              gl.toneMapping = THREE.ACESFilmicToneMapping;
-              gl.toneMappingExposure = 2.04;
-            }}
-          >
-            <RenderScheduler interactive={interactive} />
-            <ambientLight intensity={0.18} />
-            <hemisphereLight color="#ffffff" groundColor="#ddd8cf" intensity={2.15} />
-            <directionalLight
-              castShadow
-              color="#fff7ed"
-              position={[4.8, 6.2, 4.2]}
-              intensity={1.1}
-              shadow-bias={-0.00012}
-              shadow-mapSize-height={shadowMapSize}
-              shadow-mapSize-width={shadowMapSize}
-            />
-            <Suspense fallback={null}>
-              <SignalModel interactive={interactive} />
-              <Environment preset="city" environmentIntensity={0.42} />
-              <EffectComposer depthBuffer multisampling={8} resolutionScale={1}>
-                <SMAA />
-              </EffectComposer>
-              <Preload all />
-            </Suspense>
-          </Canvas>
-        </div>
-      )}
+    <div className="webgl-canvas-wrap">
+      <Canvas
+        shadows={{ type: THREE.PCFShadowMap }}
+        dpr={[1, 2]}
+        frameloop="demand"
+        camera={{ position: [0.02, 0.12, 4.18], fov: 30 }}
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+        onCreated={({ gl }) => {
+          gl.toneMapping = THREE.ACESFilmicToneMapping;
+          gl.toneMappingExposure = 2.04;
+        }}
+      >
+        <RenderScheduler interactive={interactive} />
+        <ambientLight intensity={0.18} />
+        <hemisphereLight color="#ffffff" groundColor="#ddd8cf" intensity={2.15} />
+        <directionalLight
+          castShadow
+          color="#fff7ed"
+          position={[4.8, 6.2, 4.2]}
+          intensity={1.1}
+          shadow-bias={-0.00012}
+          shadow-mapSize-height={shadowMapSize}
+          shadow-mapSize-width={shadowMapSize}
+        />
+        <Suspense fallback={null}>
+          <SignalModel interactive={interactive} />
+          <Environment preset="city" environmentIntensity={0.42} />
+          <EffectComposer depthBuffer multisampling={8} resolutionScale={1}>
+            <SMAA />
+          </EffectComposer>
+          <Preload all />
+        </Suspense>
+      </Canvas>
     </div>
   );
 }

@@ -10,7 +10,7 @@
   display: grid;
   grid-template-columns: auto auto minmax(0, 1fr);
   align-items: center;
-  gap: 24px;
+  gap: 20px;
   padding-right: clamp(120px, 18vw, 260px);
   color: #0b0b0a94;
   font-size: max(13px, min(1vw, 9.75px + 0.35vw));

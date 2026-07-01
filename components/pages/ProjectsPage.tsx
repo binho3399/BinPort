@@ -1,7 +1,6 @@
 import type { CSSProperties } from 'react';
 import Image from 'next/image';
 import { projects } from '../../lib/projects';
-import BackButton from './BackButton';
 
 type ProjectCardStyle = CSSProperties & { '--delay': string };
 
@@ -10,7 +9,6 @@ export default function ProjectsPage() {
     <main className="experience-page experience-page--projects">
       <section className="projects-page page-shell">
         <header className="page-shell__header">
-          <BackButton />
         </header>
         <div className="projects-gallery reveal" suppressHydrationWarning>
           {projects.map((project, index) => (
