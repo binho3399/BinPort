@@ -17,3 +17,9 @@ export const routes = [
 export function getRouteId(pathname: string): RouteId | null {
   return routes.find((route) => route.href === pathname)?.id ?? null;
 }
+
+export const standaloneRoutes = new Set(['/yellow-canvas-test', '/codegraph', '/bg-test-2']);
+
+export function isStandaloneRoute(pathname: string) {
+  return standaloneRoutes.has(pathname);
+}

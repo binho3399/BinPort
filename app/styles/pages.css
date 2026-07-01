@@ -52,7 +52,7 @@
 
 .project-card h2 {
   margin: 7px 0 5px;
-  color: #0b0b0a;
+  color: var(--ink);
   font-size: max(18px, min(1.7vw, 22px));
   font-weight: 500;
   line-height: 1;
@@ -89,12 +89,12 @@
 }
 
 .about-language-toggle button:hover {
-  color: #0b0b0a;
+  color: var(--ink);
   transform: translateY(-1px);
 }
 
 .about-language-toggle button[aria-pressed='true'] {
-  color: #0b0b0a;
+  color: var(--ink);
 }
 
 .about-page__content,
@@ -197,7 +197,7 @@
   width: fit-content;
   max-width: calc(100% - clamp(28px, 3vw, 38px));
   min-height: clamp(32px, 3.6vw, 40px);
-  color: #0b0b0a;
+  color: var(--ink);
   font-size: max(18px, min(1.8vw, 15.6px + 0.63vw));
   font-weight: 500;
   line-height: 1;

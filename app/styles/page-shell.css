@@ -44,7 +44,7 @@
 
 .page-shell__intro h1 {
   margin: 0;
-  color: #0b0b0a;
+  color: var(--ink);
   font-size: max(22px, min(2.4vw, 23.4px + 0.84vw));
   font-weight: 500;
   line-height: 1.08;
@@ -58,7 +58,7 @@
 .home-profile {
   align-self: start;
   width: min(max(360px, 24vw), 100vw - clamp(28px, 5.2vw, 88px));
-  color: #0b0b0a;
+  color: var(--ink);
 }
 
 .home-profile p {
@@ -87,7 +87,7 @@
   width: min(540px, 100vw - clamp(28px, 5.2vw, 88px));
   margin: 0;
   padding: 0;
-  color: #0b0b0a;
+  color: var(--ink);
 }
 
 .home-meta div {
@@ -114,13 +114,13 @@
 .home-meta dd,
 .home-profile dd {
   margin-top: 7px;
-  color: #0b0b0a;
+  color: var(--ink);
   white-space: pre-line;
 }
 
 .route-current {
   position: relative;
-  z-index: 3;
+  z-index: var(--z-content);
   min-height: 100svh;
   pointer-events: none;
   transform-origin: top;
@@ -134,67 +134,4 @@
 .route-current > .experience-page--home,
 .experience-page--home .hero-section {
   pointer-events: none;
-}
-
-.page-transition {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  overflow: hidden;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.page-transition__clip-defs {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-}
-
-.page-transition__next {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  color: #070707;
-  background: transparent;
-  filter: drop-shadow(0 -28px 64px #0707072e);
-  transform-origin: 50%;
-  will-change: clip-path;
-}
-
-.page-transition__next-content {
-  --transition-content-blur: 0px;
-  --transition-content-brightness: 1;
-  position: relative;
-  width: 100%;
-  height: 100%;
-  filter: blur(var(--transition-content-blur)) brightness(var(--transition-content-brightness));
-  transform-origin: bottom;
-  will-change: filter;
-}
-
-.page-transition__background-snapshot {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: #fff;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .page-transition__next,
-  .page-transition__next-content {
-    filter: none;
-    transition: none;
-  }
-  .page-transition__next {
-    will-change: auto;
-  }
-  .page-transition__next-content {
-    will-change: auto;
-  }
 }

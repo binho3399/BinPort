@@ -2,7 +2,6 @@
 
 import { Canvas, useThree } from '@react-three/fiber';
 import { Environment, Preload } from '@react-three/drei';
-import { EffectComposer, SMAA } from '@react-three/postprocessing';
 import { Suspense, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import SignalModel from './webgl/SignalModel';
@@ -57,7 +56,10 @@ function RenderScheduler({ interactive }: { interactive: boolean }) {
       'touchend',
     ];
 
-    const idleInterval = window.setInterval(invalidateIfVisible, interactive ? IDLE_RENDER_INTERVAL_MS : IDLE_RENDER_INTERVAL_MS_NON_INTERACTIVE);
+    const idleInterval = window.setInterval(
+      invalidateIfVisible,
+      interactive ? IDLE_RENDER_INTERVAL_MS : IDLE_RENDER_INTERVAL_MS_NON_INTERACTIVE,
+    );
     window.addEventListener('resize', requestActiveRender);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     if (interactive) {
@@ -85,7 +87,8 @@ function RenderScheduler({ interactive }: { interactive: boolean }) {
 }
 
 export default function WebGLScene({ interactive }: WebGLSceneProps) {
-  const shadowMapSize = 2048;
+  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 620px)').matches;
+  const shadowMapSize = isMobile ? 1024 : 2048;
   return (
     <div className="webgl-canvas-wrap">
       <Canvas
@@ -114,9 +117,6 @@ export default function WebGLScene({ interactive }: WebGLSceneProps) {
         <Suspense fallback={null}>
           <SignalModel interactive={interactive} />
           <Environment preset="city" environmentIntensity={0.42} />
-          <EffectComposer depthBuffer multisampling={8} resolutionScale={1}>
-            <SMAA />
-          </EffectComposer>
           <Preload all />
         </Suspense>
       </Canvas>

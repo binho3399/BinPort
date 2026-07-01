@@ -1,0 +1,45 @@
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-preloader);
+  display: grid;
+  place-items: center;
+  padding: clamp(20px, 4vw, 45px);
+  color: #ffffffeb;
+  cursor: default;
+  pointer-events: auto;
+  background: transparent;
+  transform-origin: bottom;
+  opacity: 0;
+  visibility: hidden;
+  contain: layout paint style;
+}
+
+.preloader__wave {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-base);
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: var(--ink);
+}
+
+.preloader__inner {
+  position: relative;
+  z-index: var(--z-layer-1);
+  display: grid;
+  min-height: 1.4em;
+  place-items: center;
+}
+
+.preloader__text {
+  display: inline-block;
+  color: #ffffffeb;
+  font-size: clamp(12px, 1.35vw, 15px);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}

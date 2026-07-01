@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { MutableRefObject } from 'react';
+import type { RefObject } from 'react';
 import type * as THREE from 'three';
 import { signalEvents } from '../../lib/events';
 
@@ -8,7 +8,7 @@ type TouchPoint = { x: number; y: number };
 type UsePointerScrollOptions = {
   interactive: boolean;
   gl: THREE.WebGLRenderer;
-  scrollTarget: MutableRefObject<number>;
+  scrollTarget: RefObject<number>;
   onReset: () => void;
 };
 

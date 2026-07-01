@@ -13,8 +13,8 @@ type SignalMaterial = THREE.MeshStandardMaterial;
 type SignalMesh = THREE.Mesh<THREE.BufferGeometry, SignalMaterial | SignalMaterial[]>;
 type ShaderWithFragment = { fragmentShader: string };
 
-function asSignalMesh(object: THREE.Object3D): SignalMesh | null {
-  return (object as SignalMesh).isMesh ? (object as SignalMesh) : null;
+function isSignalMesh(object: THREE.Object3D | null | undefined): object is SignalMesh {
+  return !!object && (object as THREE.Mesh).isMesh === true;
 }
 
 const SHOWREEL_CACHE_KEY = 'showreel-1.16-1.04';
@@ -49,41 +49,25 @@ function removeProfileMaterialGroups(object: SignalMesh) {
   return true;
 }
 
-function applyProjectsMaterial(object: SignalMesh, texture: THREE.Texture | null | undefined) {
-  if (Array.isArray(object.material)) return;
-  const name = object.material.name;
-  object.material = object.material.clone();
-  object.material.map = texture || object.material.map;
-  object.material.emissiveMap = texture || object.material.emissiveMap;
-  object.material.color.set('#ffffff');
-  object.material.emissive.set('#ffffff');
-  object.material.emissiveIntensity = 0.68;
-  object.material.metalness = 0;
-  object.material.roughness = 0.48;
-  object.material.toneMapped = false;
-  object.material.side = THREE.DoubleSide;
-  object.material.needsUpdate = true;
-  object.material.name = name;
-}
+type SignSurfaceMaterialConfig = {
+  emissiveIntensity: number;
+  roughness: number;
+};
 
-function applyContactMaterial(object: SignalMesh, texture: THREE.Texture | null | undefined) {
-  if (Array.isArray(object.material)) return;
-  const name = object.material.name;
-  object.material = object.material.clone();
-  object.material.map = texture || object.material.map;
-  object.material.emissiveMap = texture || object.material.emissiveMap;
-  object.material.color.set('#ffffff');
-  object.material.emissive.set('#ffffff');
-  object.material.emissiveIntensity = 0.86;
-  object.material.metalness = 0;
-  object.material.roughness = 0.5;
-  object.material.toneMapped = false;
-  object.material.side = THREE.DoubleSide;
-  object.material.needsUpdate = true;
-  object.material.name = name;
-}
+const SIGN_SURFACE_MATERIAL_CONFIG: Record<
+  'hiroto-profile' | 'to_projects' | 'to_contact',
+  SignSurfaceMaterialConfig
+> = {
+  'hiroto-profile': { emissiveIntensity: 0.72, roughness: 0.54 },
+  to_projects: { emissiveIntensity: 0.68, roughness: 0.48 },
+  to_contact: { emissiveIntensity: 0.86, roughness: 0.5 },
+};
 
-function applyProfileMaterial(object: SignalMesh, texture: THREE.Texture | null | undefined) {
+function applySignSurfaceMaterial(
+  object: SignalMesh,
+  texture: THREE.Texture | null | undefined,
+  config: SignSurfaceMaterialConfig,
+) {
   if (Array.isArray(object.material)) return;
   const name = object.material.name;
   object.material = object.material.clone();
@@ -91,9 +75,9 @@ function applyProfileMaterial(object: SignalMesh, texture: THREE.Texture | null 
   object.material.emissiveMap = texture || object.material.emissiveMap;
   object.material.color.set('#ffffff');
   object.material.emissive.set('#ffffff');
-  object.material.emissiveIntensity = 0.72;
+  object.material.emissiveIntensity = config.emissiveIntensity;
   object.material.metalness = 0;
-  object.material.roughness = 0.54;
+  object.material.roughness = config.roughness;
   object.material.toneMapped = false;
   object.material.side = THREE.DoubleSide;
   object.material.needsUpdate = true;
@@ -165,8 +149,8 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
       objectsToRemove.push(object);
       return;
     }
-    const mesh = asSignalMesh(object);
-    if (!mesh) return;
+    const mesh = object;
+    if (!isSignalMesh(mesh)) return;
     object.castShadow = true;
     object.receiveShadow = true;
 
@@ -175,7 +159,11 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
     const name = Array.isArray(mesh.material) ? undefined : mesh.material?.name;
 
     if (name === 'hiroto-profile') {
-      applyProfileMaterial(mesh, profileSign?.texture);
+      applySignSurfaceMaterial(
+        mesh,
+        profileSign?.texture,
+        SIGN_SURFACE_MATERIAL_CONFIG['hiroto-profile'],
+      );
       signSurfaces.push({
         mesh,
         materialName: name satisfies InteractiveSignMaterialName,
@@ -183,7 +171,11 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
       });
     }
     if (name === 'to_projects') {
-      applyProjectsMaterial(mesh, projectsSign?.texture);
+      applySignSurfaceMaterial(
+        mesh,
+        projectsSign?.texture,
+        SIGN_SURFACE_MATERIAL_CONFIG.to_projects,
+      );
       signSurfaces.push({
         mesh,
         materialName: name satisfies InteractiveSignMaterialName,
@@ -191,7 +183,7 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
       });
     }
     if (name === 'to_contact') {
-      applyContactMaterial(mesh, contactSign?.texture);
+      applySignSurfaceMaterial(mesh, contactSign?.texture, SIGN_SURFACE_MATERIAL_CONFIG.to_contact);
       signSurfaces.push({
         mesh,
         materialName: name satisfies InteractiveSignMaterialName,

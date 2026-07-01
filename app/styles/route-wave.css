@@ -1,0 +1,10 @@
+.route-wave {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-route-wave);
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+}

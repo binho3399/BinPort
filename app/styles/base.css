@@ -1,12 +1,25 @@
 :root {
   --background: #f0f4f8;
   --foreground: #10100f;
+  --ink: #0b0b0a;
   --muted: #10100fad;
   --line: #10100f24;
   --accent: #8f6200;
   --ui-gutter-x: clamp(14px, 2.6vw, 44px);
   --ui-gutter-y: clamp(18px, 2.8vw, 40px);
   --ui-edge-x: var(--ui-gutter-x);
+
+  /* Stacking order (low → high). See REFACTOR_PLAN.md §3.1. */
+  --z-base: 0;
+  --z-layer-1: 1;
+  --z-content: 3;
+  --z-route-wave: 45;
+  --z-hint: 70;
+  --z-nav: 80;
+  --z-grain: 150;
+  --z-cursor: 160;
+  --z-debug: 200;
+  --z-preloader: 999;
 }
 
 @font-face {

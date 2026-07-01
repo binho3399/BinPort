@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import PersistentExperience from './PersistentExperience';
-import { isStandaloneRoute } from '../lib/standaloneRoutes';
+import { isStandaloneRoute } from '../lib/routes';
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
