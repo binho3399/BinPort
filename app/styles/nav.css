@@ -88,7 +88,9 @@
   position: sticky;
   top: var(--ui-gutter-y);
   left: var(--ui-edge-x);
-  z-index: var(--z-content);
+  /* Must be above .route-current > .experience-page (z-index: 3) to be clickable,
+     but below .route-wave (z-index: 45) to stay behind the transition overlay. */
+  z-index: calc(var(--z-content) + 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
