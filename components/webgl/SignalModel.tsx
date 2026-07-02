@@ -70,7 +70,7 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
   }, [highQuality, invalidate]);
 
   useEffect(() => {
-    if (!highQuality || !hasInteracted || hasVideoApplied.current) return;
+    if (hasVideoApplied.current) return;
     const mesh = showreelMeshRef.current;
     if (!mesh || Array.isArray(mesh.material)) return;
     const texture = tryCreateShowreelVideoTexture();
@@ -82,7 +82,7 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
     mesh.material = material;
     hasVideoApplied.current = true;
     invalidate();
-  }, [highQuality, hasInteracted, invalidate]);
+  }, [invalidate]);
 
   useEffect(() => {
     if (hasInteracted) return undefined;
