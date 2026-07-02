@@ -144,11 +144,13 @@
 .projects-marquee__item:nth-child(8n + 6),
 .projects-marquee__item:nth-child(8n + 8) {
   width: max(154px, min(13.8vw, 158.6px + 4.83vw));
-  height: max(196px, min(18.2vw, 205.4px + 6.37vw));
+  height: auto;
+  aspect-ratio: 2 / 3;
 }
 .projects-marquee__item:nth-child(8n + 5) {
   width: max(254px, min(24vw, 271.7px + 8.4vw));
-  height: max(150px, min(14vw, 159.9px + 4.9vw));
+  height: auto;
+  aspect-ratio: 3 / 2;
 }
 
 .projects-marquee__card {

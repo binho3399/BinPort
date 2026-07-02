@@ -4,7 +4,6 @@ import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useRouter } from 'next/navigation';
 import * as THREE from 'three';
 import { prepareSignalScene } from './prepareScene';
 import { getInteractiveCanvasHit, getMaterialLabel, SIGN_MATERIAL_NAMES } from './hitTest';
@@ -13,6 +12,7 @@ import { useModelCamera } from './useModelCamera';
 import type { AnimatedTexturesState, InteractiveSignSurface, TrafficLight } from './types';
 import { usePointerScroll } from './usePointerScroll';
 import { signalEvents } from '../../lib/events';
+import { useNavigate } from '../../lib/navigationContext';
 import { tryCreateShowreelVideoTexture } from './textures';
 
 const INITIAL_SCROLL_PROGRESS = 0;
@@ -25,7 +25,7 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
   const scrollTarget = useRef(INITIAL_SCROLL_PROGRESS);
   const shake = useRef(0);
   const shakeClock = useRef(0);
-  const router = useRouter();
+  const navigate = useNavigate();
   const { gl, raycaster, invalidate } = useThree();
   const { scene, animations } = useGLTF('/models/model.glb');
   const actionRef = useRef<THREE.AnimationAction | null>(null);
@@ -139,6 +139,34 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
       ?.materialName;
   };
 
+  const navigateToMaterial = useCallback(
+    (materialName: string) => {
+      const href =
+        materialName === 'hiroto-profile'
+          ? '/about'
+          : materialName === 'to_projects'
+            ? '/projects'
+            : materialName === 'to_contact'
+              ? '/contact'
+              : null;
+
+      if (!href) return;
+
+      if (navigate) {
+        navigate(href);
+        return;
+      }
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(
+          '[SignalModel] Missing NavigationContext. Internal sign navigation requires PersistentExperience.',
+          { href, materialName },
+        );
+      }
+    },
+    [navigate],
+  );
+
   const touchStart = useRef<{ id: number; x: number; y: number } | null>(null);
 
   const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
@@ -163,9 +191,7 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
     if (dist > 12) return;
     const materialName = getInteractiveMaterialNameFromRay(event.ray);
     if (!materialName) return;
-    if (materialName === 'hiroto-profile') router.push('/about');
-    if (materialName === 'to_projects') router.push('/projects');
-    if (materialName === 'to_contact') router.push('/contact');
+    navigateToMaterial(materialName);
   };
 
   const handleClick = (event: ThreeEvent<MouseEvent>) => {
@@ -173,9 +199,7 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
     if ((event.nativeEvent as PointerEvent).pointerType === 'touch') return;
     const materialName = getInteractiveMaterialNameFromRay(event.ray);
     if (!materialName) return;
-    if (materialName === 'hiroto-profile') router.push('/about');
-    if (materialName === 'to_projects') router.push('/projects');
-    if (materialName === 'to_contact') router.push('/contact');
+    navigateToMaterial(materialName);
   };
 
   const handlePointerMissed = useCallback(() => {
