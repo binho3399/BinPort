@@ -33,3 +33,7 @@ playwright-report/
 
 # Claude Code
 .claude/
+
+# Observational Memory (plugin secrets + session state)
+.opencode/om-config.json
+.opencode/om-state/

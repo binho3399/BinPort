@@ -56,9 +56,11 @@
 }
 
 .experience-page--projects {
+  color: var(--ink);
   pointer-events: auto;
   overscroll-behavior: contain;
   overflow: hidden;
+  background: transparent;
 }
 
 .experience-page--about {

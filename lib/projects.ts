@@ -21,7 +21,13 @@ export const projects: Project[] = [
     image: '/projects/dbrain.png',
     href: '#',
   },
-  { title: 'Track', year: '2025', type: '3D interface', image: '/projects/track.png', href: '#' },
+  {
+    title: 'Track',
+    year: '2025',
+    type: '3D interface',
+    image: '/projects/track.png',
+    href: '#',
+  },
   {
     title: 'Tap to meet you',
     year: '2024',
@@ -50,5 +56,11 @@ export const projects: Project[] = [
     image: '/projects/wired.png',
     href: '#',
   },
-  { title: 'Demo 01', year: '2024', type: 'Experiment', image: '/projects/demo01.png', href: '#' },
+  {
+    title: 'Demo 01',
+    year: '2024',
+    type: 'Experiment',
+    image: '/projects/demo01.png',
+    href: '#',
+  },
 ];

@@ -84,7 +84,7 @@ export default function Preloader() {
         .timeline({ onComplete: finish })
         .to(pathState, {
           ...waveMidPath,
-          duration: 1.3,
+          duration: 1,
           ease: 'power3.inOut',
           onUpdate: () => setWavePath(wavePath, pathState),
         })
@@ -92,11 +92,11 @@ export default function Preloader() {
           pathState,
           {
             ...waveClosedPath,
-            duration: 1.3,
+            duration: 1,
             ease: 'power3.out',
             onUpdate: () => setWavePath(wavePath, pathState),
           },
-          '-=0.65',
+          '-=0.5',
         );
     });
   }, [finish]);
@@ -143,7 +143,7 @@ export default function Preloader() {
       loadingLoop.current = loop;
     }, root);
 
-    exitDelay.current = gsap.delayedCall(3.5, startExit);
+    exitDelay.current = gsap.delayedCall(4, startExit);
 
     return () => {
       loadingLoop.current?.kill();

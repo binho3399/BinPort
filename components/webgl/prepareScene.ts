@@ -92,10 +92,10 @@ function applyShowreelMaterial(object: SignalMesh, texture: THREE.Texture | null
   object.material.emissiveMap = texture;
   object.material.color.set('#ffffff');
   object.material.emissive.set('#ffffff');
-  object.material.emissiveIntensity = 0.56;
-  object.material.roughness = 0.62;
+  object.material.emissiveIntensity = 0.22;
+  object.material.roughness = 0.68;
   object.material.metalness = 0;
-  object.material.toneMapped = false;
+  object.material.toneMapped = true;
   object.material.side = THREE.DoubleSide;
   object.material.onBeforeCompile = (shader: ShaderWithFragment) => {
     shader.fragmentShader = shader.fragmentShader.replace(

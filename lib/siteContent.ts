@@ -66,6 +66,12 @@ export const contactContent = {
   heading: 'Get in touch.',
 };
 
+export const projectsPageContent = {
+  eyebrow: 'PROJECTS',
+  heading:
+    'Projects that explore design, motion, 3D, and interactive front-end development.',
+};
+
 export const webglText = {
   contactLabels: ['コンタクト', 'CONTACT'],
   projectsMarquee: 'PROJECTS ARCHIVE / PROJECTS ARCHIVE / PROJECTS ARCHIVE / ',

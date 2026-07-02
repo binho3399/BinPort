@@ -14,6 +14,7 @@ import { buildRevealTimeline, setWavePath, waveClosedPath } from './waveTransiti
 import { signalEvents } from '../lib/events';
 import type { RouteId } from '../lib/routes';
 import { getRouteId, routeIds } from '../lib/routes';
+import { NavigationContext } from '../lib/navigationContext';
 
 const WebGLScene = dynamic(() => import('./WebGLScene'), {
   ssr: false,
@@ -182,7 +183,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
 
       if (displayRoute === 'projects') {
         gsap.fromTo(
-          '.project-card',
+          '.projects-marquee__card',
           { y: 42, autoAlpha: 0 },
           { y: 0, autoAlpha: 1, delay: 0.08, duration: 0.75, stagger: 0.045, ease: 'power3.out' },
         );
@@ -192,6 +193,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
   }, [displayRoute]);
 
   return (
+    <NavigationContext.Provider value={handleNavigate}>
     <div
       ref={page}
       className="persistent-experience"
@@ -213,7 +215,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
       >
         <path ref={routeWaveRef} fill="#050505" />
       </svg>
-      {route && route !== routeIds.home && route !== routeIds.about ? (
+      {route && route !== routeIds.home && route !== routeIds.projects && route !== routeIds.about ? (
         <button
           type="button"
           className="back-circle-control back-circle-control--shell"
@@ -241,5 +243,6 @@ export default function PersistentExperience({ children }: { children: ReactNode
         </>
       )}
     </div>
+    </NavigationContext.Provider>
   );
 }

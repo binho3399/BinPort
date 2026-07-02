@@ -99,24 +99,24 @@ export default function WebGLScene({ interactive }: WebGLSceneProps) {
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 2.04;
+          gl.toneMappingExposure = 1.56;
         }}
       >
         <RenderScheduler interactive={interactive} />
-        <ambientLight intensity={0.18} />
-        <hemisphereLight color="#ffffff" groundColor="#ddd8cf" intensity={2.15} />
+        <ambientLight intensity={0.1} />
+        <hemisphereLight color="#fffdf8" groundColor="#d8d0c7" intensity={1.38} />
         <directionalLight
           castShadow
           color="#fff7ed"
           position={[4.8, 6.2, 4.2]}
-          intensity={1.1}
+          intensity={1.28}
           shadow-bias={-0.00012}
           shadow-mapSize-height={shadowMapSize}
           shadow-mapSize-width={shadowMapSize}
         />
         <Suspense fallback={null}>
           <SignalModel interactive={interactive} />
-          <Environment preset="city" environmentIntensity={0.42} />
+          <Environment preset="city" environmentIntensity={0.58} />
           <Preload all />
         </Suspense>
       </Canvas>
