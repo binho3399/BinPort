@@ -96,14 +96,15 @@ export function drawProfileTexture(
   time: number,
 ) {
   const frame = getProfileTextFrame(time);
+  const scale = canvas.width / 1024;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#ffdf0e';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   drawTrackedText(ctx, frame.renderedText, {
     x: canvas.width / 2,
-    y: 512,
-    font: '500 152px/1 gazzetta-variable, sans-serif',
+    y: 512 * scale,
+    font: `500 ${152 * scale}px/1 gazzetta-variable, sans-serif`,
     color: '#000000',
     maxWidth: canvas.width * 0.82,
   });

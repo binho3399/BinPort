@@ -37,3 +37,6 @@ playwright-report/
 # Observational Memory (plugin secrets + session state)
 .opencode/om-config.json
 .opencode/om-state/
+
+# OpenCode deepwork session notes
+.slim/deepwork/

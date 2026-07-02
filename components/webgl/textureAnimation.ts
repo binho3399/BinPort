@@ -51,8 +51,16 @@ export function updateAnimatedTextures(
   }
 }
 
-export function updateTrafficLights(trafficLights: TrafficLight[], elapsedTime: number) {
+export function updateTrafficLights(trafficLights: TrafficLight[], elapsedTime: number, richMode = true) {
   if (!trafficLights.length) return;
+  if (!richMode) {
+    trafficLights.forEach((light) => {
+      light.material.color.copy(light.idleColor);
+      light.material.emissive.copy(light.idleColor);
+      light.material.emissiveIntensity = 0.05;
+    });
+    return;
+  }
   const cycle = 3.6;
   const lightTime = elapsedTime % cycle;
   const activeIndex = Math.floor((lightTime / cycle) * trafficLights.length);

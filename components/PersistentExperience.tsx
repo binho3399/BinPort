@@ -38,6 +38,23 @@ export default function PersistentExperience({ children }: { children: ReactNode
   const [displayRoute, setDisplayRoute] = useState<RouteId | null>(null);
   const [displayedChildren, setDisplayedChildren] = useState<ReactNode>(children);
   const [transitionPhase, setTransitionPhase] = useState<'idle' | 'covering' | 'revealing'>('idle');
+  const [hasEnteredExperience, setHasEnteredExperience] = useState(
+    () => typeof document !== 'undefined' && document.documentElement.classList.contains('is-entered'),
+  );
+  const [showOverlayExtras, setShowOverlayExtras] = useState(false);
+
+  useEffect(() => {
+    if (hasEnteredExperience) return;
+    const handleEntered = () => setHasEnteredExperience(true);
+    window.addEventListener(signalEvents.entered, handleEntered);
+    return () => window.removeEventListener(signalEvents.entered, handleEntered);
+  }, [hasEnteredExperience]);
+
+  useEffect(() => {
+    if (!hasEnteredExperience) return undefined;
+    const id = window.setTimeout(() => setShowOverlayExtras(true), 650);
+    return () => window.clearTimeout(id);
+  }, [hasEnteredExperience]);
 
   useEffect(() => {
     const handleCursorReset = () => {
@@ -204,7 +221,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
         <div className="sky-layer">
           <SkyBackground />
         </div>
-        {isHomeRoute ? <WebGLScene interactive /> : null}
+        {isHomeRoute && hasEnteredExperience ? <WebGLScene interactive /> : null}
       </div>
       <Preloader />
       <svg
@@ -238,8 +255,8 @@ export default function PersistentExperience({ children }: { children: ReactNode
       ) : null}
       {isContactRoute ? null : (
         <>
-          <FilmGrain />
-          <Cursor />
+          {showOverlayExtras ? <FilmGrain /> : null}
+          {showOverlayExtras ? <Cursor /> : null}
         </>
       )}
     </div>

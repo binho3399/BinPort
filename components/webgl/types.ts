@@ -35,4 +35,5 @@ export type PreparedSignalScene = {
   animatedTextures: AnimatedTexturesState;
   trafficLights: TrafficLight[];
   signSurfaces: InteractiveSignSurface[];
+  showreelMesh: THREE.Mesh | null;
 };

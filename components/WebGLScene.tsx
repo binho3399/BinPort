@@ -1,14 +1,15 @@
 'use client';
 
 import { Canvas, useThree } from '@react-three/fiber';
-import { Environment, Preload } from '@react-three/drei';
-import { Suspense, useEffect, useRef } from 'react';
+import { Environment } from '@react-three/drei';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import SignalModel from './webgl/SignalModel';
 
 const IDLE_RENDER_INTERVAL_MS = 1000 / 24;
 const IDLE_RENDER_INTERVAL_MS_NON_INTERACTIVE = 1000 / 12;
 const ACTIVE_RENDER_BURST_MS = 700;
+const LOW_QUALITY_UPGRADE_DELAY_MS = 1800;
 
 type WebGLSceneProps = {
   interactive: boolean;
@@ -86,22 +87,70 @@ function RenderScheduler({ interactive }: { interactive: boolean }) {
   return null;
 }
 
+function useViewportCategory() {
+  const [isNarrowViewport, setIsNarrowViewport] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 620px)');
+    const update = () => setIsNarrowViewport(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+
+  return isNarrowViewport;
+}
+
+function useAdaptiveAutoUpgradeAllowed() {
+  const [allowed] = useState(() => {
+    const cores = navigator.hardwareConcurrency ?? 0;
+    const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 0;
+    const weakDevice = (cores > 0 && cores <= 4) || (memory > 0 && memory <= 4);
+    return !weakDevice;
+  });
+
+  return allowed;
+}
+
+function ProgressiveQualityGate({ onUpgrade }: { onUpgrade: () => void }) {
+  const allowAutomaticUpgrade = useAdaptiveAutoUpgradeAllowed();
+  useEffect(() => {
+    let completed = false;
+    const finish = () => {
+      if (completed) return;
+      completed = true;
+      onUpgrade();
+    };
+    const idleId = allowAutomaticUpgrade ? window.setTimeout(finish, LOW_QUALITY_UPGRADE_DELAY_MS) : null;
+    const onInteraction = () => finish();
+    const events = ['pointerdown', 'pointermove', 'wheel', 'touchstart', 'keydown'];
+    events.forEach((eventName) => window.addEventListener(eventName, onInteraction, { passive: true }));
+    return () => {
+      if (idleId) window.clearTimeout(idleId);
+      events.forEach((eventName) => window.removeEventListener(eventName, onInteraction));
+    };
+  }, [allowAutomaticUpgrade, onUpgrade]);
+  return null;
+}
+
 export default function WebGLScene({ interactive }: WebGLSceneProps) {
-  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 620px)').matches;
-  const shadowMapSize = isMobile ? 1024 : 2048;
+  const [highQuality, setHighQuality] = useState(false);
+  const isMobile = useViewportCategory();
+  const shadowMapSize = highQuality ? (isMobile ? 1024 : 2048) : isMobile ? 512 : 768;
   return (
     <div className="webgl-canvas-wrap">
       <Canvas
         shadows={{ type: THREE.PCFShadowMap }}
-        dpr={[1, 2]}
+        dpr={highQuality ? [1, 2] : [0.75, 1]}
         frameloop="demand"
         camera={{ position: [0.02, 0.12, 4.18], fov: 30 }}
-        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+        gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = 1.56;
         }}
       >
+        <ProgressiveQualityGate onUpgrade={() => setHighQuality(true)} />
         <RenderScheduler interactive={interactive} />
         <ambientLight intensity={0.1} />
         <hemisphereLight color="#fffdf8" groundColor="#d8d0c7" intensity={1.38} />
@@ -115,9 +164,8 @@ export default function WebGLScene({ interactive }: WebGLSceneProps) {
           shadow-mapSize-width={shadowMapSize}
         />
         <Suspense fallback={null}>
-          <SignalModel interactive={interactive} />
-          <Environment preset="city" environmentIntensity={0.58} />
-          <Preload all />
+          <SignalModel interactive={interactive} highQuality={highQuality} />
+          {highQuality ? <Environment preset="city" environmentIntensity={0.58} /> : null}
         </Suspense>
       </Canvas>
     </div>

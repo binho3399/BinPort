@@ -2,7 +2,7 @@
 
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 import * as THREE from 'three';
@@ -13,11 +13,13 @@ import { useModelCamera } from './useModelCamera';
 import type { AnimatedTexturesState, InteractiveSignSurface, TrafficLight } from './types';
 import { usePointerScroll } from './usePointerScroll';
 import { signalEvents } from '../../lib/events';
+import { tryCreateShowreelVideoTexture } from './textures';
 
 const INITIAL_SCROLL_PROGRESS = 0;
 
-export default function SignalModel({ interactive }: { interactive: boolean }) {
+export default function SignalModel({ interactive, highQuality }: { interactive: boolean; highQuality: boolean }) {
   const textureInterval = interactive ? 1 / 24 : 1 / 12;
+  const initialTextureInterval = highQuality ? 1 / 24 : 1 / 12;
   const group = useRef<THREE.Object3D | null>(null);
   const scroll = useRef(INITIAL_SCROLL_PROGRESS);
   const scrollTarget = useRef(INITIAL_SCROLL_PROGRESS);
@@ -30,8 +32,11 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const animatedTexturesRef = useRef<AnimatedTexturesState | null>(null);
   const trafficLightsRef = useRef<TrafficLight[]>([]);
+  const showreelMeshRef = useRef<THREE.Mesh | null>(null);
   const hoverPointerDirty = useRef(false);
   const textureFrameTimes = useRef({ contact: 0, profile: 0, projects: 0 });
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const hasVideoApplied = useRef(false);
 
   const resetScroll = useCallback(() => {
     scroll.current = INITIAL_SCROLL_PROGRESS;
@@ -53,8 +58,38 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
   useEffect(() => {
     animatedTexturesRef.current = prepared.animatedTextures;
     trafficLightsRef.current = prepared.trafficLights;
+    showreelMeshRef.current = prepared.showreelMesh;
     textureFrameTimes.current = { contact: 0, profile: 0, projects: 0 };
+    hasVideoApplied.current = false;
   }, [prepared]);
+
+  useEffect(() => {
+    if (!highQuality || !hasInteracted || hasVideoApplied.current) return;
+    const mesh = showreelMeshRef.current;
+    if (!mesh || Array.isArray(mesh.material)) return;
+    const texture = tryCreateShowreelVideoTexture();
+    if (!texture) return;
+    const material = mesh.material.clone() as THREE.MeshStandardMaterial;
+    material.map = texture;
+    material.emissiveMap = texture;
+    material.needsUpdate = true;
+    mesh.material = material;
+    hasVideoApplied.current = true;
+  }, [highQuality, hasInteracted]);
+
+  useEffect(() => {
+    if (hasInteracted) return undefined;
+    const markInteracted = () => setHasInteracted(true);
+    const element = gl.domElement;
+    element.addEventListener('pointerdown', markInteracted, { passive: true });
+    element.addEventListener('wheel', markInteracted, { passive: true });
+    element.addEventListener('touchstart', markInteracted, { passive: true });
+    return () => {
+      element.removeEventListener('pointerdown', markInteracted);
+      element.removeEventListener('wheel', markInteracted);
+      element.removeEventListener('touchstart', markInteracted);
+    };
+  }, [gl.domElement, hasInteracted]);
 
   useEffect(() => {
     const mixer = new THREE.AnimationMixer(preparedScene);
@@ -170,16 +205,17 @@ export default function SignalModel({ interactive }: { interactive: boolean }) {
 
     const animated = animatedTexturesRef.current;
     if (animated) {
+      const interval = highQuality || hasInteracted ? textureInterval : initialTextureInterval;
       updateAnimatedTextures(
         animated,
         textureFrameTimes.current,
         state.clock.elapsedTime,
         delta,
-        textureInterval,
+        interval,
       );
     }
 
-    updateTrafficLights(trafficLightsRef.current, state.clock.elapsedTime);
+    updateTrafficLights(trafficLightsRef.current, state.clock.elapsedTime, highQuality || hasInteracted);
 
     const action = actionRef.current;
     const mixer = mixerRef.current;

@@ -66,4 +66,8 @@
   .projects-gl-gallery {
     margin-left: -18px;
   }
+  .projects-page__active-meta {
+    left: 18px;
+    bottom: 18px;
+  }
 }

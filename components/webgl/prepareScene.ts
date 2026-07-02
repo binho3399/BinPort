@@ -5,7 +5,6 @@ import {
   drawProjectsTexture,
   makeAnimatedCanvasTexture,
   makeShowreelTexture,
-  makeVideoTexture,
 } from './textures';
 import type { InteractiveSignMaterialName, PreparedSignalScene, TrafficLight } from './types';
 
@@ -134,9 +133,10 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
   const projectsSign = makeAnimatedCanvasTexture();
   const contactSign = makeAnimatedCanvasTexture();
   const profileSign = makeAnimatedCanvasTexture();
-  const showreel = makeVideoTexture('/videos/hirotos_showreel.mp4') || makeShowreelTexture();
+  const showreel = makeShowreelTexture();
   const trafficLights: TrafficLight[] = [];
   const signSurfaces: PreparedSignalScene['signSurfaces'] = [];
+  const showreelMesh = { current: null as THREE.Mesh | null };
   const objectsToRemove: THREE.Object3D[] = [];
 
   if (projectsSign?.ctx)
@@ -190,7 +190,10 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
         root: getInteractiveSignRoot(mesh),
       });
     }
-    if (name === 'hirotos_showreel') applyShowreelMaterial(mesh, showreel);
+    if (name === 'hirotos_showreel') {
+      applyShowreelMaterial(mesh, showreel);
+      showreelMesh.current = mesh;
+    }
     if (name && ['light1', 'light2', 'light3'].includes(name)) {
       applyTrafficLightMaterial(mesh, name, trafficLights);
     }
@@ -206,5 +209,5 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
     contactTime: 0,
     profileTime: 0,
   };
-  return { clone, animatedTextures, trafficLights, signSurfaces };
+  return { clone, animatedTextures, trafficLights, signSurfaces, showreelMesh: showreelMesh.current };
 }
