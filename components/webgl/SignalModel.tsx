@@ -26,7 +26,7 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
   const shake = useRef(0);
   const shakeClock = useRef(0);
   const router = useRouter();
-  const { gl, raycaster } = useThree();
+  const { gl, raycaster, invalidate } = useThree();
   const { scene, animations } = useGLTF('/models/model.glb');
   const actionRef = useRef<THREE.AnimationAction | null>(null);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
@@ -64,6 +64,10 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
   }, [prepared]);
 
   useEffect(() => {
+    invalidate();
+  }, [highQuality, invalidate]);
+
+  useEffect(() => {
     if (!highQuality || !hasInteracted || hasVideoApplied.current) return;
     const mesh = showreelMeshRef.current;
     if (!mesh || Array.isArray(mesh.material)) return;
@@ -75,7 +79,8 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
     material.needsUpdate = true;
     mesh.material = material;
     hasVideoApplied.current = true;
-  }, [highQuality, hasInteracted]);
+    invalidate();
+  }, [highQuality, hasInteracted, invalidate]);
 
   useEffect(() => {
     if (hasInteracted) return undefined;

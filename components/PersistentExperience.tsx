@@ -57,6 +57,12 @@ export default function PersistentExperience({ children }: { children: ReactNode
   }, [hasEnteredExperience]);
 
   useEffect(() => {
+    if (!isHomeRoute) return;
+    void import('./WebGLScene');
+    void import('./webgl/SignalModel');
+  }, [isHomeRoute]);
+
+  useEffect(() => {
     const handleCursorReset = () => {
       document.body.style.cursor = '';
     };
@@ -221,7 +227,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
         <div className="sky-layer">
           <SkyBackground />
         </div>
-        {isHomeRoute && hasEnteredExperience ? <WebGLScene interactive /> : null}
+        {isHomeRoute ? <WebGLScene interactive={hasEnteredExperience} /> : null}
       </div>
       <Preloader />
       <svg

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useLayoutEffect, useRef } from 'react';
+import { useGLTF } from '@react-three/drei';
 import gsap from 'gsap';
 import ScrambleTextPlugin from 'gsap/ScrambleTextPlugin';
 import { setWavePath, waveClosedPath, waveMidPath, waveOpenPath } from './waveTransition';
@@ -13,6 +14,7 @@ const scrambleChars = 'upperAndLowerCase0123456789<>!?_#*+';
 let hasEnteredExperience = false;
 
 export default function Preloader() {
+  useGLTF.preload('/models/model.glb');
   const preloader = useRef<HTMLDivElement | null>(null);
   const text = useRef<HTMLSpanElement | null>(null);
   const wave = useRef<SVGPathElement | null>(null);

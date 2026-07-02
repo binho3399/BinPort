@@ -137,6 +137,9 @@ export default function WebGLScene({ interactive }: WebGLSceneProps) {
   const [highQuality, setHighQuality] = useState(false);
   const isMobile = useViewportCategory();
   const shadowMapSize = highQuality ? (isMobile ? 1024 : 2048) : isMobile ? 512 : 768;
+  const ambientIntensity = highQuality ? 0.1 : 0.18;
+  const hemisphereIntensity = highQuality ? 1.38 : 1.58;
+  const directionalIntensity = highQuality ? 1.28 : 1.42;
   return (
     <div className="webgl-canvas-wrap">
       <Canvas
@@ -152,20 +155,22 @@ export default function WebGLScene({ interactive }: WebGLSceneProps) {
       >
         <ProgressiveQualityGate onUpgrade={() => setHighQuality(true)} />
         <RenderScheduler interactive={interactive} />
-        <ambientLight intensity={0.1} />
-        <hemisphereLight color="#fffdf8" groundColor="#d8d0c7" intensity={1.38} />
+        <ambientLight intensity={ambientIntensity} />
+        <hemisphereLight color="#fffdf8" groundColor="#d8d0c7" intensity={hemisphereIntensity} />
         <directionalLight
           castShadow
           color="#fff7ed"
           position={[4.8, 6.2, 4.2]}
-          intensity={1.28}
+          intensity={directionalIntensity}
           shadow-bias={-0.00012}
           shadow-mapSize-height={shadowMapSize}
           shadow-mapSize-width={shadowMapSize}
         />
         <Suspense fallback={null}>
           <SignalModel interactive={interactive} highQuality={highQuality} />
-          {highQuality ? <Environment preset="city" environmentIntensity={0.58} /> : null}
+        </Suspense>
+        <Suspense fallback={null}>
+          <Environment preset="city" environmentIntensity={highQuality ? 0.58 : 0.42} />
         </Suspense>
       </Canvas>
     </div>

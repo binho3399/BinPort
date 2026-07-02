@@ -96,6 +96,7 @@ function applyShowreelMaterial(object: SignalMesh, texture: THREE.Texture | null
   object.material.metalness = 0;
   object.material.toneMapped = true;
   object.material.side = THREE.DoubleSide;
+  object.material.transparent = false;
   object.material.onBeforeCompile = (shader: ShaderWithFragment) => {
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <map_fragment>',
@@ -113,15 +114,16 @@ function applyTrafficLightMaterial(
   trafficLights: TrafficLight[],
 ) {
   if (Array.isArray(object.material)) return;
+  const idleHex = name === 'light1' ? '#180606' : name === 'light2' ? '#1c1806' : '#06150f';
   object.material = object.material.clone();
-  object.material.color.set('#050505');
-  object.material.emissive.set('#050505');
-  object.material.emissiveIntensity = 0.05;
+  object.material.color.set(idleHex);
+  object.material.emissive.set(idleHex);
+  object.material.emissiveIntensity = 0.14;
   object.material.toneMapped = false;
   object.material.needsUpdate = true;
   trafficLights.push({
     material: object.material,
-    idleColor: new THREE.Color('#050505'),
+    idleColor: new THREE.Color(idleHex),
     activeColor: new THREE.Color(
       name === 'light1' ? '#ff2b1f' : name === 'light2' ? '#ffd21f' : '#12d7a8',
     ),
