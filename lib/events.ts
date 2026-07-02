@@ -1,7 +1,9 @@
-export const signalEvents = {
-  cursorEnter: 'signal-pole:cursor-enter',
-  cursorLeave: 'signal-pole:cursor-leave',
-  cursorReset: 'signal-pole:cursor-reset',
-  resetCameraScroll: 'signal-pole:reset-camera-scroll',
-  entered: 'signal-pole:entered',
-} as const;
+export {
+  interactionEventNames as signalEvents,
+  createInteractionEvent,
+  emitInteractionEvent,
+  onInteractionEvent,
+  offInteractionEvent,
+  type CursorEnterDetail,
+  type InteractionEventName,
+} from './interactions';

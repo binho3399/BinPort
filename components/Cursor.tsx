@@ -2,14 +2,13 @@
 
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { signalEvents } from '../lib/events';
+import {
+  offInteractionEvent,
+  onInteractionEvent,
+  type CursorEnterDetail,
+} from '../lib/interactions';
 
 const DEFAULT_LABEL = 'Open';
-
-type CursorEnterDetail = {
-  label?: string;
-  showArrow?: boolean;
-};
 
 function getLabel(target: HTMLElement) {
   const explicit = target.dataset.cursorStalkerLabel?.trim();
@@ -208,9 +207,9 @@ export default function Cursor() {
     window.addEventListener('pointermove', onMove);
     document.addEventListener('pointerover', onOver);
     document.addEventListener('pointerout', onOut);
-    window.addEventListener(signalEvents.cursorEnter, onCursorEnter);
-    window.addEventListener(signalEvents.cursorLeave, onCursorLeave);
-    window.addEventListener(signalEvents.cursorReset, hide);
+    onInteractionEvent(window, 'cursorEnter', onCursorEnter);
+    onInteractionEvent(window, 'cursorLeave', onCursorLeave);
+    onInteractionEvent(window, 'cursorReset', hide);
     document.documentElement.addEventListener('pointerleave', onPointerLeave);
 
     return () => {
@@ -220,9 +219,9 @@ export default function Cursor() {
       window.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerover', onOver);
       document.removeEventListener('pointerout', onOut);
-      window.removeEventListener(signalEvents.cursorEnter, onCursorEnter);
-      window.removeEventListener(signalEvents.cursorLeave, onCursorLeave);
-      window.removeEventListener(signalEvents.cursorReset, hide);
+      offInteractionEvent(window, 'cursorEnter', onCursorEnter);
+      offInteractionEvent(window, 'cursorLeave', onCursorLeave);
+      offInteractionEvent(window, 'cursorReset', hide);
       document.documentElement.removeEventListener('pointerleave', onPointerLeave);
     };
   }, []);

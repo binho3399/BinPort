@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
+    "smoke:test": "playwright test",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
     "analyze": "ANALYZE=true next build"
@@ -33,6 +34,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.2.9",
+    "@playwright/test": "^1.61.1",
     "@types/node": "22.18.9",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",

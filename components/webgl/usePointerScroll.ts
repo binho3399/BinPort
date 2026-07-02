@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import type { RefObject } from 'react';
 import type * as THREE from 'three';
-import { signalEvents } from '../../lib/events';
+import { onInteractionEvent, offInteractionEvent } from '../../lib/interactions';
 
 type TouchPoint = { x: number; y: number };
 
@@ -87,7 +87,7 @@ export function usePointerScroll({
     element.addEventListener('pointerdown', pointerDown);
     element.addEventListener('pointermove', pointerMove);
     element.addEventListener('pointerup', pointerUp);
-    window.addEventListener(signalEvents.resetCameraScroll, reset);
+    onInteractionEvent(window, 'resetCameraScroll', reset);
     return () => {
       element.removeEventListener('wheel', onWheel);
       element.removeEventListener('touchstart', touchStart);
@@ -97,7 +97,7 @@ export function usePointerScroll({
       element.removeEventListener('pointerdown', pointerDown);
       element.removeEventListener('pointermove', pointerMove);
       element.removeEventListener('pointerup', pointerUp);
-      window.removeEventListener(signalEvents.resetCameraScroll, reset);
+      offInteractionEvent(window, 'resetCameraScroll', reset);
     };
   }, [gl, interactive, scrollTarget, onReset]);
 }

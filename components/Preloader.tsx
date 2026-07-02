@@ -5,6 +5,7 @@ import { useGLTF } from '@react-three/drei';
 import gsap from 'gsap';
 import ScrambleTextPlugin from 'gsap/ScrambleTextPlugin';
 import { setWavePath, waveClosedPath, waveMidPath, waveOpenPath } from './waveTransition';
+import { emitInteractionEvent } from '../lib/interactions';
 
 gsap.registerPlugin(ScrambleTextPlugin);
 
@@ -39,7 +40,7 @@ export default function Preloader() {
     if (root) gsap.set(root, { autoAlpha: 0, display: 'none' });
     hasEnteredExperience = true;
     document.documentElement.classList.add('is-page-ready', 'is-page-surface-ready', 'is-entered');
-    window.dispatchEvent(new CustomEvent('signal-pole:entered'));
+    emitInteractionEvent(window, 'entered');
   }, []);
 
   const startExit = useCallback(() => {

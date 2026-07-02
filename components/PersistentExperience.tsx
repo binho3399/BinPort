@@ -1,20 +1,19 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import gsap from 'gsap';
+import { usePathname } from 'next/navigation';
 import Cursor from './Cursor';
 import SkyBackground from './SkyBackground';
 import Preloader from './Preloader';
 import FilmGrain from './FilmGrain';
 import SiteNav from './SiteNav';
-import { buildRevealTimeline, setWavePath, waveClosedPath } from './waveTransition';
-import { signalEvents } from '../lib/events';
-import type { RouteId } from '../lib/routes';
-import { getRouteId, routeIds } from '../lib/routes';
+import { getRouteId, isContactRoute, isHomeRoute, shouldShowShellBackButton } from '../lib/routes';
 import { NavigationContext } from '../lib/navigationContext';
+import { offInteractionEvent, onInteractionEvent } from '../lib/interactions';
+import { useRouteTransition } from './shell/useRouteTransition';
+import { usePageRevealAnimations } from './shell/usePageRevealAnimations';
 
 const WebGLScene = dynamic(() => import('./WebGLScene'), {
   ssr: false,
@@ -24,30 +23,21 @@ const WebGLScene = dynamic(() => import('./WebGLScene'), {
 export default function PersistentExperience({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const route = getRouteId(pathname);
-  const isHomeRoute = route === routeIds.home;
-  const isContactRoute = route === routeIds.contact;
+  const isHomeShellRoute = isHomeRoute(route);
+  const isContactShellRoute = isContactRoute(route);
   const page = useRef<HTMLDivElement | null>(null);
-  const routeWaveRef = useRef<SVGPathElement | null>(null);
-  const routeTimelineRef = useRef<gsap.core.Timeline | null>(null);
-  const coverTweenRef = useRef<gsap.core.Tween | null>(null);
-  const prevRoute = useRef<RouteId | null>(null);
-  const prevChildren = useRef<ReactNode | null>(null);
-  const pendingNavRef = useRef<string | null>(null);
-  const isPreCoveredRef = useRef(false);
-  const router = useRouter();
-  const [displayRoute, setDisplayRoute] = useState<RouteId | null>(null);
-  const [displayedChildren, setDisplayedChildren] = useState<ReactNode>(children);
-  const [transitionPhase, setTransitionPhase] = useState<'idle' | 'covering' | 'revealing'>('idle');
   const [hasEnteredExperience, setHasEnteredExperience] = useState(
     () => typeof document !== 'undefined' && document.documentElement.classList.contains('is-entered'),
   );
   const [showOverlayExtras, setShowOverlayExtras] = useState(false);
+  const { routeWaveRef, displayRoute, displayedChildren, transitionPhase, handleNavigate } =
+    useRouteTransition(children);
 
   useEffect(() => {
     if (hasEnteredExperience) return;
     const handleEntered = () => setHasEnteredExperience(true);
-    window.addEventListener(signalEvents.entered, handleEntered);
-    return () => window.removeEventListener(signalEvents.entered, handleEntered);
+    onInteractionEvent(window, 'entered', handleEntered);
+    return () => offInteractionEvent(window, 'entered', handleEntered);
   }, [hasEnteredExperience]);
 
   useEffect(() => {
@@ -57,163 +47,20 @@ export default function PersistentExperience({ children }: { children: ReactNode
   }, [hasEnteredExperience]);
 
   useEffect(() => {
-    if (!isHomeRoute) return;
+    if (!isHomeShellRoute) return;
     void import('./WebGLScene');
     void import('./webgl/SignalModel');
-  }, [isHomeRoute]);
+  }, [isHomeShellRoute]);
 
   useEffect(() => {
     const handleCursorReset = () => {
       document.body.style.cursor = '';
     };
-    window.addEventListener(signalEvents.cursorReset, handleCursorReset);
-    return () => window.removeEventListener(signalEvents.cursorReset, handleCursorReset);
+    onInteractionEvent(window, 'cursorReset', handleCursorReset);
+    return () => offInteractionEvent(window, 'cursorReset', handleCursorReset);
   }, []);
 
-  // Route transition wave
-  useLayoutEffect(() => {
-    // Kill any ongoing route transition or pre-cover
-    routeTimelineRef.current?.kill();
-    routeTimelineRef.current = null;
-    coverTweenRef.current?.kill();
-    coverTweenRef.current = null;
-
-    if (!route) return;
-
-    const path = routeWaveRef.current;
-    if (!path) return;
-    const svg = path.parentElement as HTMLElement | null;
-    if (!svg) return;
-
-    // First route or same route — no transition needed
-    if (!prevRoute.current || prevRoute.current === route) {
-      prevRoute.current = route;
-      prevChildren.current = children;
-      setDisplayedChildren(children);
-      setDisplayRoute(route);
-      setTransitionPhase('idle');
-      return;
-    }
-
-    prevRoute.current = route;
-
-    if (isPreCoveredRef.current) {
-      // Pre-covered by click handler: just reveal new page
-      isPreCoveredRef.current = false;
-      setDisplayedChildren(children);
-      setDisplayRoute(route);
-      setTransitionPhase('revealing');
-      prevChildren.current = children;
-
-      routeTimelineRef.current = buildRevealTimeline(path, svg, () => setTransitionPhase('idle'));
-      return;
-    }
-
-    // No pre-cover: full transition (browser back/forward)
-    setTransitionPhase('covering');
-    // displayedChildren and displayRoute stay at OLD values during covering
-
-    const state = { ...waveClosedPath };
-    setWavePath(path, state);
-
-    const coverTl = gsap.timeline({
-      onComplete: () => {
-        setDisplayedChildren(children);
-        setDisplayRoute(route);
-        setTransitionPhase('revealing');
-        prevChildren.current = children;
-
-        routeTimelineRef.current = buildRevealTimeline(path, svg, () => setTransitionPhase('idle'));
-      },
-    });
-    routeTimelineRef.current = coverTl;
-    coverTl.set(svg, { opacity: 1 }).to(state, {
-      bottomY: 100,
-      controlY: 100,
-      duration: 0.35,
-      ease: 'power2.in',
-      onUpdate: () => setWavePath(path, state),
-    });
-
-    return () => {
-      routeTimelineRef.current?.kill();
-      routeTimelineRef.current = null;
-    };
-  }, [route, children]);
-
-  const handleNavigate = (href: string) => {
-    // Prevent double-clicks during transition
-    if (pendingNavRef.current) return;
-
-    window.dispatchEvent(new CustomEvent(signalEvents.cursorReset));
-
-    const path = routeWaveRef.current;
-    if (!path) {
-      router.push(href);
-      return;
-    }
-    const svg = path.parentElement as HTMLElement | null;
-    if (!svg) {
-      router.push(href);
-      return;
-    }
-
-    pendingNavRef.current = href;
-
-    // Cover wave on current (old) page first
-    const state = { ...waveClosedPath };
-    setWavePath(path, state);
-
-    gsap.set(svg, { opacity: 1 });
-    coverTweenRef.current = gsap.to(state, {
-      bottomY: 100,
-      controlY: 100,
-      duration: 0.35,
-      ease: 'power2.in',
-      onUpdate: () => setWavePath(path, state),
-      onComplete: () => {
-        coverTweenRef.current = null;
-        isPreCoveredRef.current = true;
-        const target = pendingNavRef.current;
-        pendingNavRef.current = null;
-        if (target) router.push(target);
-      },
-    });
-  };
-
-  useEffect(() => {
-    if (!displayRoute) return undefined;
-
-    const ctx = gsap.context(() => {
-      if (displayRoute === 'home') {
-        gsap.fromTo(
-          '[data-text-reveal-kicker], [data-text-reveal-heading], .home-meta > div',
-          { yPercent: 55, autoAlpha: 0 },
-          { yPercent: 0, autoAlpha: 1, duration: 0.8, stagger: 0.055, ease: 'power3.out' },
-        );
-        gsap.fromTo(
-          '.home-rotate-hint',
-          { y: 10, autoAlpha: 0 },
-          { y: 0, autoAlpha: 1, delay: 0.28, duration: 0.64, ease: 'power3.out' },
-        );
-      } else {
-        gsap.fromTo(
-          '.reveal',
-          { y: 22, autoAlpha: 0 },
-          { y: 0, autoAlpha: 1, duration: 0.72, stagger: 0.06, ease: 'power3.out' },
-        );
-      }
-
-      if (displayRoute === 'projects') {
-        gsap.fromTo(
-          '.projects-marquee__card',
-          { y: 42, autoAlpha: 0 },
-          { y: 0, autoAlpha: 1, delay: 0.08, duration: 0.75, stagger: 0.045, ease: 'power3.out' },
-        );
-      }
-    }, page);
-    return () => ctx.revert();
-  }, [displayRoute]);
+  usePageRevealAnimations(displayRoute, page);
 
   return (
     <NavigationContext.Provider value={handleNavigate}>
@@ -227,7 +74,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
         <div className="sky-layer">
           <SkyBackground />
         </div>
-        {isHomeRoute ? <WebGLScene interactive={hasEnteredExperience} /> : null}
+        {isHomeShellRoute ? <WebGLScene interactive={hasEnteredExperience} /> : null}
       </div>
       <Preloader />
       <svg
@@ -238,7 +85,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
       >
         <path ref={routeWaveRef} fill="#050505" />
       </svg>
-      {route && route !== routeIds.home && route !== routeIds.projects && route !== routeIds.about ? (
+      {shouldShowShellBackButton(route) ? (
         <button
           type="button"
           className="back-circle-control back-circle-control--shell"
@@ -254,12 +101,12 @@ export default function PersistentExperience({ children }: { children: ReactNode
         {transitionPhase === 'covering' ? displayedChildren : children}
       </div>
       <SiteNav currentRoute={route} onNavigate={handleNavigate} />
-      {isHomeRoute ? (
+      {isHomeShellRoute ? (
         <div className="home-rotate-hint" aria-hidden="true">
           <span>Scroll to rotate model 3D</span>
         </div>
       ) : null}
-      {isContactRoute ? null : (
+      {isContactShellRoute ? null : (
         <>
           {showOverlayExtras ? <FilmGrain /> : null}
           {showOverlayExtras ? <Cursor /> : null}

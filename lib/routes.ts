@@ -14,6 +14,24 @@ export const routes = [
   { href: '/contact', label: 'Contact', id: routeIds.contact },
 ];
 
+export const shellRouteFlags = {
+  backButtonVisible: new Set<RouteId>([routeIds.contact]),
+  homeInteractive: routeIds.home,
+  contactShellHidden: routeIds.contact,
+} as const;
+
+export function shouldShowShellBackButton(route: RouteId | null) {
+  return route !== null && shellRouteFlags.backButtonVisible.has(route);
+}
+
+export function isHomeRoute(route: RouteId | null) {
+  return route === shellRouteFlags.homeInteractive;
+}
+
+export function isContactRoute(route: RouteId | null) {
+  return route === shellRouteFlags.contactShellHidden;
+}
+
 export function getRouteId(pathname: string): RouteId | null {
   return routes.find((route) => route.href === pathname)?.id ?? null;
 }
