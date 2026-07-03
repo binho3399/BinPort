@@ -7,36 +7,54 @@ Next.js 16 portfolio website với 3D WebGL (Three.js / React Three Fiber). Type
 ## Commands
 
 ```bash
-npm run dev          # Dev server (localhost:3000)
-npm run build        # Production build
-npm run lint         # ESLint
-npm run type-check   # tsc --noEmit
-npm run format:check # Prettier check
-npm run format       # Prettier fix
+npm run dev           # Dev server (localhost:3000)
+npm run build         # Production build
+npm run start         # Serve the production build
+npm run lint          # ESLint
+npm run type-check    # tsc --noEmit
+npm run format:check  # Prettier check
+npm run format        # Prettier fix
+npm run smoke:test    # Playwright smoke tests
+npm run analyze       # ANALYZE=true next build (bundle-analyzer)
 ```
 
 ## Project Structure
 
 ```
-app/              # Next.js App Router pages + API routes
-  api/codegraph/  # CodeGraph REST API (dev only)
-  codegraph/      # CodeGraph UI explorer (dev only)
-components/       # React components
-  webgl/          # Three.js scene components (SignalModel, textures, canvas)
-  pages/          # Page-level components (HomePage, AboutPage, etc.)
-lib/              # Shared utilities (routes, events, siteContent, codegraph-db)
-public/           # Static assets (models/, fonts/, images/)
+app/                # Next.js App Router pages + API routes
+  (debug)/          # Diagnostic pages (yellow-canvas-test, bg-test, bg-test-2, codegraph)
+  api/codegraph/    # CodeGraph REST API (dev only)
+  codegraph/        # CodeGraph UI explorer (dev only)
+  styles/           # Plain CSS layers imported by app/globals.css
+components/         # React components
+  shell/            # Route-transition hooks (useRouteTransition, usePageRevealAnimations)
+  webgl/            # Three.js scene modules (SignalModel, hitTest, textures, camera, …)
+  pages/            # Page-level components (HomePage, AboutPage, …) + BackButton
+  Preloader.tsx     # Preloader + wave exit animation
+  SiteNav.tsx       # Top-right nav
+  Cursor.tsx        # Custom cursor and sticker-preview behavior
+  FilmGrain.tsx     # CSS-animated grain overlay (12fps, reduced-motion safe)
+  SkyBackground.tsx # Canvas sky backdrop
+  PersistentExperience.tsx  # Thin shell orchestrator
+  WebGLScene.tsx    # React Three Fiber entrypoint
+lib/                # Shared utilities
+  routes.ts         # Route IDs, nav order, shell flags, standalone routes
+  siteContent.ts    # Profile, metadata, about, contact copy
+  projects.ts       # Project gallery data
+  interactions.ts   # signal-pole:* event bus (cursor, camera reset, entered)
+  events.ts         # Re-export of interactions (kept for legacy imports)
+  navigationContext.ts # React context for shell handleNavigate
+  codegraph-db.ts   # better-sqlite3 access to .codegraph/codegraph.db
+public/             # Static assets (models/, projects/, videos/, fonts/, favicon.ico)
 ```
 
-Key files:
+Key invariants:
 
-- `components/PersistentExperience.tsx`: persistent shell, preloader, nav, cursor, transition overlay, route content, and WebGL layer.
-- `components/Cursor.tsx`: custom cursor and sticker-preview behavior.
-- `components/WebGLScene.tsx` + `components/webgl/`: React Three Fiber scene; `SignalModel.tsx` loads `/models/model.glb`.
-- `lib/routes.ts`: route IDs and nav order.
-- `lib/siteContent.ts`: profile, metadata, about, and contact content.
-- `lib/projects.ts`: projects gallery data.
-- `app/styles/*.css`: plain CSS layers imported by `app/globals.css`.
+- `components/PersistentExperience.tsx` là thin orchestrator — compose Preloader, SiteNav, FilmGrain, Cursor, SkyBackground, WebGLScene, route-wave SVG. Route transitions delegated to `components/shell/useRouteTransition.ts`; per-route reveal animations to `components/shell/usePageRevealAnimations.ts`.
+- Cursor event names live in `lib/interactions.ts` (namespace `signal-pole:*`); `lib/events.ts` is re-export only.
+- `components/WebGLScene.tsx` + `components/webgl/*` own the Three.js scene; `webgl/SignalModel.tsx` loads `/models/model.glb` (Meshopt-compressed).
+- `lib/routes.ts` is single source of truth cho route IDs, nav order, shell flags (`backButtonVisible`, `homeInteractive`, `contactShellHidden`), và `standaloneRoutes` (yellow-canvas-test, codegraph, bg-test-2).
+- CSS layers: `base.css` (tokens + z-index) → `shell.css` → `preloader.css` → `route-wave.css` → `nav.css` → `cursor.css` → `background.css` → `page-shell.css` → `pages.css` → `debug.css` → `responsive.css` (overrides last).
 
 ## Conventions
 
@@ -44,8 +62,8 @@ Key files:
 - **ESM** (`"type": "module"`) — dùng `import`, không `require`
 - **Path alias**: `@/*` maps to project root
 - **React 19** + **Next.js 16** App Router — server components by default, `"use client"` khi cần
-- **Styling**: plain CSS modules/layers under `app/styles/`, imported by `app/globals.css` (do not assume Tailwind utilities)
-- **3D**: React Three Fiber + Drei cho WebGL scene, GSAP cho animations
+- **Styling**: plain CSS layers under `app/styles/`, imported by `app/globals.css` (do not assume Tailwind utilities)
+- **3D**: React Three Fiber + Drei cho WebGL scene; GSAP cho route transitions, preloader scramble, page reveal (not film grain — that's CSS keyframes)
 - **Formatting**: Prettier (check CI), ESLint (next/core-web-vitals + typescript)
 
 ## Design System

@@ -19,15 +19,18 @@ function RenderScheduler({ interactive }: { interactive: boolean }) {
   const { gl, invalidate } = useThree();
   const activeUntil = useRef(0);
   const activeFrame = useRef<number | null>(null);
+  const contextLost = useRef(false);
 
   useEffect(() => {
     const isVisible = () => document.visibilityState !== 'hidden';
     const invalidateIfVisible = () => {
+      if (contextLost.current) return;
       if (isVisible()) invalidate();
     };
     const renderActiveFrame = () => {
       activeFrame.current = null;
       if (!isVisible()) return;
+      if (contextLost.current) return;
 
       invalidate();
       if (performance.now() < activeUntil.current) {
@@ -57,6 +60,23 @@ function RenderScheduler({ interactive }: { interactive: boolean }) {
       'touchend',
     ];
 
+    const onContextLost = (event: Event) => {
+      event.preventDefault();
+      contextLost.current = true;
+      if (activeFrame.current !== null) {
+        window.cancelAnimationFrame(activeFrame.current);
+        activeFrame.current = null;
+      }
+      console.warn('[WebGLScene] context lost', { interactive, dpr: gl.getPixelRatio() });
+    };
+    const onContextRestored = () => {
+      contextLost.current = false;
+      requestActiveRender();
+      console.info('[WebGLScene] context restored', { interactive });
+    };
+    canvas.addEventListener('webglcontextlost', onContextLost, false);
+    canvas.addEventListener('webglcontextrestored', onContextRestored, false);
+
     const idleInterval = window.setInterval(
       invalidateIfVisible,
       interactive ? IDLE_RENDER_INTERVAL_MS : IDLE_RENDER_INTERVAL_MS_NON_INTERACTIVE,
@@ -74,6 +94,8 @@ function RenderScheduler({ interactive }: { interactive: boolean }) {
     return () => {
       window.clearInterval(idleInterval);
       if (activeFrame.current !== null) window.cancelAnimationFrame(activeFrame.current);
+      canvas.removeEventListener('webglcontextlost', onContextLost);
+      canvas.removeEventListener('webglcontextrestored', onContextRestored);
       window.removeEventListener('resize', requestActiveRender);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (interactive) {

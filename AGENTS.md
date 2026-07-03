@@ -31,24 +31,27 @@ If there is no `.codegraph/` directory, skip CodeGraph entirely - indexing is th
 
 ## Codebase Map
 
-- `app/` contains App Router pages, global CSS imports, dev-only CodeGraph routes/UI, and the `yellow-canvas-test` diagnostic page.
-- `components/PersistentExperience.tsx` owns the always-on experience shell: WebGL layer, preloader, route content, site nav, cursor, and page-transition overlay.
-- `components/WebGLScene.tsx` and `components/webgl/` own the React Three Fiber scene. The primary model is loaded from `/models/model.glb` through `SignalModel.tsx`.
-- `components/Cursor.tsx` owns the custom cursor/sticker behavior. Cursor event names live in `lib/events.ts` and use the `signal-pole:*` namespace.
-- `components/pages/` contains route-level page bodies. Shared route definitions live in `lib/routes.ts`; profile, metadata, about, and contact copy live in `lib/siteContent.ts`; project cards live in `lib/projects.ts`.
-- CSS is plain CSS split under `app/styles/` and imported by `app/globals.css`. Do not assume Tailwind utilities are available.
+- `app/` contains App Router pages, global CSS imports, and dev-only CodeGraph routes/UI, the `yellow-canvas-test` and `bg-test-2` diagnostic pages.
+- `components/PersistentExperience.tsx` is a thin orchestrator (~120 lines) that composes the always-on experience shell: WebGL layer, sky backdrop, preloader, route content, site nav, cursor, film grain, and route-wave overlay. Route-transition state lives in `components/shell/useRouteTransition.ts`; per-route reveal animations live in `components/shell/usePageRevealAnimations.ts`. Wave path morphing is in `components/waveTransition.ts`.
+- Sibling shell pieces: `components/Preloader.tsx` (preload + wave exit), `components/SiteNav.tsx` (top-right nav), `components/FilmGrain.tsx` (CSS animated grain), `components/SkyBackground.tsx` (canvas sky), `components/Cursor.tsx` (custom cursor/sticker).
+- `components/WebGLScene.tsx` and `components/webgl/` own the React Three Fiber scene. The primary model is loaded from `/models/model.glb` through `SignalModel.tsx`. `webgl/` is split into focused modules: `prepareScene.ts` (materials/lighting), `hitTest.ts` (interactive sign hit detection), `textures.ts` + `textureAnimation.ts` (per-frame texture redraws), `useModelCamera.ts` (camera + scroll), `useModelInteractions.ts`, `usePointerScroll.ts`, `useModelCursor.ts`, `useCanvasHoverPointer.ts`, `useSignalModelFrame.ts` (per-frame update), `modelRoutes.ts` (route → model state), `types.ts` (shared types).
+- `components/pages/` contains route-level page bodies (`HomePage`, `ProjectsPage`, `AboutPage`, `ContactPage`) plus `BackButton.tsx`. Shared route definitions and shell flags live in `lib/routes.ts`; profile, metadata, about, and contact copy live in `lib/siteContent.ts`; project cards live in `lib/projects.ts`.
+- `lib/interactions.ts` owns the `signal-pole:*` interaction event bus (cursor enter/leave/reset, camera scroll reset, entered). `lib/events.ts` is a thin re-export. `lib/navigationContext.ts` exposes a React context for the shell's `handleNavigate` (used by `BackButton`).
+- CSS is plain CSS split under `app/styles/` and imported in this order by `app/globals.css`: `base.css` → `shell.css` → `preloader.css` → `route-wave.css` → `nav.css` → `cursor.css` → `background.css` → `page-shell.css` → `pages.css` → `debug.css` → `responsive.css` (overrides must be last). Do not assume Tailwind utilities are available.
 - Static assets live under `public/`: `models/`, `projects/`, `videos/`, `fonts/`, and `favicon.ico`.
 
 ## Development Commands
 
 ```bash
-npm run dev          # Start Next dev server
-npm run build        # Production build
-npm run start        # Serve the production build
-npm run lint         # ESLint over the repo
-npm run type-check   # TypeScript without emit
-npm run format:check # Prettier check
-npm run format       # Prettier write
+npm run dev           # Start Next dev server
+npm run build         # Production build
+npm run start         # Serve the production build
+npm run lint          # ESLint over the repo
+npm run type-check    # TypeScript without emit
+npm run format:check  # Prettier check
+npm run format        # Prettier write
+npm run smoke:test    # Playwright smoke tests
+npm run analyze       # ANALYZE=true next build (bundle-analyzer)
 ```
 
 ## Implementation Notes

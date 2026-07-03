@@ -1,5 +1,12 @@
 # Plan — Quy trình cập nhật Work History
 
+> **Vai trò của file này:** định nghĩa workflow cập nhật `WORKLOG.md` sau mỗi task. **Không phải** agent instructions (xem `AGENTS.md` cho instructions tự load bởi OpenCode) và **không phải** design tokens (xem `DESIGN.md`). Ba file phụ trách ba việc khác nhau:
+>
+> - `AGENTS.md` — agent instructions (codebase map, dev commands, edge cases).
+> - `DESIGN.md` — design system single source of truth (colors, typography, components, …).
+> - `PLAN.md` (file này) — quy trình cập nhật worklog.
+> - `WORKLOG.md` — timeline history thực tế (output của quy trình này).
+
 File này định nghĩa quy trình **luôn cập nhật history công việc theo timeline** sau mỗi task.
 
 ## Quy trình (áp dụng cho mọi task)

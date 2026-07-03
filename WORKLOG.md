@@ -185,6 +185,99 @@ Lịch sử các task đã thực hiện trong project. Mỗi task có table sum
 
 ---
 
+## [2026-07-02] Task: Split shell + WebGL + CSS theo REFACTOR_PLAN §2.1/2.2/3.2/3.1/6.x
+
+**Files thay đổi:**
+- `components/PersistentExperience.tsx` (sửa lớn) — 534 → 118 lines. Orchestrator-only: compose Preloader, SiteNav, FilmGrain, Cursor, SkyBackground, WebGLScene, route-wave SVG. State: `hasEnteredExperience` dùng `useState` init từ `document.documentElement.classList` (không còn module-level state ở shell).
+- `components/Preloader.tsx` (mới, ~165 lines) — extract từ PersistentExperience: GSAP scramble text loop, exit timeline, wave exit animation. Có `useGLTF.preload('/models/model.glb')` (REFACTOR_PLAN §5.3).
+- `components/SiteNav.tsx` (mới, ~26 lines) — top-right nav, dùng `routes` từ `lib/routes.ts` + `onNavigate` callback.
+- `components/FilmGrain.tsx` (mới, ~30 lines) — film grain overlay với CSS keyframes (`steps(10)` 0.83s) + `prefers-reduced-motion` block inline.
+- `components/SkyBackground.tsx` (đã có sẵn, dùng trong shell) — canvas sky backdrop throttled 30fps.
+- `components/shell/useRouteTransition.ts` (mới, ~133 lines) — route cover/reveal state machine: GSAP timeline morph wave path `waveClosedPath` → `waveMidPath` → `waveOpenPath`. Expose `handleNavigate`, `transitionPhase`, `displayedChildren`, `routeWaveRef`.
+- `components/shell/usePageRevealAnimations.ts` (mới, ~46 lines) — per-route reveal: home kicker/heading/meta + rotate hint, projects marquee, generic `.reveal` elsewhere. Dùng `gsap.context` scoped vào `containerRef`.
+- `components/waveTransition.ts` (đã có, dùng chung) — `waveClosedPath` / `waveMidPath` / `waveOpenPath` + `setWavePath` + `buildRevealTimeline(path, svg, onComplete)` helper. Dùng cho cả preloader exit và route transitions → khử duplication.
+- `components/webgl/SignalModel.tsx` (sửa lớn) — 518 → ~260 lines. Composition only: group ref, pointer events, delegates logic sang hooks.
+- `components/webgl/hitTest.ts` (mới, 177 lines) — interactive sign hit detection: `getInteractiveCanvasHit`, `isCanvasHitOccluded`, `isWithinInteractiveUv`, face-side dot thresholds.
+- `components/webgl/textureAnimation.ts` (mới, 79 lines) — `updateAnimatedTextures` per-frame cho contact/profile/projects textures.
+- `components/webgl/useModelCamera.ts` (mới, 42 lines) — camera setup với type guard `isPerspectiveCamera`, scroll smoothing, shake. Có thêm `useFrame` riêng.
+- `components/webgl/useModelInteractions.ts` (mới) — pointer enter/leave/dispatch, route navigation.
+- `components/webgl/useModelCursor.ts` (mới) — cursor label/arrow state driven by `signal-pole:*` events.
+- `components/webgl/usePointerScroll.ts` (mới) — wheel/touch scroll → camera rotation.
+- `components/webgl/useCanvasHoverPointer.ts` (mới) — canvas pointer position tracking.
+- `components/webgl/useSignalModelFrame.ts` (mới) — per-frame texture/traffic light update (split từ giant `useFrame` cũ).
+- `components/webgl/modelRoutes.ts` (mới) — route → model state mapping.
+- `components/webgl/textures.ts` (mới) — `drawContactTexture`, `drawProjectsTexture` (profile giữ trong `components/profileSignCanvas.ts`).
+- `components/webgl/types.ts` (mới) — shared types: `InteractiveSignMaterialName`, `InteractiveSignSurface`, `AnimatedTexturesState`, `TrafficLight`.
+- `components/webgl/canvasText.ts` (đã có) — shared canvas text helpers.
+- `lib/routes.ts` (sửa) — thêm `shellRouteFlags`, `shouldShowShellBackButton`, `isHomeRoute`, `isContactRoute`, `getRouteId`, `standaloneRoutes` (Set), `isStandaloneRoute`. Single source of truth (REFACTOR_PLAN §6.1 done).
+- `lib/interactions.ts` (sửa) — typed `signal-pole:*` event bus: `interactionEventNames`, `createInteractionEvent`, `emitInteractionEvent`, `onInteractionEvent`, `offInteractionEvent` + `CursorEnterDetail` / `InteractionEventName` types.
+- `lib/events.ts` (mới, 9 lines) — re-export từ `interactions.ts` cho backward compat.
+- `lib/navigationContext.ts` (mới, 9 lines) — `NavigationContext` + `useNavigate` cho `BackButton` và non-shell callers.
+- `app/styles/base.css` (sửa) — thêm `--ink` token + `--z-base` / `--z-layer-1` / `--z-content` / `--z-route-wave` / `--z-hint` / `--z-nav` / `--z-grain` / `--z-cursor` / `--z-debug` / `--z-preloader` (REFACTOR_PLAN §3.1 done).
+- `app/styles/shell.css` (sửa lớn) — 335 → 127 lines. Giờ chỉ chứa `.webgl-background`, `.persistent-experience`, `.experience-page*`, `.home-rotate-hint` (REFACTOR_PLAN §3.2 partial).
+- `app/styles/preloader.css` (mới, 45 lines) — extract từ shell.css: `.preloader`, `.preloader__wave`, `.preloader__inner`, `.preloader__text`.
+- `app/styles/route-wave.css` (mới, 10 lines) — `.route-wave` SVG overlay với `var(--z-route-wave)`.
+- `app/styles/nav.css` (mới, 102 lines) — `.site-nav` + `.back-circle-control` (shell + inline variants) + reduced-motion overrides.
+- `app/styles/cursor.css` (mới, 53 lines) — `.mouse-stalker` và children, `pointer: coarse` hide, reduced-motion.
+- `app/globals.css` (sửa) — thêm 4 import mới: `preloader.css`, `route-wave.css`, `nav.css`, `cursor.css` (theo thứ tự mới).
+- `package.json` (sửa) — thêm scripts `smoke:test` (`playwright test`) và `analyze` (`ANALYZE=true next build`).
+- `next.config.mjs` (sửa) — wrap với `bundleAnalyzer({ enabled: process.env.ANALYZE === 'true' })` (REFACTOR_PLAN §6.2 done).
+- `app/styles/page-shell.css` (sửa) — `color: #0b0b0a7a` → dùng `var(--ink)` khi có thể, semantic HTML structure unchanged.
+- `app/styles/pages.css` (sửa) — thêm `.projects-page__header`, `.projects-page__active-meta` styles; dùng `var(--ink)` cho main text colors.
+- `app/styles/nav.css` (sửa) — `.back-circle-control--shell` fixed top-left, `z-index: calc(var(--z-content) + 1)` (trên route content, dưới route-wave).
+- `components/Cursor.tsx` (sửa) — đổi `lib/events` → `lib/interactions`, dùng typed `CursorEnterDetail`.
+- `components/pages/BackButton.tsx` (sửa) — dùng `useNavigate` từ `lib/navigationContext` thay vì prop drilling.
+
+### Summary
+
+| # | Vấn đề / Yêu cầu | Giải pháp | Kết quả |
+|---|---|---|---|
+| 1 | `PersistentExperience.tsx` 534 lines, 6 trách nhiệm (god component) | Tách thành Preloader, SiteNav, FilmGrain, SkyBackground, Cursor + 2 hooks (useRouteTransition, usePageRevealAnimations); shell chỉ compose | Shell xuống 118 lines, mỗi file < 200 lines, dễ review |
+| 2 | `SignalModel.tsx` 518 lines, `useFrame` 110 lines closure trộn texture/camera/scroll/shake | Tách thành hitTest, textureAnimation, useModelCamera, useModelInteractions, useModelCursor, usePointerScroll, useCanvasHoverPointer, useSignalModelFrame + types/modelRoutes | SignalModel xuống ~260 lines, mỗi hook single-responsibility |
+| 3 | `shell.css` 335 lines trộn preloader/route-wave/nav/cursor/page-shell | Tách thành preloader.css, route-wave.css, nav.css, cursor.css; shell.css giữ webgl-background + experience-page | CSS partials dễ navigate, mỗi file < 130 lines |
+| 4 | Magic z-index scattered in 4 CSS files | Định nghĩa `--z-*` tokens trong `base.css`, replace tất cả literal `z-index:` bằng `var(--z-*)` | 1 source of truth cho stacking, dễ audit/debug |
+| 5 | `routes.ts` chỉ chứa route IDs, không có shell flags hay standalone routes | Thêm `shellRouteFlags`, `shouldShowShellBackButton`, `isHomeRoute`, `isContactRoute`, `getRouteId`, `standaloneRoutes` (Set), `isStandaloneRoute` | Single source of truth cho routes + shell routing rules |
+| 6 | `signal-pole:*` event names hardcoded string ở nhiều file | Typed event bus trong `lib/interactions.ts` (event names + types + emit/on/off helpers), re-export từ `lib/events.ts` cho legacy | Type-safe events, không typo string literal |
+| 7 | `BackButton` cần prop drilling `handleNavigate` từ shell xuống | React context `NavigationContext` + `useNavigate` hook trong `lib/navigationContext.ts` | BackButton + non-shell callers dùng `useNavigate()` |
+| 8 | `useGLTF` chỉ load khi WebGLScene mount → first paint lag | `useGLTF.preload('/models/model.glb')` trong `Preloader.tsx` (chạy trong preloader phase) | Fetch song song với preloader, model sẵn sàng khi preloader exit |
+| 9 | Bundle analyzer devDep không wired | `npm run analyze` script + `bundleAnalyzer` wrap trong `next.config.mjs` | `npm run analyze` mở bundle report khi cần debug bundle size |
+| 10 | Smoke tests không có script entry | Thêm `npm run smoke:test` (`playwright test`) | CI/dev có thể chạy Playwright suite dễ dàng |
+
+### Bài học rút ra
+- **Hook extraction > render-prop > prop drilling**: route transition logic và page reveal animations phù hợp với custom hooks hơn là HOC hay prop drilling, vì chúng consume React state + refs + refs-of-children. Tách `useRouteTransition` (state machine cho cover/reveal) khỏi `usePageRevealAnimations` (per-route reveal keyframes) — 2 concerns khác nhau, 2 hooks khác nhau.
+- **`gsap.context()` cho cleanup**: Page reveal animations nên dùng `gsap.context(fn, scope)` để auto-revert tất cả tweens khi effect cleanup. Tránh leak khi route đổi nhanh.
+- **CSS `var(--z-*)` tokens > literal numbers**: Sau khi extract, audit z-index mỗi lần thêm layer mới. Có `--z-debug: 200` riêng để diagnostic routes không ảnh hưởng production stacking.
+- **Re-export pattern cho lib restructuring**: Khi move `events.ts` → `interactions.ts`, giữ `events.ts` như re-export (9 lines) → callers cũ vẫn work, fix dần theo thời gian.
+- **`useGLTF.preload` tại component scope (trong Preloader) > module scope**: Component scope chạy khi Preloader mount, tức là ngay từ preloader phase → fetch song song với preloader animation → model ready khi preloader exit. Module scope ở `WebGLScene.tsx` cũng work nhưng khó debug vì side effect tại module load.
+- **Per-frame work tách thành separate `useFrame` calls**: Texture update, traffic light, scroll smoothing, camera shake → 4 hooks riêng → R3F scheduler tự handle ordering + cleanup. Dễ test + dễ disable từng phần.
+
+---
+
+## [2026-07-03] Task: Review & update all `.md` files trong codebase
+
+**Files thay đổi:**
+- `AGENTS.md` (sửa) — update Codebase Map: PersistentExperience giờ là 118-line orchestrator (không phải 534-line monolith); list thêm `components/Preloader.tsx`, `components/SiteNav.tsx`, `components/FilmGrain.tsx`, `components/shell/`, expanded `components/webgl/*` module list, `lib/interactions.ts`, `lib/navigationContext.ts`. Thêm scripts `smoke:test`, `analyze`.
+- `CLAUDE.md` (sửa) — same updates: Project Structure section rewrite với full layout, Key invariants section mới, Conventions: clarify FilmGrain dùng CSS (không GSAP), add `smoke:test` + `analyze` scripts.
+- `DESIGN.md` (sửa) — Section 5 z-index diagram rewrite với `--z-*` token names thực tế từ `base.css` (low → high: preloader 999, debug 200, cursor 160, grain 150, nav 80, hint 70, route-wave 45, content 3, base 0, layer-1 1). Section 6 component patterns: thay `.page-transition` bằng `.route-wave` với GSAP morph description. Section 7 animation: thay "Animated clip-path" bằng "GSAP-morphed SVG path" với easing tokens. Section 9 CSS Architecture: list 11 file partials + import order mới, mention `--z-*` token system.
+- `REFACTOR_PLAN.md` (sửa) — thêm `> **Status (2026-07-03)**` callout đầu file. Mỗi subsection trong Phase 1-6 có `**Status:**` line (✅ Done / ⚠️ Partial / ⚠️ Unknown) reflect codebase thực tế. Execution Priority table có thêm cột "Status (2026-07-03)".
+- `WORKLOG.md` (sửa) — append entry này + entry `[2026-07-02]` cho shell/WebGL/CSS split refactor (đã thực hiện nhưng chưa log).
+- `README.md` (sửa) — thêm link tới `AGENTS.md` (agent instructions), `DESIGN.md` (design system), `WORKLOG.md` (history), `REFACTOR_PLAN.md` (refactor backlog); thêm `smoke:test` + `analyze` vào Available scripts.
+- `PLAN.md` (sửa) — thêm note về role relative to `AGENTS.md` (PLAN.md = quy trình worklog; AGENTS.md = agent instructions; không trộn lẫn).
+
+### Summary
+
+| # | Vấn đề / Yêu cầu | Giải pháp | Kết quả |
+|---|---|---|---|
+| 1 | AGENTS.md vẫn mô tả `PersistentExperience.tsx` 534-line monolith; thiếu script entries `smoke:test` / `analyze`; thiếu reference đến `components/shell/`, `components/Preloader.tsx`, `lib/interactions.ts` | Rewrite Codebase Map section với file list đầy đủ của current state; thêm 2 scripts; mention shell hooks + interactions module | AGENTS.md giờ phản ánh đúng persistent experience shell sau split refactor |
+| 2 | CLAUDE.md cùng vấn đề + conventions section claim FilmGrain dùng GSAP (đã sai sau 2026-06-30 optimization) | Rewrite Project Structure thành layout tree đầy đủ; thêm Key invariants; sửa Conventions: GSAP cho route transition/preloader/reveal, CSS cho FilmGrain | CLAUDE.md giờ match state thực tế |
+| 3 | DESIGN.md z-index diagram liệt kê `Page Transition` cũ (đã remove); CSS Architecture section chỉ list 7 file (giờ có 11) | Rewrite diagram với `--z-*` token names thực tế; replace `.page-transition` component pattern bằng `.route-wave`; update CSS Architecture section với 11 file list + import order mới | DESIGN.md là single source of truth chính xác |
+| 4 | REFACTOR_PLAN.md không reflect work đã xong (~80% phases complete); execution priority table stale | Thêm Status callout đầu file; annotate mỗi subsection với `**Status:**` line; thêm Status column vào priority table | REFACTOR_PLAN.md từ "proposed plan" trở thành "plan with status" — track open work vs done work |
+| 5 | WORKLOG.md thiếu entry cho 2026-07-02 shell/WebGL/CSS split refactor (một work day lớn) | Append entry đầy đủ với files changed + 10-row summary table + bài học rút ra | Timeline history đầy đủ, dễ trace lại bằng git |
+| 6 | README.md thiếu pointer tới các doc files khác + thiếu 2 script entries | Thêm "Documentation" section link tới AGENTS/DESIGN/WORKLOG/REFACTOR_PLAN; thêm `smoke:test` + `analyze` scripts | README.md là entry point đầy đủ cho cả dev lẫn agent |
+| 7 | PLAN.md không clarify role relative tới AGENTS.md | Thêm note ngắn ở đầu file phân biệt PLAN.md (worklog quy trình) vs AGENTS.md (agent instructions) | 3 file docs chính (AGENTS/PLAN/WORKLOG) có ranh giới rõ ràng |
+
+---
+
 ### Bài học rút ra
 - **Meshopt compression** qua `@gltf-transform/cli meshopt` giảm 71% file size visually lossless — tốt hơn Draco cho parity tuyệt đối. Drei v10.7.7 `useGLTF` auto-register `MeshoptDecoder` by default (`useMeshopt=true`), không cần code thêm.
 - **Turbopack code-split**: `dynamic({ ssr:false })` tách three.js vào dynamic chunk (1.04MB) — không nằm trong `rootMainFiles` (initial load). Initial payload giảm 60% dù total JS không đổi. Đo `rootMainFiles` trong `build-manifest.json`, không phải total chunks.

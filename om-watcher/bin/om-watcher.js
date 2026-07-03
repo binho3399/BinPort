@@ -217,7 +217,6 @@ function render(state) {
   const midGap    = '  ';
   const pctWidth  = pctText.length;
   const rightPad  = Math.max(0, CONTENT_WIDTH - leftGap.length - PROGRESS_BAR_W - midGap.length - pctWidth);
-  const barVisual = '\u2588'.repeat(PROGRESS_BAR_W); // placeholder, replaced by ANSI bar
 
   /* ---- assemble ANSI-wrapped panel lines ---- */
   const lines = [

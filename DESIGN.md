@@ -149,25 +149,33 @@ clamp(<min-px>, min(<vw-scale>, <middle-px> + <vw-scale>), <max-px>)
 
 ### Fixed Full-Viewport Structure
 
+Z-index tokens live in `app/styles/base.css` (see `--z-*` custom properties). Listed low → high:
+
 ```
 ┌──────────────────────────────────────┐
-│  Film Grain (z-index: 150)           │  ← fixed, pointer-events: none
+│  Preloader (--z-preloader: 999)      │  ← initial load overlay
 ├──────────────────────────────────────┤
-│  Mouse Stalker (z-index: 160)        │  ← fixed cursor
+│  Debug (--z-debug: 200)              │  ← diagnostic routes only
 ├──────────────────────────────────────┤
-│  Site Nav (z-index: 80)              │  ← fixed top-right
+│  Mouse Stalker (--z-cursor: 160)     │  ← fixed cursor (pointer: fine)
 ├──────────────────────────────────────┤
-│  Page Transition (z-index: 50)       │  ← route change overlay
+│  Film Grain (--z-grain: 150)         │  ← fixed, pointer-events: none
 ├──────────────────────────────────────┤
-│  Route Content (z-index: 3)          │  ← fixed route pages
+│  Site Nav (--z-nav: 80)              │  ← fixed top-right
 ├──────────────────────────────────────┤
-│  WebGL Background (z-index: 0)       │  ← fixed, full viewport
-│  ┌ Sky Layer (z-index: 0)           │
-│  └ WebGL Canvas (z-index: 1)        │
+│  Home Rotate Hint (--z-hint: 70)     │  ← fixed bottom-right
 ├──────────────────────────────────────┤
-│  Preloader (z-index: 999)            │  ← initial load overlay
+│  Route Wave (--z-route-wave: 45)     │  ← SVG cover/reveal overlay
+├──────────────────────────────────────┤
+│  Route Content (--z-content: 3)      │  ← fixed route pages
+├──────────────────────────────────────┤
+│  WebGL Background (--z-base: 0)      │  ← fixed, full viewport
+│  ┌ Sky Layer (--z-base: 0)           │
+│  └ WebGL Canvas (--z-layer-1: 1)    │
 └──────────────────────────────────────┘
 ```
+
+Note: route transitions are driven by the SVG `.route-wave` overlay (morphing path in `components/waveTransition.ts`), not a `.page-transition` element.
 
 Key constraints:
 - `html`, `body`: `overflow: hidden`, `width/height: 100%`
@@ -230,13 +238,12 @@ Key constraints:
 - Text: white (`#ffffffeb`), uppercase, letter-spacing 0.14em
 - Initially invisible (opacity 0, visibility hidden)
 
-### Page Transition (`.page-transition`)
+### Route Wave (`.route-wave`)
 
-- Fixed fullscreen, `z-index: 50`
-- SVG clip-path with animated morphing
-- Next page content: `filter: drop-shadow(0 -28px 64px #0707072e)`
-- Inner content: `blur()` + `brightness()` animated during transition
-- Reduced motion: disable filter/transition, reset will-change
+- Fixed fullscreen, `z-index: var(--z-route-wave)` (45)
+- SVG path with GSAP-animated morphing between `waveClosedPath` / `waveMidPath` / `waveOpenPath` (defined in `components/waveTransition.ts`)
+- Driven by `components/shell/useRouteTransition.ts`; click on nav covers → push route → reveal
+- Reduced motion: preloader + nav transitions still disabled via `@media (prefers-reduced-motion)` blocks in `preloader.css` and `nav.css`
 
 ### Project Cards (`.project-card`)
 
@@ -268,7 +275,7 @@ Key constraints:
 | Contact link hover | 0.18s | Default |
 | Rotate hint scroll | 1.9s | `ease-in-out` (infinite) |
 | Film grain CSS animation | 0.83s | `steps(10)` (12fps) |
-| Route transition | Animated clip-path | — |
+| Route transition | GSAP-morphed SVG path | `power2.in` cover / `power3.inOut` reveal |
 
 ### Animation Principles
 
@@ -304,30 +311,38 @@ Key constraints:
 ```
 app/globals.css          ← imports all partials (order matters!)
 app/styles/
-├── base.css             ← Custom properties, @font-face, reset, html/body
-├── shell.css            ← Fixed layers (WebGL, preloader, nav, cursor, hints)
-├── background.css       ← Sky layer, canvas wrapper, film grain
-├── page-shell.css       ← Page shell grid, intro, home profile, meta, transitions
+├── base.css             ← Tokens (colors, spacing, z-index), @font-face, reset, html/body
+├── shell.css            ← Fixed layers: webgl-background, persistent-experience, experience-page, home-rotate-hint
+├── preloader.css        ← .preloader + .preloader__wave / __inner / __text
+├── route-wave.css       ← .route-wave SVG cover/reveal overlay
+├── nav.css              ← .site-nav + .back-circle-control
+├── cursor.css           ← .mouse-stalker and children
+├── background.css       ← .sky-layer, .webgl-canvas-wrap, .film-grain
+├── page-shell.css       ← Page shell grid, intro, home profile, home meta, route-current
 ├── pages.css            ← Route-specific (projects, about, contact)
-├── responsive.css       ← All media queries (960px, 620px)
-└── debug.css            ← Dev-only debug page styles
+├── debug.css            ← Dev-only debug page styles (yellow-canvas-test, sky-bg-test)
+└── responsive.css       ← All media queries (overrides, must be last)
 ```
 
 ### Import Order (globals.css)
 
 1. `base.css` — foundations (must be first)
-2. `shell.css` — persistent experience shell
-3. `background.css` — WebGL/sky/film grain layers
-4. `page-shell.css` — page layout shell
-5. `pages.css` — route-specific styles
-6. `debug.css` — debug/testing pages
-7. `responsive.css` — overrides (must be last)
+2. `shell.css` — fixed experience shell (webgl-bg, persistent-experience, experience-page, home-rotate-hint)
+3. `preloader.css` — preloader layers
+4. `route-wave.css` — route transition SVG overlay
+5. `nav.css` — site nav + back-circle-control
+6. `cursor.css` — mouse stalker
+7. `background.css` — sky + film grain
+8. `page-shell.css` — page layout shell
+9. `pages.css` — route-specific styles
+10. `debug.css` — debug/testing pages
+11. `responsive.css` — overrides (must be last)
 
 ### Implementation Rules
 
 - **No Tailwind** — plain CSS only
 - **No CSS-in-JS** — all styles in `app/styles/*.css`
-- **CSS custom properties** for theme tokens only (colors, spacing)
+- **CSS custom properties** for theme tokens (colors, spacing, z-index). Z-index tokens (`--z-base`, `--z-content`, `--z-route-wave`, `--z-hint`, `--z-nav`, `--z-grain`, `--z-cursor`, `--z-debug`, `--z-preloader`) live in `base.css` and are referenced via `var(--z-*)` everywhere
 - **Fluid sizing** via `clamp()` with consistent formula patterns
 - **`contain` property** on fixed layers for performance isolation
 - **`will-change`** used sparingly, only on animated elements during animation

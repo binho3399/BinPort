@@ -1,6 +1,6 @@
 # cloned-web
 
-Minimal setup notes for running the project locally.
+Source-editable Next.js 16 / React 19 portfolio rebuild of the Hirotos-style experience. Persistent WebGL background, route shell, custom cursor, page transitions, and project gallery interactions.
 
 ## Local setup
 
@@ -22,15 +22,32 @@ Minimal setup notes for running the project locally.
    npm run dev
    ```
 
+4. Open `http://localhost:3000` (use `localhost`, not `127.0.0.1` — see `AGENTS.md` for the WebGL/HMR origin caveat).
+
 ## Available scripts
 
 ```bash
-npm run dev
-npm run build
-npm run lint
-npm run type-check
-npm run format:check
+npm run dev           # Start Next dev server
+npm run build         # Production build
+npm run start         # Serve the production build
+npm run lint          # ESLint over the repo
+npm run type-check    # TypeScript without emit
+npm run format:check  # Prettier check
+npm run format        # Prettier write
+npm run smoke:test    # Playwright smoke tests
+npm run analyze       # ANALYZE=true next build (bundle-analyzer)
 ```
+
+## Documentation
+
+| File | Purpose |
+|---|---|
+| `AGENTS.md` | Agent instructions — codebase map, dev commands, edge cases. Loaded automatically by OpenCode. |
+| `CLAUDE.md` | Project context for Claude — Vietnamese-mixed English, conventions, CodeGraph usage, parity/visual work. |
+| `DESIGN.md` | **Single source of truth for UI consistency** — colors, typography, spacing, layout, components, animation, responsive, CSS architecture, accessibility. |
+| `PLAN.md` | Quy trình cập nhật `WORKLOG.md` sau mỗi task (template + thứ tự thực hiện). |
+| `WORKLOG.md` | Timeline history của tất cả tasks đã thực hiện (files changed + summary table + bài học rút ra). |
+| `REFACTOR_PLAN.md` | Refactor backlog grouped by phase, with ✅/⚠️ status per item. |
 
 ## Environment variables
 
