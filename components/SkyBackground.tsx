@@ -343,7 +343,7 @@ export default function SkyBackground() {
       if (time - lastDrawTime < 1000 / 30) return;
       lastDrawTime = time;
       const elapsed = (time - startTime) / 1000;
-      const offset = (elapsed * 0.015) % 1.2;
+      const offset = (elapsed * 0.05) % 1.2;
       drawScene(offset);
     };
 

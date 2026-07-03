@@ -9,6 +9,16 @@
   gap: 8px;
   pointer-events: auto;
   opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.site-nav--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.site-nav--visible {
+  opacity: 1;
 }
 
 .site-nav a,
