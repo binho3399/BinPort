@@ -169,6 +169,11 @@
   margin: 0;
   overflow: hidden;
 }
+.projects-marquee__placeholder {
+  width: 100%;
+  height: 100%;
+  background: #2a2a28;
+}
 .projects-marquee__figure img {
   object-fit: cover;
   width: 100%;

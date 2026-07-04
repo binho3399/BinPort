@@ -31,7 +31,7 @@ export default function ProjectsPage() {
                   key={`set-${setIdx}`}
                   aria-hidden={setIdx > 0 ? 'true' : undefined}
                 >
-                  {set.map((project, projectIdx) => (
+                  {set.map((project) => (
                     <div
                       key={`${setIdx}-${project.title}`}
                       className="projects-marquee__item"
@@ -47,16 +47,24 @@ export default function ProjectsPage() {
                         onBlur={() => setActiveProject(null)}
                       >
                         <figure className="projects-marquee__figure">
-                          <Image
-                            src={project.image}
-                            alt={`${project.title} preview`}
-                            width={1600}
-                            height={900}
-                            sizes="(max-width: 768px) 92vw, (max-width: 1280px) 42vw, 33vw"
-                            loading={setIdx === 0 && projectIdx === 0 ? 'eager' : 'lazy'}
-                            fetchPriority={setIdx === 0 && projectIdx === 0 ? 'high' : 'auto'}
-                            draggable={false}
-                          />
+                          {project.image ? (
+                            <Image
+                              src={project.image}
+                              alt={`${project.title} preview`}
+                              width={1600}
+                              height={900}
+                              sizes="(max-width: 768px) 92vw, (max-width: 1280px) 42vw, 33vw"
+                              priority={setIdx === 0}
+                              loading={setIdx === 1 ? 'eager' : undefined}
+                              draggable={false}
+                            />
+                          ) : (
+                            <div
+                              className="projects-marquee__placeholder"
+                              aria-label={`${project.title} preview unavailable`}
+                              role="img"
+                            />
+                          )}
                         </figure>
                       </a>
                     </div>

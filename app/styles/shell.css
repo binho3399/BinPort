@@ -96,6 +96,7 @@
 
 .home-rotate-hint span {
   order: 2;
+  white-space: pre-line;
 }
 
 .home-rotate-hint::before {

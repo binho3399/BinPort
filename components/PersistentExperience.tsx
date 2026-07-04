@@ -103,7 +103,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
       <SiteNav currentRoute={route} onNavigate={handleNavigate} />
       {isHomeShellRoute ? (
         <div className="home-rotate-hint" aria-hidden="true">
-          <span>Scroll to rotate model 3D</span>
+          <span>Scroll to rotate\nmodel 3D</span>
         </div>
       ) : null}
       {isContactShellRoute ? null : (

@@ -19,9 +19,9 @@ export const contactLinks = {
 export const homeContent = {
   ariaLabel: 'Signal Pole',
   meta: [
-    { label: 'Base', value: 'HO CHI MINH, VIET NAM' },
+    { label: 'Base', value: 'HO CHI MINH,\nVIET NAM' },
     { label: 'Focus', value: 'UXUI DESIGN,\nWEB/APP DEV AI' },
-    { label: 'Index', value: 'Portfolio 2026' },
+    { label: 'Index', value: 'Portfolio\n2026' },
   ],
 };
 
@@ -73,6 +73,6 @@ export const projectsPageContent = {
 };
 
 export const webglText = {
-  contactLabels: ['コンタクト', 'CONTACT'],
+  contactLabels: ['LIÊN HỆ', 'CONTACT'],
   projectsMarquee: 'PROJECTS ARCHIVE / PROJECTS ARCHIVE / PROJECTS ARCHIVE / ',
 };
