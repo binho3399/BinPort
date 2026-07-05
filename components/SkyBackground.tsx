@@ -174,6 +174,18 @@ const WRAP_MODULUS = 1.2;
 const BOB_AMPLITUDE = 0.015;
 const ALPHA_BREATH_AMP = 0.05;
 const DRIFT_AMPLITUDE = 0.04;
+const PARALLAX_X_AMP = 0.04;
+const PARALLAX_Y_AMP = 0.06;
+
+// --- Vivid-mode overrides (used when ?sky=vivid is active) ---
+const BOB_AMPLITUDE_VIVID = 0;
+const DRIFT_AMPLITUDE_VIVID = 0.06;
+const ALPHA_BREATH_AMP_VIVID = 0.07;
+const HUE_CYCLE_PERIOD_VIVID = 90;
+const LIGHT_CYCLE_PERIOD_VIVID = 8;
+const LIGHT_HIGHLIGHT_AMP_VIVID = 0.22;
+const GUST_AMP = 0;
+const GUST_PERIOD = 25;
 
 // Reference radius for baked puff sprites. Sprites scale to on-screen size
 // at draw time; clouds are soft so a moderate reference keeps memory low.
@@ -312,7 +324,7 @@ function buildRenderClouds(): RenderCloud[] {
     return {
       cloud,
       sizeScale: cloud.scale * (0.55 + cloud.depth * 0.45),
-      parallax: 0.2 + cloud.depth * 0.8,
+      parallax: 0.1 + cloud.depth * 1.4,
       // Feature 1: vertical bobbing phase/period (deterministic from depth)
       bobPhase: 2 * Math.PI * cloud.depth * 13.7,
       bobPeriod: 18 + (depthSeed * 7) % 13,
@@ -363,6 +375,17 @@ function buildBackground(
   return canvas;
 }
 
+/** Deterministic seeded PRNG (mulberry32) for stable particle positions. */
+function mulberry32(seed: number): () => number {
+  return () => {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 export default function SkyBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -375,6 +398,7 @@ export default function SkyBackground() {
     const prefersReduced = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches;
+    const vivid = true;
 
     // Sprites are pure data -> build once for the component's lifetime.
     const renderClouds = buildRenderClouds();
@@ -382,6 +406,11 @@ export default function SkyBackground() {
     let rafId = 0;
     let startTime = 0;
     let lastDrawTime = 0;
+    // Vivid-mode: pointer lerp state
+    let pointerX = 0, pointerY = 0, targetX = 0, targetY = 0;
+    let haloCanvas: HTMLCanvasElement | null = null;
+    type VividParticle = { x: number; y: number; r: number; alpha: number; speedMul: number; bobPhase: number; bobPeriod: number };
+    let particles: VividParticle[] | null = null;
     // Feature 4: hue drift rebuild state (mutable copy of stops)
     const currentStops = SKY_STOPS.map((s) => ({ ...s }));
     let lastHueRebuild = 0;
@@ -397,6 +426,34 @@ export default function SkyBackground() {
       canvas.style.width = `${window.innerWidth}px`;
       canvas.style.height = `${window.innerHeight}px`;
       bgCanvas = buildBackground(w, h, currentStops);
+      if (vivid) {
+        haloCanvas = document.createElement('canvas');
+        haloCanvas.width = w;
+        haloCanvas.height = h;
+        const hctx = haloCanvas.getContext('2d');
+        if (hctx) {
+          const gx = w * 0.82, gy = h * 0.18;
+          const grd = hctx.createRadialGradient(gx, gy, 0, gx, gy, Math.max(w, h) * 0.6);
+          grd.addColorStop(0, 'rgba(255, 250, 235, 0.5)');
+          grd.addColorStop(0.35, 'rgba(255, 245, 220, 0.12)');
+          grd.addColorStop(1, 'rgba(255, 245, 220, 0)');
+          hctx.fillStyle = grd;
+          hctx.fillRect(0, 0, w, h);
+        }
+        if (!particles) {
+          const rng = mulberry32(1337);
+          const count = window.innerWidth <= 768 ? 12 : 25;
+          particles = Array.from({ length: count }, () => ({
+            x: rng(),
+            y: rng(),
+            r: rng() > 0.5 ? 3 : 2,
+            alpha: 0.2 + rng() * 0.3,
+            speedMul: 0.6 + rng() * 0.8,
+            bobPhase: rng() * 2 * Math.PI,
+            bobPeriod: 12 + rng() * 8,
+          }));
+        }
+      }
     };
 
     const drawScene = (elapsed: number) => {
@@ -406,7 +463,7 @@ export default function SkyBackground() {
 
       // --- Feature 4: Time-of-day hue drift (rebuild bg every 2s) ---
       if (!prefersReduced && elapsed - lastHueRebuild >= HUE_REBUILD_INTERVAL) {
-        const hueDelta = HUE_AMPLITUDE_DEG * Math.sin(2 * Math.PI * elapsed / HUE_CYCLE_PERIOD);
+        const hueDelta = HUE_AMPLITUDE_DEG * Math.sin(2 * Math.PI * elapsed / (vivid ? HUE_CYCLE_PERIOD_VIVID : HUE_CYCLE_PERIOD));
         for (let i = 0; i < currentStops.length; i++) {
           const stopFactor = 1 - currentStops[i].t * HUE_TOP_SHIFT_FACTOR;
           currentStops[i] = {
@@ -418,11 +475,12 @@ export default function SkyBackground() {
         lastHueRebuild = elapsed;
       }
 
-      // --- Feature 3b: Light shift (rebuild sprites every 120s) ---
-      if (!prefersReduced && elapsed - lastLightCycle >= LIGHT_CYCLE_PERIOD) {
+      // --- Feature 3b: Light shift (rebuild sprites every 120s / 8s for vivid) ---
+      if (!prefersReduced && elapsed - lastLightCycle >= (vivid ? LIGHT_CYCLE_PERIOD_VIVID : LIGHT_CYCLE_PERIOD)) {
         const hlAngle = elapsed * LIGHT_ANGLE_SPEED;
-        const hlX = SPRITE_RADIUS * LIGHT_HIGHLIGHT_AMP * Math.sin(hlAngle);
-        const hlY = SPRITE_RADIUS * LIGHT_HIGHLIGHT_AMP * Math.cos(hlAngle * 0.8);
+        const lightAmp = vivid ? LIGHT_HIGHLIGHT_AMP_VIVID : LIGHT_HIGHLIGHT_AMP;
+        const hlX = SPRITE_RADIUS * lightAmp * Math.sin(hlAngle);
+        const hlY = SPRITE_RADIUS * lightAmp * Math.cos(hlAngle * 0.8);
         for (const rc of renderClouds) {
           for (const rp of rc.puffs) {
             rp.sprite = buildPuffSprite(rc.cloud, rp.puff, hlX, hlY);
@@ -434,37 +492,55 @@ export default function SkyBackground() {
       ctx.clearRect(0, 0, width, height);
       ctx.drawImage(bgCanvas, 0, 0);
 
-      // Feature 5 SKIPPED — no wind gust modulation, constant base speed.
-      const offset = (elapsed * WIND_BASE_SPEED) % WRAP_MODULUS;
+      if (vivid) {
+        pointerX += (targetX - pointerX) * 0.05;
+        pointerY += (targetY - pointerY) * 0.05;
+        if (haloCanvas) {
+          const haloAlpha = Math.min(Math.max(1 + 0.06 * Math.sin(2 * Math.PI * elapsed / 20), 0.85), 1.15);
+          ctx.globalAlpha = haloAlpha;
+          ctx.drawImage(haloCanvas, 0, 0);
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      const gust = vivid ? GUST_AMP * Math.sin(2 * Math.PI * elapsed / GUST_PERIOD) : 0;
+      const offset = (elapsed * (WIND_BASE_SPEED + gust)) % WRAP_MODULUS;
 
       for (const rc of renderClouds) {
         const { cloud, puffs, sizeScale, parallax, bobPhase, bobPeriod, alphaPhase, alphaPeriod } = rc;
         const animatedX = (cloud.x + offset * parallax) % WRAP_MODULUS;
-        const cx = animatedX * width;
+        let cx = animatedX * width;
 
-        // --- Feature 1: Vertical bobbing (±1.5% vh, period 18-30s) ---
+        // --- Feature 1: Vertical bobbing (±1.5% vh / ±2.2% vivid, period 18-30s) ---
         let bobOffset = 0;
         if (!prefersReduced) {
-          bobOffset = BOB_AMPLITUDE * height * Math.sin(2 * Math.PI * elapsed / bobPeriod + bobPhase);
+          bobOffset = (vivid ? BOB_AMPLITUDE_VIVID : BOB_AMPLITUDE) * height * Math.sin(2 * Math.PI * elapsed / bobPeriod + bobPhase);
         }
-        const cy = cloud.y * height + bobOffset;
+        let cy = cloud.y * height + bobOffset;
 
-        // --- Feature 3a: Breathing alpha (±5%, per cloud, period 8-15s) ---
+        if (vivid) {
+          const maxParallaxX = width * PARALLAX_X_AMP; // ~2% vw at parallax=1
+          const maxParallaxY = height * PARALLAX_Y_AMP; // ~3% vh at parallax=1
+          cx += pointerX * maxParallaxX * parallax;
+          cy += pointerY * maxParallaxY * parallax;
+        }
+
+        // --- Feature 3a: Breathing alpha (±5% / ±7% vivid, per cloud, period 8-15s) ---
         let alphaMul = 1;
         if (!prefersReduced) {
-          alphaMul = 1 + ALPHA_BREATH_AMP * Math.sin(2 * Math.PI * elapsed / alphaPeriod + alphaPhase);
+          alphaMul = 1 + (vivid ? ALPHA_BREATH_AMP_VIVID : ALPHA_BREATH_AMP) * Math.sin(2 * Math.PI * elapsed / alphaPeriod + alphaPhase);
         }
 
         const drawPuffs = (originX: number) => {
           for (let pi = 0; pi < puffs.length; pi++) {
             const rp = puffs[pi];
-            const { sprite, puff, driftPhaseX, driftPhaseY, driftPeriodX, driftPeriodY } = rp;
+            const { sprite, puff, driftPhaseY, driftPeriodY } = rp;
 
-            // --- Feature 2: Cloud shape evolution (per-puff drift, ±0.04, 12-25s) ---
+            // --- Feature 2: Cloud shape evolution (per-puff drift, ±0.04 / ±0.06 vivid, 12-25s) ---
             let driftX = 0, driftY = 0;
             if (!prefersReduced) {
-              driftX = DRIFT_AMPLITUDE * Math.sin(2 * Math.PI * elapsed / driftPeriodX + driftPhaseX);
-              driftY = DRIFT_AMPLITUDE * Math.sin(2 * Math.PI * elapsed / driftPeriodY + driftPhaseY);
+              driftX = 0; // Vivid: per-puff X drift removed; horizontal motion is wind-driven (left-to-right) only
+              driftY = (vivid ? DRIFT_AMPLITUDE_VIVID : DRIFT_AMPLITUDE) * Math.sin(2 * Math.PI * elapsed / driftPeriodY + driftPhaseY);
             }
 
             const px = originX + (puff.x + driftX) * baseSize * sizeScale;
@@ -482,16 +558,27 @@ export default function SkyBackground() {
           }
         };
 
+        // Always render the primary AND a wrap-around duplicate for seamless looping.
+        // The duplicate sits WRAP_MODULUS widths to the left, ready to enter as the
+        // primary exits the right edge — eliminates the "pop" at animatedX ≈ 1.0.
         if (alphaMul !== 1) ctx.globalAlpha = alphaMul;
         drawPuffs(cx);
+        drawPuffs(cx - WRAP_MODULUS * width);
         if (alphaMul !== 1) ctx.globalAlpha = 1;
-        if (animatedX > 1.0) {
-          if (alphaMul !== 1) ctx.globalAlpha = alphaMul;
-          drawPuffs((animatedX - WRAP_MODULUS) * width);
-          if (alphaMul !== 1) ctx.globalAlpha = 1;
-        }
       }
       ctx.globalAlpha = 1; // safety reset
+
+      if (vivid && particles) {
+        for (const p of particles) {
+          const normX = (p.x + offset * p.speedMul * 0.6) % 1.2;
+          let px = normX * width;
+          if (px > width) px -= width * 1.2;
+          const py = p.y * height + Math.sin(2 * Math.PI * elapsed / p.bobPeriod + p.bobPhase) * 4;
+          if (px < 0) continue;
+          ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
+          ctx.fillRect(px, py, p.r, p.r);
+        }
+      }
     };
 
     const animate = (time: number) => {
@@ -517,6 +604,13 @@ export default function SkyBackground() {
       }
     };
 
+    const onPointerMove = (event: PointerEvent) => {
+      if (event.pointerType === 'touch') return;
+      targetX = (event.clientX / window.innerWidth) * 2 - 1;
+      targetY = (event.clientY / window.innerHeight) * 2 - 1;
+    };
+    const onPointerClear = () => { targetX = 0; targetY = 0; };
+
     const onVisibility = () => {
       if (document.hidden) stop();
       else start();
@@ -530,11 +624,21 @@ export default function SkyBackground() {
       document.addEventListener('visibilitychange', onVisibility);
     }
     window.addEventListener('resize', resize);
+    if (vivid) {
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerleave', onPointerClear);
+      window.addEventListener('blur', onPointerClear);
+    }
 
     return () => {
       stop();
       document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('resize', resize);
+      if (vivid) {
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerleave', onPointerClear);
+        window.removeEventListener('blur', onPointerClear);
+      }
     };
   }, []);
 
