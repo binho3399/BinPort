@@ -12,7 +12,12 @@
     "smoke:test": "playwright test",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
-    "analyze": "ANALYZE=true next build"
+    "analyze": "ANALYZE=true next build",
+    "ai:build": "rtk next build --skip-env",
+    "ai:lint": "rtk eslint .",
+    "ai:typecheck": "rtk tsc --noEmit",
+    "ai:test": "rtk playwright test",
+    "ai:diff": "rtk git diff"
   },
   "keywords": [],
   "author": "",

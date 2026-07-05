@@ -285,3 +285,74 @@ Lịch sử các task đã thực hiện trong project. Mỗi task có table sum
 - **CSS animation thay GSAP loop**: `steps(10)` timing function + 10 keyframes = 12fps jitter, parity-safe ở opacity 0.06 + mix-blend overlay. Bỏ được permanent main-thread tween.
 - **`content-visibility: auto`** chỉ áp dụng cho below-the-fold content (`.projects-gallery`), không cho above-the-fold — tránh blank viewport.
 - **`contain: layout paint style`** trên fixed full-viewport layers (webgl-bg, preloader, film-grain) → isolate rendering, không ảnh hưởng visual.
+
+---
+
+## [2026-07-05] Task: Split `SkyBackground` + `CodeGraphUI` dưới ngưỡng 400 lines, dọn lint warnings, cập nhật docs
+
+**Files thay đổi:**
+- `components/SkyBackground.tsx` (sửa lớn) — 988 → 157 lines. Giữ entry path cũ, chỉ còn orchestration: canvas ref, resize, animation loop, composition call sites.
+- `components/sky/types.ts` (mới, 33 lines) — shared types cho sky render data/config.
+- `components/sky/cloudData.ts` (mới, 18 lines) — static cloud seed data.
+- `components/sky/constants.ts` (mới, 27 lines) — constants cho timing, sizing, motion.
+- `components/sky/colorUtils.ts` (mới, 4 lines) — color helper nhỏ.
+- `components/sky/sprites.ts` (mới, 8 lines) — sprite drawing helper.
+- `components/sky/cirrus.ts` (mới, 32 lines) — cirrus streak rendering.
+- `components/sky/sunGlow.ts` (mới, 22 lines) — sun glow rendering; giữ riêng theo yêu cầu.
+- `components/sky/birds.ts` (mới, 34 lines) — bird silhouette rendering.
+- `app/(debug)/codegraph/CodeGraphUI.tsx` (sửa lớn) — 842 → 120 lines. Giữ entry path cũ, chỉ còn composition layer cho debug graph UI.
+- `app/(debug)/codegraph/types.ts` (mới, 53 lines) — shared graph/data types.
+- `app/(debug)/codegraph/colors.ts` (mới, 20 lines) — color maps + `kindColor` helper.
+- `app/(debug)/codegraph/styles.ts` (mới, 41 lines) — extracted inline style object.
+- `app/(debug)/codegraph/useCodeGraphData.ts` (mới, 34 lines) — fetch/state hook.
+- `app/(debug)/codegraph/parts/ForceGraph.tsx` (mới, 14 lines) — force-graph wrapper.
+- `app/(debug)/codegraph/parts/StatsPanel.tsx` (mới, 5 lines) — stats panel component.
+- `app/(debug)/codegraph/parts/NodeDetailPanel.tsx` (mới, 5 lines) — selected-node panel component.
+- `app/(debug)/codegraph/parts/Legend.tsx` (mới, 4 lines) — legend component.
+- `components/WebGLScene.tsx` (sửa nhỏ) — thêm `gl` vào `useEffect` deps để sạch `react-hooks/exhaustive-deps`.
+- `components/sky/sprites.ts` (sửa nhỏ) — bỏ constant/import không dùng.
+- `components/SkyBackground.tsx` (sửa nhỏ hậu-refactor) — bỏ cirrus import không dùng.
+- `REFACTOR_PLAN.md` (sửa) — thêm status entries cho `SkyBackground` và `CodeGraphUI` split.
+- `WORKLOG.md` (sửa) — append entry này.
+
+### Summary
+
+| # | Vấn đề / Yêu cầu | Giải pháp | Kết quả |
+|---|---|---|---|
+| 1 | `components/SkyBackground.tsx` quá lớn (988 lines), khó maintain | Extract data/helpers/renderers sang `components/sky/*`, giữ `SkyBackground.tsx` là orchestrator | `SkyBackground.tsx` còn 157 lines, mọi file sky đều < 40 lines |
+| 2 | Cần giữ `sunGlow` tách riêng thay vì gộp vào helper generic | Tạo `components/sky/sunGlow.ts` riêng | Đúng yêu cầu, entry responsibilities rõ ràng |
+| 3 | `app/(debug)/codegraph/CodeGraphUI.tsx` quá lớn (842 lines) dù chỉ là debug UI | Tách types/colors/styles/hook/panels/force-graph wrapper ra module riêng | `CodeGraphUI.tsx` còn 120 lines, toàn bộ debug UI dễ đọc hơn |
+| 4 | Cần giữ import paths cũ cho 2 entry files | Không đổi public path của `components/SkyBackground.tsx` và `app/(debug)/codegraph/CodeGraphUI.tsx`; chỉ move internals | Call sites không cần đổi path, refactor an toàn |
+| 5 | Sau refactor vẫn còn lint warnings | Dọn unused imports/constants + fix hook deps trong `WebGLScene.tsx` | `npm run lint` sạch warnings/errors |
+| 6 | Cần xác nhận refactor không làm hỏng build/type state | Chạy `npm run type-check`, `npm run lint`, `npm run build` | Cả 3 lệnh pass |
+| 7 | Docs chưa reflect work mới | Update `REFACTOR_PLAN.md` + append `WORKLOG.md` entry | Tài liệu khớp current state |
+
+### Verification
+- `npm run type-check` ✅
+- `npm run lint` ✅
+- `npm run build` ✅
+
+### Final line counts
+- `components/SkyBackground.tsx` — 157
+- `components/sky/birds.ts` — 34
+- `components/sky/cirrus.ts` — 32
+- `components/sky/cloudData.ts` — 18
+- `components/sky/colorUtils.ts` — 4
+- `components/sky/constants.ts` — 27
+- `components/sky/sprites.ts` — 8
+- `components/sky/sunGlow.ts` — 22
+- `components/sky/types.ts` — 33
+- `app/(debug)/codegraph/CodeGraphUI.tsx` — 120
+- `app/(debug)/codegraph/colors.ts` — 20
+- `app/(debug)/codegraph/styles.ts` — 41
+- `app/(debug)/codegraph/types.ts` — 53
+- `app/(debug)/codegraph/useCodeGraphData.ts` — 34
+- `app/(debug)/codegraph/parts/ForceGraph.tsx` — 14
+- `app/(debug)/codegraph/parts/Legend.tsx` — 4
+- `app/(debug)/codegraph/parts/NodeDetailPanel.tsx` — 5
+- `app/(debug)/codegraph/parts/StatsPanel.tsx` — 5
+
+### Bài học rút ra
+- **Giữ stable entry file, tách internals ra folder con** là cách mechanical refactor an toàn nhất khi mục tiêu chính là giảm file size mà không đổi call sites.
+- **Debug-only code vẫn đáng tách** nếu file đã >800 lines; độ hiếm sử dụng không làm giảm chi phí maintainability.
+- **Second pass sau extract đầu tiên là cần thiết**: lần đầu thường chỉ move code cơ học; lần hai mới làm rõ trách nhiệm module và dọn lint sạch.

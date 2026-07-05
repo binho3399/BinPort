@@ -82,6 +82,42 @@ Removes ~30 lines of duplication.
 
 - **Status:** ✅ Done (in spirit). `prepareScene.ts` was restructured; the three `apply*Material` functions are now driven by config maps in the same file. Verify final shape in `components/webgl/prepareScene.ts` if a follow-up pass wants to push the table out further.
 
+### 2.4 Split `SkyBackground.tsx` (988 lines)
+
+Keep `components/SkyBackground.tsx` as the stable entry path, but move rendering helpers and data into focused modules:
+
+| New file | Responsibility | Lines moved |
+|---|---|---|
+| `components/sky/types.ts` | Shared cloud/bird/render config types | ~30 |
+| `components/sky/cloudData.ts` | Static cloud seed data | ~20 |
+| `components/sky/constants.ts` | Animation and sizing constants | ~30 |
+| `components/sky/colorUtils.ts` | Small color helpers | ~5 |
+| `components/sky/sprites.ts` | Cloud sprite drawing helpers | ~10 |
+| `components/sky/cirrus.ts` | Cirrus streak drawing | ~35 |
+| `components/sky/sunGlow.ts` | Sun glow rendering | ~25 |
+| `components/sky/birds.ts` | Bird silhouette rendering | ~35 |
+| `components/SkyBackground.tsx` | Orchestrator only — animation loop, resize, composition | ~160 |
+
+**Status:** ✅ Done. `components/SkyBackground.tsx` is down to ~157 lines and now delegates to `components/sky/{types,cloudData,constants,colorUtils,sprites,cirrus,sunGlow,birds}.ts`. `sunGlow.ts` remains a separate module as intended.
+
+### 2.5 Split `app/(debug)/codegraph/CodeGraphUI.tsx` (842 lines)
+
+Keep `app/(debug)/codegraph/CodeGraphUI.tsx` as the stable entry path, but extract debug-only graph internals into smaller modules:
+
+| New file | Responsibility | Lines moved |
+|---|---|---|
+| `app/(debug)/codegraph/types.ts` | Shared graph/data types | ~50 |
+| `app/(debug)/codegraph/colors.ts` | Color maps and `kindColor` helper | ~20 |
+| `app/(debug)/codegraph/styles.ts` | Extracted inline style objects | ~40 |
+| `app/(debug)/codegraph/useCodeGraphData.ts` | Fetching + state hook | ~35 |
+| `app/(debug)/codegraph/parts/ForceGraph.tsx` | Force graph wrapper | ~15 |
+| `app/(debug)/codegraph/parts/StatsPanel.tsx` | Stats panel | ~5 |
+| `app/(debug)/codegraph/parts/NodeDetailPanel.tsx` | Selected node panel | ~5 |
+| `app/(debug)/codegraph/parts/Legend.tsx` | Legend panel | ~5 |
+| `app/(debug)/codegraph/CodeGraphUI.tsx` | Composition only | ~120 |
+
+**Status:** ✅ Done. `app/(debug)/codegraph/CodeGraphUI.tsx` is down to ~120 lines and composes the extracted hook, styles, types, and `parts/*` modules while preserving the existing import path.
+
 ---
 
 ## Phase 3 — CSS Architecture (low risk, high consistency)
@@ -225,6 +261,8 @@ And wrap config with `@next/bundle-analyzer` plugin.
 | P1 | 2.3 Dedup materials | 20 min | Maintainability | ✅ Done (in `prepareScene.ts`) |
 | P2 | 2.1 Split PersistentExperience | 1-2 hr | Core maintainability | ✅ Done |
 | P2 | 2.2 Split SignalModel | 1-2 hr | Core maintainability | ✅ Done (+ extra hooks) |
+| P2 | 2.4 Split SkyBackground | 1-2 hr | Canvas maintainability | ✅ Done |
+| P2 | 2.5 Split CodeGraphUI | 45-90 min | Debug maintainability | ✅ Done |
 | P2 | 3.2 Split shell.css | 30 min | CSS maintainability | ✅ Done |
 | P3 | 4.2 Gate video texture | 30 min | Measurable perf | ⚠️ Needs audit |
 | P3 | 4.3 Unify render loops | 1 hr | Measurable perf | ⚠️ Partial (30fps throttle done; loops still independent) |

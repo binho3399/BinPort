@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { routes } from '../lib/routes';
 import type { RouteId } from '../lib/routes';
 
@@ -11,6 +12,12 @@ type SiteNavProps = {
 
 export default function SiteNav({ currentRoute, onNavigate }: SiteNavProps) {
   const [isReady, setIsReady] = useState(false);
+  const router = useRouter();
+
+  const prefetchRoute = (href: string) => {
+    if (href === '/') return;
+    router.prefetch(href);
+  };
 
   useEffect(() => {
     const id = window.setTimeout(() => setIsReady(true), 100);
@@ -28,6 +35,8 @@ export default function SiteNav({ currentRoute, onNavigate }: SiteNavProps) {
           type="button"
           aria-current={currentRoute === id ? 'page' : undefined}
           onClick={() => onNavigate(href)}
+          onPointerEnter={() => prefetchRoute(href)}
+          onFocus={() => prefetchRoute(href)}
         >
           {label}
         </button>

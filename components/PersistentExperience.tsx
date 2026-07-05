@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Cursor from './Cursor';
 import SkyBackground from './SkyBackground';
 import Preloader from './Preloader';
@@ -22,6 +22,7 @@ const WebGLScene = dynamic(() => import('./WebGLScene'), {
 
 export default function PersistentExperience({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const route = getRouteId(pathname);
   const isHomeShellRoute = isHomeRoute(route);
   const isContactShellRoute = isContactRoute(route);
@@ -38,13 +39,36 @@ export default function PersistentExperience({ children }: { children: ReactNode
     const handleEntered = () => setHasEnteredExperience(true);
     onInteractionEvent(window, 'entered', handleEntered);
     return () => offInteractionEvent(window, 'entered', handleEntered);
-  }, [hasEnteredExperience]);
+  }, [hasEnteredExperience, router]);
 
   useEffect(() => {
     if (!hasEnteredExperience) return undefined;
     const id = window.setTimeout(() => setShowOverlayExtras(true), 650);
     return () => window.clearTimeout(id);
-  }, [hasEnteredExperience]);
+  }, [hasEnteredExperience, router]);
+
+  useEffect(() => {
+    if (!hasEnteredExperience) return undefined;
+
+    const warmRoutes = () => {
+      router.prefetch('/projects');
+      router.prefetch('/about');
+      router.prefetch('/contact');
+    };
+
+    const idleCallbackId =
+      typeof window.requestIdleCallback === 'function'
+        ? window.requestIdleCallback(warmRoutes, { timeout: 2000 })
+        : window.setTimeout(warmRoutes, 900);
+
+    return () => {
+      if (typeof window.cancelIdleCallback === 'function' && typeof idleCallbackId === 'number') {
+        window.cancelIdleCallback(idleCallbackId);
+      } else {
+        window.clearTimeout(idleCallbackId);
+      }
+    };
+  }, [hasEnteredExperience, router]);
 
   useEffect(() => {
     if (!isHomeShellRoute) return;

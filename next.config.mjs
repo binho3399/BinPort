@@ -9,6 +9,19 @@ const withBundleAnalyzer = bundleAnalyzer({
 const nextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: path.resolve(process.cwd()),
+  async headers() {
+    return [
+      {
+        source: '/:path((?:models|videos|projects|fonts)/:asset*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, must-revalidate',
+          },
+        ],
+      },
+    ];
+  },
   experimental: {
     optimizePackageImports: [
       'three',

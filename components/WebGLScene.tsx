@@ -17,6 +17,7 @@ type WebGLSceneProps = {
 
 function RenderScheduler({ interactive }: { interactive: boolean }) {
   const { gl, invalidate } = useThree();
+  const glDomElement = gl.domElement;
   const activeUntil = useRef(0);
   const activeFrame = useRef<number | null>(null);
   const contextLost = useRef(false);
@@ -48,7 +49,7 @@ function RenderScheduler({ interactive }: { interactive: boolean }) {
       if (isVisible()) requestActiveRender();
     };
 
-    const canvas = gl.domElement;
+    const canvas = glDomElement;
     const interactiveEvents = [
       'wheel',
       'pointerenter',
@@ -104,7 +105,7 @@ function RenderScheduler({ interactive }: { interactive: boolean }) {
         });
       }
     };
-  }, [gl.domElement, interactive, invalidate]);
+  }, [gl, glDomElement, interactive, invalidate]);
 
   return null;
 }
