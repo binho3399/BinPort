@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { getInteractiveCanvasHit, getMaterialLabel, SIGN_MATERIAL_NAMES } from './hitTest';
 import { updateAnimatedTextures, updateTrafficLights } from './textureAnimation';
 import type { AnimatedTexturesState, InteractiveSignSurface, TrafficLight } from './types';
+import { skyTransition } from '../../lib/skyTransition';
 
 type UseSignalModelFrameOptions = {
   interactive: boolean;
@@ -103,6 +104,11 @@ export function useSignalModelFrame(options: UseSignalModelFrameOptions) {
     }
     mixer.setTime((((scrollRef.current % 1) + 1) % 1) * duration);
     const camera = cameraRef.current;
+    // Gentle dolly up when leaving home — runs while WebGL is still mounted during cover phase
+    if (camera && skyTransition.ascend > 0.001) {
+      camera.position.y += skyTransition.ascend * 0.12;
+      camera.rotation.x -= skyTransition.ascend * 0.055;
+    }
     if (camera && shakeRef.current > 0.0001) {
       const step = Math.min(delta, 1 / 30);
       shakeClockRef.current += 52 * step;

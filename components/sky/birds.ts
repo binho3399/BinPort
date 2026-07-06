@@ -31,6 +31,7 @@ export function drawBirdSilhouette(
   height: number,
   elapsed: number,
   offset: number,
+  ascend = 0,
 ): void {
   ctx.save();
   ctx.lineCap = 'round';
@@ -44,7 +45,7 @@ export function drawBirdSilhouette(
     const tIn  = Math.min(1, Math.max(0, wrapProgress / fadeInWindow));
     const tOut = Math.min(1, Math.max(0, (1 - wrapProgress) / fadeOutWindow));
     const fadeIn  = 1 - (1 - tIn) * (1 - tIn);   // easeOutQuad
-    const fadeOut = tOut * tOut;                   // easeInQuad
+    const fadeOut = 1 - (1 - tOut) * (1 - tOut);  // easeOutQuad — gentle tail, no harsh cutoff
     const wrapFade = Math.min(fadeIn, fadeOut);
     let px = normX * width;
     if (px > width) px -= width * 1.2;
@@ -57,7 +58,7 @@ export function drawBirdSilhouette(
     const wingSpan = 9 * bird.scale;
     const wingLift = (3 + flap * 3.1) * bird.scale;
 
-    ctx.strokeStyle = `rgba(78, 86, 96, ${bird.alpha * wrapFade})`;
+    ctx.strokeStyle = `rgba(78, 86, 96, ${bird.alpha * wrapFade * (1 - ascend)})`;
     ctx.lineWidth = Math.max(1.2, 1.35 * bird.scale);
     ctx.beginPath();
     ctx.moveTo(px - wingSpan, py + wingLift * 0.35);

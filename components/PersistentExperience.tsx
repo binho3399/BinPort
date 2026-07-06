@@ -125,7 +125,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
         preserveAspectRatio="xMidYMin slice"
         aria-hidden="true"
       >
-        <path ref={routeWaveRef} fill="#050505" />
+        <path ref={routeWaveRef} fill="#ddeaf6" />
       </svg>
       {shouldShowShellBackButton(route) ? (
         <button

@@ -7,7 +7,7 @@ import gsap from 'gsap';
 import { emitInteractionEvent } from '../../lib/interactions';
 import type { RouteId } from '../../lib/routes';
 import { getRouteId } from '../../lib/routes';
-import { buildRevealTimeline, setWavePath, waveClosedPath } from '../waveTransition';
+import { skyTransition } from '../../lib/skyTransition';
 
 export function useRouteTransition(children: ReactNode) {
   const pathname = usePathname();
@@ -42,6 +42,8 @@ export function useRouteTransition(children: ReactNode) {
       setDisplayedChildren(children);
       setDisplayRoute(route);
       setTransitionPhase('idle');
+      gsap.killTweensOf(skyTransition);
+      skyTransition.ascend = 0;
       return;
     }
 
@@ -53,31 +55,31 @@ export function useRouteTransition(children: ReactNode) {
       setDisplayRoute(route);
       setTransitionPhase('revealing');
       prevChildren.current = children;
-      routeTimelineRef.current = buildRevealTimeline(path, svg, () => setTransitionPhase('idle'));
+      gsap.killTweensOf(skyTransition);
+      gsap.to(skyTransition, { ascend: 0, duration: 1.2, ease: 'power3.out' });
+      // fade veil out — no wave shape morphing
+      gsap.to(svg, { opacity: 0, duration: 1.0, delay: 0.1, ease: 'power2.out', onComplete: () => setTransitionPhase('idle') });
       return;
     }
 
     setTransitionPhase('covering');
-    const state = { ...waveClosedPath };
-    setWavePath(path, state);
-
+    // set wave path to full cover (static, no animation)
+    path.setAttribute('d', 'M 0 0 H 100 V 100 H 0 Z');
+    gsap.set(svg, { opacity: 1 });
     const coverTl = gsap.timeline({
       onComplete: () => {
         setDisplayedChildren(children);
         setDisplayRoute(route);
         setTransitionPhase('revealing');
         prevChildren.current = children;
-        routeTimelineRef.current = buildRevealTimeline(path, svg, () => setTransitionPhase('idle'));
+        gsap.killTweensOf(skyTransition);
+        gsap.to(skyTransition, { ascend: 0, duration: 1.2, ease: 'power3.out' });
+        gsap.to(svg, { opacity: 0, duration: 1.0, delay: 0.1, ease: 'power2.out', onComplete: () => setTransitionPhase('idle') });
       },
     });
     routeTimelineRef.current = coverTl;
-    coverTl.set(svg, { opacity: 1 }).to(state, {
-      bottomY: 100,
-      controlY: 100,
-      duration: 0.35,
-      ease: 'power2.in',
-      onUpdate: () => setWavePath(path, state),
-    });
+    // small pause so sky ascend is visible before DOM swap
+    coverTl.to({}, { duration: 0.45 });
 
     return () => {
       routeTimelineRef.current?.kill();
@@ -89,6 +91,8 @@ export function useRouteTransition(children: ReactNode) {
     if (pendingNavRef.current) return;
 
     emitInteractionEvent(window, 'cursorReset');
+    gsap.killTweensOf(skyTransition);
+    gsap.to(skyTransition, { ascend: 1, duration: 0.5, ease: 'power2.in' });
 
     const path = routeWaveRef.current;
     if (!path) {
@@ -102,23 +106,18 @@ export function useRouteTransition(children: ReactNode) {
     }
 
     pendingNavRef.current = href;
-    const state = { ...waveClosedPath };
-    setWavePath(path, state);
-
+    // snap veil on — sky ascend is the visual; veil just ensures DOM swap is hidden
+    path.setAttribute('d', 'M 0 0 H 100 V 100 H 0 Z');
     gsap.set(svg, { opacity: 1 });
-    coverTweenRef.current = gsap.to(state, {
-      bottomY: 100,
-      controlY: 100,
-      duration: 0.35,
-      ease: 'power2.in',
-      onUpdate: () => setWavePath(path, state),
-      onComplete: () => {
-        coverTweenRef.current = null;
-        isPreCoveredRef.current = true;
-        const target = pendingNavRef.current;
-        pendingNavRef.current = null;
-        if (target) router.push(target);
-      },
+    // wait for ascend to peak, then push route
+    coverTweenRef.current = gsap.delayedCall(0.45, () => {
+      coverTweenRef.current = null;
+      isPreCoveredRef.current = true;
+      const target = pendingNavRef.current;
+      pendingNavRef.current = null;
+      if (target) router.push(target);
+      gsap.killTweensOf(skyTransition);
+      gsap.to(skyTransition, { ascend: 0, duration: 1.2, ease: 'power3.out' });
     });
   };
 

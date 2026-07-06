@@ -23,6 +23,7 @@ import { buildBackground, buildRenderClouds, mulberry32 } from './sky/sprites';
 import { buildBirds, drawBirdSilhouette } from './sky/birds';
 import type { Bird } from './sky/birds';
 import { buildSunGlowCanvas, drawSunGlow } from './sky/sunGlow';
+import { skyTransition } from '../lib/skyTransition';
 
 export default function SkyBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -66,6 +67,7 @@ export default function SkyBackground() {
     const drawScene = (elapsed: number) => {
       if (!bgCanvas) return;
       const { width, height } = canvas;
+      const ascend = skyTransition.ascend;
       const baseSize = Math.min(width, height);
       ctx.clearRect(0, 0, width, height);
       if (!prefersReduced) {
@@ -88,6 +90,10 @@ export default function SkyBackground() {
         let bobOffset = 0;
         if (!prefersReduced) bobOffset = (vivid ? BOB_AMPLITUDE_VIVID : BOB_AMPLITUDE) * height * Math.sin(2 * Math.PI * elapsed / bobPeriod + bobPhase);
         let cy = cloud.y * height + bobOffset;
+        // Parallax ascend: near clouds (high rc.parallax) rush down faster
+        if (ascend > 0.001) {
+          cy += ascend * rc.parallax * height * 0.45;
+        }
         if (vivid) { cx += pointerX * width * PARALLAX_X_AMP * parallax; cy += pointerY * height * PARALLAX_Y_AMP * parallax; }
         let alphaMul = 1;
         if (!prefersReduced) alphaMul = 1 + (vivid ? ALPHA_BREATH_AMP_VIVID : ALPHA_BREATH_AMP) * Math.sin(2 * Math.PI * elapsed / alphaPeriod + alphaPhase);
@@ -109,7 +115,13 @@ export default function SkyBackground() {
       }
       ctx.globalAlpha = 1;
       if (vivid && particles) {
-        drawBirdSilhouette(ctx, particles, width, height, elapsed, offset);
+        drawBirdSilhouette(ctx, particles, width, height, elapsed, offset, ascend);
+      }
+      if (ascend > 0.01 && !prefersReduced) {
+        ctx.globalAlpha = ascend * 0.55;
+        ctx.fillStyle = '#e8f1fa';
+        ctx.fillRect(0, 0, width, height);
+        ctx.globalAlpha = 1;
       }
     };
 
