@@ -11,25 +11,15 @@ import {
   DRIFT_AMPLITUDE_VIVID,
   GUST_AMP,
   GUST_PERIOD,
-  HUE_AMPLITUDE_DEG,
   HUE_CYCLE_PERIOD,
   HUE_CYCLE_PERIOD_VIVID,
-  HUE_REBUILD_INTERVAL,
-  HUE_TOP_SHIFT_FACTOR,
-  LIGHT_ANGLE_SPEED,
-  LIGHT_CYCLE_PERIOD,
-  LIGHT_CYCLE_PERIOD_VIVID,
-  LIGHT_HIGHLIGHT_AMP,
-  LIGHT_HIGHLIGHT_AMP_VIVID,
   PARALLAX_X_AMP,
   PARALLAX_Y_AMP,
-  SPRITE_RADIUS,
   SPRITE_SCALE,
   WIND_BASE_SPEED,
   WRAP_MODULUS,
 } from './sky/constants';
-import { shiftHueColor } from './sky/colorUtils';
-import { buildBackground, buildPuffSprite, buildRenderClouds, mulberry32 } from './sky/sprites';
+import { buildBackground, buildRenderClouds, mulberry32 } from './sky/sprites';
 import { buildBirds, drawBirdSilhouette } from './sky/birds';
 import type { Bird } from './sky/birds';
 import { buildSunGlowCanvas, drawSunGlow } from './sky/sunGlow';
@@ -53,9 +43,6 @@ export default function SkyBackground() {
     let pointerX = 0, pointerY = 0, targetX = 0, targetY = 0;
     let haloCanvas: HTMLCanvasElement | null = null;
     let particles: Bird[] | null = null;
-    const currentStops = SKY_STOPS.map((s) => ({ ...s }));
-    let lastHueRebuild = 0;
-    let lastLightCycle = 0;
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -65,7 +52,7 @@ export default function SkyBackground() {
       canvas.height = h;
       canvas.style.width = `${window.innerWidth}px`;
       canvas.style.height = `${window.innerHeight}px`;
-      bgCanvas = buildBackground(w, h, currentStops);
+      bgCanvas = buildBackground(w, h, SKY_STOPS);
       if (vivid) {
         haloCanvas = buildSunGlowCanvas(w, h);
         if (!particles) {
@@ -80,25 +67,13 @@ export default function SkyBackground() {
       if (!bgCanvas) return;
       const { width, height } = canvas;
       const baseSize = Math.min(width, height);
-      if (!prefersReduced && elapsed - lastHueRebuild >= HUE_REBUILD_INTERVAL) {
-        const hueDelta = HUE_AMPLITUDE_DEG * Math.sin(2 * Math.PI * elapsed / (vivid ? HUE_CYCLE_PERIOD_VIVID : HUE_CYCLE_PERIOD));
-        for (let i = 0; i < currentStops.length; i++) {
-          const stopFactor = 1 - currentStops[i].t * HUE_TOP_SHIFT_FACTOR;
-          currentStops[i] = { t: currentStops[i].t, color: shiftHueColor(SKY_STOPS[i].color, hueDelta * stopFactor) };
-        }
-        bgCanvas = buildBackground(width, height, currentStops);
-        lastHueRebuild = elapsed;
-      }
-      if (!prefersReduced && elapsed - lastLightCycle >= (vivid ? LIGHT_CYCLE_PERIOD_VIVID : LIGHT_CYCLE_PERIOD)) {
-        const hlAngle = elapsed * LIGHT_ANGLE_SPEED;
-        const lightAmp = vivid ? LIGHT_HIGHLIGHT_AMP_VIVID : LIGHT_HIGHLIGHT_AMP;
-        const hlX = SPRITE_RADIUS * lightAmp * Math.sin(hlAngle);
-        const hlY = SPRITE_RADIUS * lightAmp * Math.cos(hlAngle * 0.8);
-        for (const rc of renderClouds) for (const rp of rc.puffs) rp.sprite = buildPuffSprite(rc.cloud, rp.puff, hlX, hlY);
-        lastLightCycle = elapsed;
-      }
       ctx.clearRect(0, 0, width, height);
+      if (!prefersReduced) {
+        const hueDelta = 0.5 * Math.sin(2 * Math.PI * elapsed / (vivid ? HUE_CYCLE_PERIOD_VIVID : HUE_CYCLE_PERIOD));
+        ctx.filter = `hue-rotate(${hueDelta * 10}deg)`;
+      }
       ctx.drawImage(bgCanvas, 0, 0);
+      ctx.filter = 'none';
       if (vivid) {
         pointerX += (targetX - pointerX) * 0.05;
         pointerY += (targetY - pointerY) * 0.05;
@@ -139,7 +114,7 @@ export default function SkyBackground() {
     };
 
     const animate = (time: number) => { rafId = window.requestAnimationFrame(animate); if (!startTime) startTime = time; if (time - lastDrawTime < 1000 / 30) return; lastDrawTime = time; drawScene((time - startTime) / 1000); };
-    const start = () => { if (rafId) return; lastDrawTime = 0; lastHueRebuild = 0; lastLightCycle = 0; rafId = window.requestAnimationFrame(animate); };
+    const start = () => { if (rafId) return; lastDrawTime = 0; rafId = window.requestAnimationFrame(animate); };
     const stop = () => { if (rafId) { window.cancelAnimationFrame(rafId); rafId = 0; } };
     const onPointerMove = (event: PointerEvent) => { if (event.pointerType === 'touch') return; targetX = (event.clientX / window.innerWidth) * 2 - 1; targetY = (event.clientY / window.innerHeight) * 2 - 1; };
     const onPointerClear = () => { targetX = 0; targetY = 0; };

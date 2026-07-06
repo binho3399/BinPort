@@ -18,9 +18,9 @@ export function buildBirds(rng: () => number, count: number): Bird[] {
     alpha: 0.28 + rng() * 0.24,
     speedMul: 0.35 + rng() * 0.45,
     bobPhase: rng() * 2 * Math.PI,
-    bobPeriod: 10 + rng() * 8,
+    bobPeriod: [15, 12, 10][Math.floor(rng() * 3)],
     flapPhase: rng() * 2 * Math.PI,
-    flapPeriod: 1.8 + rng() * 1.6,
+    flapPeriod: [2, 2.5, 3][Math.floor(rng() * 3)],
   }));
 }
 
@@ -38,6 +38,14 @@ export function drawBirdSilhouette(
 
   for (const bird of birds) {
     const normX = (bird.x + offset * bird.speedMul * 0.22) % 1.2;
+    const wrapProgress = normX / 1.2;
+    const fadeInWindow = 0.15;
+    const fadeOutWindow = 0.45;
+    const tIn  = Math.min(1, Math.max(0, wrapProgress / fadeInWindow));
+    const tOut = Math.min(1, Math.max(0, (1 - wrapProgress) / fadeOutWindow));
+    const fadeIn  = 1 - (1 - tIn) * (1 - tIn);   // easeOutQuad
+    const fadeOut = tOut * tOut;                   // easeInQuad
+    const wrapFade = Math.min(fadeIn, fadeOut);
     let px = normX * width;
     if (px > width) px -= width * 1.2;
     if (px < -24 || px > width + 24) continue;
@@ -49,7 +57,7 @@ export function drawBirdSilhouette(
     const wingSpan = 9 * bird.scale;
     const wingLift = (3 + flap * 3.1) * bird.scale;
 
-    ctx.strokeStyle = `rgba(78, 86, 96, ${bird.alpha})`;
+    ctx.strokeStyle = `rgba(78, 86, 96, ${bird.alpha * wrapFade})`;
     ctx.lineWidth = Math.max(1.2, 1.35 * bird.scale);
     ctx.beginPath();
     ctx.moveTo(px - wingSpan, py + wingLift * 0.35);

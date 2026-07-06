@@ -48,6 +48,10 @@ function removeProfileMaterialGroups(object: SignalMesh) {
   return true;
 }
 
+function disposeOwnedGeometry(geometry: THREE.BufferGeometry) {
+  geometry.dispose();
+}
+
 type SignSurfaceMaterialConfig = {
   emissiveIntensity: number;
   roughness: number;
@@ -81,6 +85,11 @@ function applySignSurfaceMaterial(
   object.material.side = THREE.DoubleSide;
   object.material.needsUpdate = true;
   object.material.name = name;
+}
+
+function disposeOwnedMaterial(material: SignalMaterial | SignalMaterial[]) {
+  if (Array.isArray(material)) return;
+  material.dispose();
 }
 
 function applyShowreelMaterial(object: SignalMesh, texture: THREE.Texture | null) {
@@ -139,6 +148,7 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
   const trafficLights: TrafficLight[] = [];
   const signSurfaces: PreparedSignalScene['signSurfaces'] = [];
   const showreelMesh = { current: null as THREE.Mesh | null };
+  const ownedResources: PreparedSignalScene['ownedResources'] = [];
   const objectsToRemove: THREE.Object3D[] = [];
 
   if (projectsSign?.ctx)
@@ -156,16 +166,24 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
     object.castShadow = true;
     object.receiveShadow = true;
 
-    removeProfileMaterialGroups(mesh);
+    const geometryChanged = removeProfileMaterialGroups(mesh);
+    if (geometryChanged) {
+      const geometry = mesh.geometry;
+      ownedResources.push({ dispose: () => disposeOwnedGeometry(geometry) });
+    }
 
     const name = Array.isArray(mesh.material) ? undefined : mesh.material?.name;
 
     if (name === 'hiroto-profile') {
+      const originalMaterial = mesh.material;
       applySignSurfaceMaterial(
         mesh,
         profileSign?.texture,
         SIGN_SURFACE_MATERIAL_CONFIG['hiroto-profile'],
       );
+      if (!Array.isArray(originalMaterial) && mesh.material !== originalMaterial) {
+        ownedResources.push({ dispose: () => disposeOwnedMaterial(mesh.material) });
+      }
       signSurfaces.push({
         mesh,
         materialName: name satisfies InteractiveSignMaterialName,
@@ -173,11 +191,15 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
       });
     }
     if (name === 'to_projects') {
+      const originalMaterial = mesh.material;
       applySignSurfaceMaterial(
         mesh,
         projectsSign?.texture,
         SIGN_SURFACE_MATERIAL_CONFIG.to_projects,
       );
+      if (!Array.isArray(originalMaterial) && mesh.material !== originalMaterial) {
+        ownedResources.push({ dispose: () => disposeOwnedMaterial(mesh.material) });
+      }
       signSurfaces.push({
         mesh,
         materialName: name satisfies InteractiveSignMaterialName,
@@ -185,7 +207,11 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
       });
     }
     if (name === 'to_contact') {
+      const originalMaterial = mesh.material;
       applySignSurfaceMaterial(mesh, contactSign?.texture, SIGN_SURFACE_MATERIAL_CONFIG.to_contact);
+      if (!Array.isArray(originalMaterial) && mesh.material !== originalMaterial) {
+        ownedResources.push({ dispose: () => disposeOwnedMaterial(mesh.material) });
+      }
       signSurfaces.push({
         mesh,
         materialName: name satisfies InteractiveSignMaterialName,
@@ -193,11 +219,19 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
       });
     }
     if (name === 'hirotos_showreel') {
+      const originalMaterial = mesh.material;
       applyShowreelMaterial(mesh, showreel);
+      if (!Array.isArray(originalMaterial) && mesh.material !== originalMaterial) {
+        ownedResources.push({ dispose: () => disposeOwnedMaterial(mesh.material) });
+      }
       showreelMesh.current = mesh;
     }
     if (name && ['light1', 'light2', 'light3'].includes(name)) {
+      const originalMaterial = mesh.material;
       applyTrafficLightMaterial(mesh, name, trafficLights);
+      if (!Array.isArray(originalMaterial) && mesh.material !== originalMaterial) {
+        ownedResources.push({ dispose: () => disposeOwnedMaterial(mesh.material) });
+      }
     }
   });
 
@@ -211,5 +245,9 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
     contactTime: 0,
     profileTime: 0,
   };
-  return { clone, animatedTextures, trafficLights, signSurfaces, showreelMesh: showreelMesh.current };
+  [projectsSign, contactSign, profileSign].forEach((resource) => {
+    if (resource) ownedResources.push({ dispose: () => resource.texture.dispose() });
+  });
+  if (showreel) ownedResources.push({ dispose: () => showreel.dispose() });
+  return { clone, animatedTextures, trafficLights, signSurfaces, showreelMesh: showreelMesh.current, ownedResources };
 }

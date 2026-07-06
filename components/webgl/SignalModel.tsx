@@ -35,6 +35,8 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
   const animatedTexturesRef = useRef<AnimatedTexturesState | null>(null);
   const trafficLightsRef = useRef<TrafficLight[]>([]);
   const showreelMeshRef = useRef<THREE.Mesh | null>(null);
+  const showreelVideoTextureRef = useRef<THREE.VideoTexture | null>(null);
+  const ownedResourcesRef = useRef<Array<{ dispose: () => void }>>([]);
   const hoverPointerDirty = useRef(false);
   const textureFrameTimes = useRef({ contact: 0, profile: 0, projects: 0 });
   const [hasInteracted, setHasInteracted] = useState(false);
@@ -61,6 +63,7 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
     animatedTexturesRef.current = prepared.animatedTextures;
     trafficLightsRef.current = prepared.trafficLights;
     showreelMeshRef.current = prepared.showreelMesh;
+    ownedResourcesRef.current = prepared.ownedResources;
     textureFrameTimes.current = { contact: 0, profile: 0, projects: 0 };
     hasVideoApplied.current = false;
   }, [prepared]);
@@ -70,11 +73,12 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
   }, [highQuality, invalidate]);
 
   useEffect(() => {
-    if (hasVideoApplied.current) return;
+    if (!hasInteracted || hasVideoApplied.current) return;
     const mesh = showreelMeshRef.current;
     if (!mesh || Array.isArray(mesh.material)) return;
     const texture = tryCreateShowreelVideoTexture();
     if (!texture) return;
+    showreelVideoTextureRef.current = texture;
     const material = mesh.material.clone() as THREE.MeshStandardMaterial;
     material.map = texture;
     material.emissiveMap = texture;
@@ -82,7 +86,7 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
     mesh.material = material;
     hasVideoApplied.current = true;
     invalidate();
-  }, [invalidate]);
+  }, [hasInteracted, invalidate]);
 
   useEffect(() => {
     if (hasInteracted) return undefined;
@@ -115,6 +119,25 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
       mixer.uncacheRoot(preparedScene);
     };
   }, [animations, preparedScene]);
+
+  useEffect(() => {
+    return () => {
+      const material = showreelMeshRef.current?.material;
+      if (material && !Array.isArray(material)) {
+        const standardMaterial = material as THREE.MeshStandardMaterial;
+        standardMaterial.map = null;
+        standardMaterial.emissiveMap = null;
+      }
+      showreelVideoTextureRef.current?.dispose();
+      const video = showreelVideoTextureRef.current?.source?.data as HTMLVideoElement | undefined;
+      if (video) {
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
+      }
+      ownedResourcesRef.current.forEach((resource) => resource.dispose());
+    };
+  }, []);
 
   const isCanvasHovered = useRef(false);
   const { dispatchCursorLabel, hoverPointer } = useModelCursor();

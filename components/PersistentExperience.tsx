@@ -39,13 +39,13 @@ export default function PersistentExperience({ children }: { children: ReactNode
     const handleEntered = () => setHasEnteredExperience(true);
     onInteractionEvent(window, 'entered', handleEntered);
     return () => offInteractionEvent(window, 'entered', handleEntered);
-  }, [hasEnteredExperience, router]);
+  }, [hasEnteredExperience]);
 
   useEffect(() => {
     if (!hasEnteredExperience) return undefined;
     const id = window.setTimeout(() => setShowOverlayExtras(true), 650);
     return () => window.clearTimeout(id);
-  }, [hasEnteredExperience, router]);
+  }, [hasEnteredExperience]);
 
   useEffect(() => {
     if (!hasEnteredExperience) return undefined;
@@ -74,6 +74,24 @@ export default function PersistentExperience({ children }: { children: ReactNode
     if (!isHomeShellRoute) return;
     void import('./WebGLScene');
     void import('./webgl/SignalModel');
+
+    const warmModel = () => {
+      const fetchMode = typeof fetch === 'function' ? { cache: 'force-cache' as const } : undefined;
+      void fetch('/models/model.glb', fetchMode).catch(() => {});
+    };
+
+    const idleCallbackId =
+      typeof window.requestIdleCallback === 'function'
+        ? window.requestIdleCallback(warmModel, { timeout: 2000 })
+        : window.setTimeout(warmModel, 300);
+
+    return () => {
+      if (typeof window.cancelIdleCallback === 'function' && typeof idleCallbackId === 'number') {
+        window.cancelIdleCallback(idleCallbackId);
+      } else {
+        window.clearTimeout(idleCallbackId);
+      }
+    };
   }, [isHomeShellRoute]);
 
   useEffect(() => {

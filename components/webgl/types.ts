@@ -22,6 +22,10 @@ export type TrafficLight = {
   activeColor: THREE.Color;
 };
 
+export type PreparedSignalSceneResource = {
+  dispose: () => void;
+};
+
 export type InteractiveSignMaterialName = 'hiroto-profile' | 'to_projects' | 'to_contact';
 
 export type InteractiveSignSurface = {
@@ -36,4 +40,5 @@ export type PreparedSignalScene = {
   trafficLights: TrafficLight[];
   signSurfaces: InteractiveSignSurface[];
   showreelMesh: THREE.Mesh | null;
+  ownedResources: PreparedSignalSceneResource[];
 };
