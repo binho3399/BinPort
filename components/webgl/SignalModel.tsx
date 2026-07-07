@@ -1,13 +1,15 @@
 'use client';
 
-import { useThree } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import * as THREE from 'three';
 import { prepareSignalScene } from './prepareScene';
 import { useModelCamera } from './useModelCamera';
+import type { InteractiveCanvasHit } from './hitTest';
 import type { AnimatedTexturesState, InteractiveSignSurface, TrafficLight } from './types';
+import { emitInteractionEvent } from '../../lib/interactions';
 import { useNavigate } from '../../lib/navigationContext';
 import { tryCreateShowreelVideoTextureResource } from './textures';
 import { getRouteForMaterial } from './modelRoutes';
@@ -31,6 +33,30 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
   const hoverPointerDirty = useRef(false);
   const textureFrameTimes = useRef({ contact: 0, profile: 0, projects: 0 });
   const hasVideoApplied = useRef(false);
+  const portalNavigationTimerRef = useRef<number | null>(null);
+  const isPortalNavigationPendingRef = useRef(false);
+  const portalPulseStartedAtRef = useRef<number | null>(null);
+  const portalPulseBaseRef = useRef<{
+    position: THREE.Vector3;
+    rotation: THREE.Euler;
+    scale: THREE.Vector3;
+  } | null>(null);
+  const activeSignGlowRef = useRef<{
+    material: THREE.MeshStandardMaterial;
+    startedAt: number;
+    baseEmissive: THREE.Color;
+    baseEmissiveIntensity: number;
+  } | null>(null);
+
+  function restoreActiveSignGlow() {
+    const active = activeSignGlowRef.current;
+    if (!active) return;
+
+    active.material.emissive.copy(active.baseEmissive);
+    active.material.emissiveIntensity = active.baseEmissiveIntensity;
+    active.material.needsUpdate = true;
+    activeSignGlowRef.current = null;
+  }
 
   const prepared = useMemo(() => prepareSignalScene(scene), [scene]);
   const preparedScene = prepared.clone;
@@ -105,6 +131,12 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
 
   useEffect(() => {
     return () => {
+      if (portalNavigationTimerRef.current !== null) {
+        window.clearTimeout(portalNavigationTimerRef.current);
+        portalNavigationTimerRef.current = null;
+      }
+      isPortalNavigationPendingRef.current = false;
+      restoreActiveSignGlow();
       const material = showreelMeshRef.current?.material;
       if (material && !Array.isArray(material)) {
         const standardMaterial = material as THREE.MeshStandardMaterial;
@@ -120,25 +152,144 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
   const isCanvasHovered = useRef(false);
   const { dispatchCursorLabel, hoverPointer } = useModelCursor();
 
+  const getHitStandardMaterial = useCallback((hit: InteractiveCanvasHit) => {
+    const mesh = hit.intersection.object as THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>;
+    const material = Array.isArray(mesh.material)
+      ? mesh.material[hit.intersection.face?.materialIndex ?? 0]
+      : mesh.material;
+
+    return material instanceof THREE.MeshStandardMaterial ? material : null;
+  }, []);
+
+  useFrame(() => {
+    const startedAt = portalPulseStartedAtRef.current;
+    const base = portalPulseBaseRef.current;
+    const modelGroup = group.current;
+    if (startedAt === null || !base || !modelGroup) return;
+
+    const elapsed = performance.now() - startedAt;
+    const progress = Math.min(elapsed / 220, 1);
+    const lift = Math.sin(progress * Math.PI);
+    const settle = 1 - Math.pow(1 - progress, 3);
+
+    modelGroup.scale.set(
+      base.scale.x * (1 + lift * 0.018),
+      base.scale.y * (1 + lift * 0.018),
+      base.scale.z * (1 + lift * 0.018),
+    );
+    modelGroup.rotation.set(
+      base.rotation.x - lift * 0.012,
+      base.rotation.y + lift * 0.018,
+      base.rotation.z - lift * 0.006,
+    );
+    modelGroup.position.set(
+      base.position.x,
+      base.position.y + lift * 0.035,
+      base.position.z - settle * 0.035,
+    );
+
+    if (progress >= 1) {
+      modelGroup.position.copy(base.position);
+      modelGroup.rotation.copy(base.rotation);
+      modelGroup.scale.copy(base.scale);
+      portalPulseStartedAtRef.current = null;
+      portalPulseBaseRef.current = null;
+      return;
+    }
+
+    invalidate();
+  });
+
+  useFrame(() => {
+    const active = activeSignGlowRef.current;
+    if (!active) return;
+
+    const elapsed = performance.now() - active.startedAt;
+    const progress = Math.min(elapsed / 520, 1);
+    const flare = Math.sin(progress * Math.PI);
+    const warmSignal = new THREE.Color('#8fc8ff').lerp(new THREE.Color('#ffd38a'), flare * 0.35);
+
+    active.material.emissive.copy(active.baseEmissive).lerp(warmSignal, flare * 0.72);
+    active.material.emissiveIntensity = active.baseEmissiveIntensity + flare * 0.95;
+    active.material.needsUpdate = true;
+
+    if (progress >= 1) {
+      restoreActiveSignGlow();
+      return;
+    }
+
+    invalidate();
+  });
+
   const navigateToMaterial = useCallback(
-    (materialName: string) => {
+    (hit: InteractiveCanvasHit, event: MouseEvent | PointerEvent) => {
+      if (isPortalNavigationPendingRef.current) return;
+
+      const { materialName } = hit;
       const href = getRouteForMaterial(materialName);
 
       if (!href) return;
 
-      if (navigate) {
-        navigate(href);
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      emitInteractionEvent(window, 'modelPortalStart', {
+        href,
+        materialName,
+        clientX: event.clientX,
+        clientY: event.clientY,
+      });
+
+      const performNavigation = () => {
+        isPortalNavigationPendingRef.current = false;
+
+        if (navigate) {
+          navigate(href);
+          return;
+        }
+
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn(
+            '[SignalModel] Missing NavigationContext. Internal sign navigation requires PersistentExperience.',
+            { href, materialName },
+          );
+        }
+      };
+
+      if (prefersReducedMotion) {
+        performNavigation();
         return;
       }
 
-      if (process.env.NODE_ENV !== 'production') {
-        console.warn(
-          '[SignalModel] Missing NavigationContext. Internal sign navigation requires PersistentExperience.',
-          { href, materialName },
-        );
+      restoreActiveSignGlow();
+      const signMaterial = getHitStandardMaterial(hit);
+      if (signMaterial) {
+        activeSignGlowRef.current = {
+          material: signMaterial,
+          startedAt: performance.now(),
+          baseEmissive: signMaterial.emissive.clone(),
+          baseEmissiveIntensity: signMaterial.emissiveIntensity,
+        };
+        invalidate();
       }
+
+      const modelGroup = group.current;
+      if (modelGroup) {
+        portalPulseBaseRef.current = {
+          position: modelGroup.position.clone(),
+          rotation: modelGroup.rotation.clone(),
+          scale: modelGroup.scale.clone(),
+        };
+        portalPulseStartedAtRef.current = performance.now();
+        invalidate();
+      }
+
+      isPortalNavigationPendingRef.current = true;
+      portalNavigationTimerRef.current = window.setTimeout(() => {
+        portalNavigationTimerRef.current = null;
+        performNavigation();
+      }, 90);
     },
-    [navigate],
+    [getHitStandardMaterial, invalidate, navigate],
   );
 
   const { handlePointerDown, handlePointerUp, handleClick, handlePointerMissed } =

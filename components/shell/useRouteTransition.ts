@@ -2,9 +2,10 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
-import { emitInteractionEvent } from '../../lib/interactions';
+import { emitInteractionEvent, offInteractionEvent, onInteractionEvent } from '../../lib/interactions';
+import type { ModelPortalStartDetail } from '../../lib/interactions';
 import type { RouteId } from '../../lib/routes';
 import { getRouteId, normalizeRoutePath } from '../../lib/routes';
 import { skyTransition } from '../../lib/skyTransition';
@@ -23,6 +24,7 @@ export function useRouteTransition(children: ReactNode) {
   const prevChildren = useRef<ReactNode | null>(null);
   const pendingNavRef = useRef<string | null>(null);
   const fallbackTimeoutRef = useRef<number | null>(null);
+  const modelPortalOriginRef = useRef<ModelPortalStartDetail | null>(null);
   const isPreCoveredRef = useRef(false);
   const [displayRoute, setDisplayRoute] = useState<RouteId | null>(null);
   const [displayedChildren, setDisplayedChildren] = useState<ReactNode>(children);
@@ -50,6 +52,41 @@ export function useRouteTransition(children: ReactNode) {
     gsap.to(skyTransition, { ascend: 0, duration: 1.2, ease: 'power3.out' });
   }, [clearPendingNavigation, router]);
 
+  useEffect(() => {
+    const handleModelPortalStart = (event: CustomEvent<ModelPortalStartDetail>) => {
+      modelPortalOriginRef.current = event.detail;
+    };
+
+    onInteractionEvent(window, 'modelPortalStart', handleModelPortalStart);
+    return () => offInteractionEvent(window, 'modelPortalStart', handleModelPortalStart);
+  }, []);
+
+  const applyModelPortalOrigin = useCallback((svg: HTMLElement, href: string) => {
+    const origin = modelPortalOriginRef.current;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!origin || origin.href !== href || reducedMotion) {
+      gsap.set(svg, { scale: 1, transformOrigin: '50% 50%' });
+      return false;
+    }
+
+    const x = Math.round((origin.clientX / window.innerWidth) * 1000) / 10;
+    const y = Math.round((origin.clientY / window.innerHeight) * 1000) / 10;
+    svg.style.setProperty('--route-wave-origin-x', `${x}%`);
+    svg.style.setProperty('--route-wave-origin-y', `${y}%`);
+    svg.dataset.origin = 'model';
+    gsap.set(svg, { scale: 0.94, transformOrigin: `${x}% ${y}%` });
+    return true;
+  }, []);
+
+  const clearModelPortalOrigin = useCallback((svg?: HTMLElement | null) => {
+    modelPortalOriginRef.current = null;
+    if (!svg) return;
+    delete svg.dataset.origin;
+    svg.style.removeProperty('--route-wave-origin-x');
+    svg.style.removeProperty('--route-wave-origin-y');
+    gsap.set(svg, { scale: 1, transformOrigin: '50% 50%' });
+  }, []);
+
   useLayoutEffect(() => {
     routeTimelineRef.current?.kill();
     routeTimelineRef.current = null;
@@ -71,6 +108,7 @@ export function useRouteTransition(children: ReactNode) {
       setTransitionPhase('idle');
       setWavePath(path, waveClosedPath);
       gsap.set(svg, { opacity: 0 });
+      clearModelPortalOrigin(svg);
       gsap.killTweensOf(skyTransition);
       skyTransition.ascend = 0;
       return;
@@ -87,7 +125,10 @@ export function useRouteTransition(children: ReactNode) {
       prevChildren.current = children;
       gsap.killTweensOf(skyTransition);
       gsap.to(skyTransition, { ascend: 0, duration: 1.2, ease: 'power3.out' });
-      routeTimelineRef.current = buildRevealTimeline(path, svg, () => setTransitionPhase('idle'));
+      routeTimelineRef.current = buildRevealTimeline(path, svg, () => {
+        setTransitionPhase('idle');
+        clearModelPortalOrigin(svg);
+      });
       return;
     }
 
@@ -104,7 +145,10 @@ export function useRouteTransition(children: ReactNode) {
         prevChildren.current = children;
         gsap.killTweensOf(skyTransition);
         gsap.to(skyTransition, { ascend: 0, duration: 1.2, ease: 'power3.out' });
-        routeTimelineRef.current = buildRevealTimeline(path, svg, () => setTransitionPhase('idle'));
+        routeTimelineRef.current = buildRevealTimeline(path, svg, () => {
+          setTransitionPhase('idle');
+          clearModelPortalOrigin(svg);
+        });
       },
     });
     routeTimelineRef.current = coverTl;
@@ -126,7 +170,7 @@ export function useRouteTransition(children: ReactNode) {
       routeTimelineRef.current?.kill();
       routeTimelineRef.current = null;
     };
-  }, [children, clearPendingNavigation, route]);
+  }, [children, clearModelPortalOrigin, clearPendingNavigation, route]);
 
   useLayoutEffect(() => {
     return () => {
@@ -170,6 +214,7 @@ export function useRouteTransition(children: ReactNode) {
       finishPendingNavigation(pendingNavRef.current);
     }, NAVIGATION_FAILSAFE_MS);
     const coverState = { ...waveClosedPath };
+    const hasModelOrigin = applyModelPortalOrigin(svg, href);
     setWavePath(path, coverState);
     gsap.set(svg, { opacity: 1 });
     const coverTl = gsap.timeline({
@@ -178,6 +223,9 @@ export function useRouteTransition(children: ReactNode) {
       },
     });
     coverTweenRef.current = coverTl;
+    if (hasModelOrigin) {
+      coverTl.to(svg, { scale: 1, duration: 0.42, ease: 'power3.out' }, 0);
+    }
     coverTl
       .to(coverState, {
         ...waveMidPath,

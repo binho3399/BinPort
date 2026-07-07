@@ -3,6 +3,7 @@ export const interactionEventNames = {
   cursorLeave: 'signal-pole:cursor-leave',
   cursorReset: 'signal-pole:cursor-reset',
   entered: 'signal-pole:entered',
+  modelPortalStart: 'signal-pole:model-portal-start',
 } as const;
 
 export type InteractionEventName = keyof typeof interactionEventNames;
@@ -12,17 +13,23 @@ export type CursorEnterDetail = {
   showArrow?: boolean;
 };
 
+export type ModelPortalStartDetail = {
+  href: string;
+  materialName: string;
+  clientX: number;
+  clientY: number;
+};
+
 type InteractionEventPayloads = {
   cursorEnter: CursorEnterDetail;
   cursorLeave: undefined;
   cursorReset: undefined;
   entered: undefined;
+  modelPortalStart: ModelPortalStartDetail;
 };
 
 type InteractionEventMap = {
-  [K in InteractionEventName]: K extends 'cursorEnter'
-    ? CustomEvent<CursorEnterDetail>
-    : CustomEvent<undefined>;
+  [K in InteractionEventName]: CustomEvent<InteractionEventPayloads[K]>;
 };
 
 export function createInteractionEvent<K extends InteractionEventName>(

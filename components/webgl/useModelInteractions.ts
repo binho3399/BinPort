@@ -4,11 +4,12 @@ import { useCallback, useRef } from 'react';
 import type { ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { getInteractiveCanvasHit, SIGN_MATERIAL_NAMES } from './hitTest';
+import type { InteractiveCanvasHit } from './hitTest';
 import type { InteractiveSignSurface } from './types';
 
 type UseModelInteractionsOptions = {
   interactive: boolean;
-  navigateToMaterial: (materialName: string) => void;
+  navigateToMaterial: (hit: InteractiveCanvasHit, event: MouseEvent | PointerEvent) => void;
   dispatchCursorLabel: (label: string | null) => void;
   raycaster: THREE.Raycaster;
   raycastTargets: readonly THREE.Object3D[];
@@ -25,13 +26,12 @@ export function useModelInteractions({
 }: UseModelInteractionsOptions) {
   const touchStart = useRef<{ id: number; x: number; y: number } | null>(null);
 
-  const getInteractiveMaterialNameFromRay = useCallback(
+  const getInteractiveHitFromRay = useCallback(
     (ray: THREE.Ray) => {
       raycaster.ray.copy(ray);
       const intersections = raycaster.intersectObjects([...raycastTargets], true);
       intersections.sort((a, b) => a.distance - b.distance);
-      return getInteractiveCanvasHit(intersections, SIGN_MATERIAL_NAMES, signSurfaces, raycaster.ray)
-        ?.materialName;
+      return getInteractiveCanvasHit(intersections, SIGN_MATERIAL_NAMES, signSurfaces, raycaster.ray);
     },
     [raycastTargets, raycaster, signSurfaces],
   );
@@ -60,22 +60,22 @@ export function useModelInteractions({
         event.nativeEvent.clientY - start.y,
       );
       if (dist > 12) return;
-      const materialName = getInteractiveMaterialNameFromRay(event.ray);
-      if (!materialName) return;
-      navigateToMaterial(materialName);
+      const hit = getInteractiveHitFromRay(event.ray);
+      if (!hit) return;
+      navigateToMaterial(hit, event.nativeEvent);
     },
-    [getInteractiveMaterialNameFromRay, interactive, navigateToMaterial],
+    [getInteractiveHitFromRay, interactive, navigateToMaterial],
   );
 
   const handleClick = useCallback(
     (event: ThreeEvent<MouseEvent>) => {
       if (!interactive) return;
       if ((event.nativeEvent as PointerEvent).pointerType === 'touch') return;
-      const materialName = getInteractiveMaterialNameFromRay(event.ray);
-      if (!materialName) return;
-      navigateToMaterial(materialName);
+      const hit = getInteractiveHitFromRay(event.ray);
+      if (!hit) return;
+      navigateToMaterial(hit, event.nativeEvent);
     },
-    [getInteractiveMaterialNameFromRay, interactive, navigateToMaterial],
+    [getInteractiveHitFromRay, interactive, navigateToMaterial],
   );
 
   const handlePointerMissed = useCallback(() => {

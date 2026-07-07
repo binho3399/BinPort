@@ -8,4 +8,9 @@
   pointer-events: none;
   opacity: 0;
   fill: var(--wave-fill);
+  transform-origin: var(--route-wave-origin-x, 50%) var(--route-wave-origin-y, 50%);
+}
+
+.route-wave[data-origin='model'] {
+  will-change: transform;
 }

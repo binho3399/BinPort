@@ -31,6 +31,8 @@ export default function PersistentExperience({ children }: { children: ReactNode
     () => typeof document !== 'undefined' && document.documentElement.classList.contains('is-entered'),
   );
   const [showOverlayExtras, setShowOverlayExtras] = useState(false);
+  const [holdWebGLForPortal, setHoldWebGLForPortal] = useState(false);
+  const webglHoldTimeoutRef = useRef<number | null>(null);
   const { routeWaveRef, displayRoute, displayedChildren, transitionPhase, handleNavigate } =
     useRouteTransition(children);
 
@@ -46,6 +48,40 @@ export default function PersistentExperience({ children }: { children: ReactNode
     const id = window.setTimeout(() => setShowOverlayExtras(true), 650);
     return () => window.clearTimeout(id);
   }, [hasEnteredExperience]);
+
+  useEffect(() => {
+    const clearWebGLHoldTimeout = () => {
+      if (webglHoldTimeoutRef.current !== null) {
+        window.clearTimeout(webglHoldTimeoutRef.current);
+        webglHoldTimeoutRef.current = null;
+      }
+    };
+
+    const handleModelPortalStart = () => {
+      clearWebGLHoldTimeout();
+      setHoldWebGLForPortal(true);
+      webglHoldTimeoutRef.current = window.setTimeout(() => {
+        setHoldWebGLForPortal(false);
+        webglHoldTimeoutRef.current = null;
+      }, 1800);
+    };
+
+    onInteractionEvent(window, 'modelPortalStart', handleModelPortalStart);
+    return () => {
+      clearWebGLHoldTimeout();
+      offInteractionEvent(window, 'modelPortalStart', handleModelPortalStart);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (transitionPhase !== 'idle' || isHomeShellRoute || !holdWebGLForPortal) return;
+    if (webglHoldTimeoutRef.current !== null) {
+      window.clearTimeout(webglHoldTimeoutRef.current);
+      webglHoldTimeoutRef.current = null;
+    }
+    const id = window.setTimeout(() => setHoldWebGLForPortal(false), 0);
+    return () => window.clearTimeout(id);
+  }, [holdWebGLForPortal, isHomeShellRoute, transitionPhase]);
 
   useEffect(() => {
     if (!hasEnteredExperience) return undefined;
@@ -116,7 +152,9 @@ export default function PersistentExperience({ children }: { children: ReactNode
         <div className="sky-layer">
           <SkyBackground />
         </div>
-        {isHomeShellRoute ? <WebGLScene interactive={hasEnteredExperience} /> : null}
+        {isHomeShellRoute || holdWebGLForPortal ? (
+          <WebGLScene interactive={isHomeShellRoute && hasEnteredExperience} />
+        ) : null}
       </div>
       <Preloader />
       <svg
