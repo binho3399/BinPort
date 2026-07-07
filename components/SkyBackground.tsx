@@ -25,6 +25,8 @@ import type { Bird } from './sky/birds';
 import { buildSunGlowCanvas, drawSunGlow } from './sky/sunGlow';
 import { skyTransition } from '../lib/skyTransition';
 
+const wrapPosition = (value: number, modulus: number) => ((value % modulus) + modulus) % modulus;
+
 export default function SkyBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -88,10 +90,10 @@ export default function SkyBackground() {
         drawSunGlow(ctx, haloCanvas, elapsed);
       }
       const gust = vivid ? GUST_AMP * Math.sin(2 * Math.PI * elapsed / GUST_PERIOD) : 0;
-      const offset = (elapsed * (WIND_BASE_SPEED + gust)) % WRAP_MODULUS;
+      const windOffset = elapsed * (WIND_BASE_SPEED + gust);
       for (const rc of renderClouds) {
         const { cloud, puffs, sizeScale, parallax, bobPhase, bobPeriod, alphaPhase, alphaPeriod } = rc;
-        const animatedX = (cloud.x + offset * parallax) % WRAP_MODULUS;
+        const animatedX = wrapPosition(cloud.x + windOffset * parallax, WRAP_MODULUS);
         let cx = animatedX * width;
         let bobOffset = 0;
         if (!prefersReduced) bobOffset = (vivid ? BOB_AMPLITUDE_VIVID : BOB_AMPLITUDE) * height * Math.sin(2 * Math.PI * elapsed / bobPeriod + bobPhase);
@@ -105,12 +107,19 @@ export default function SkyBackground() {
         if (!prefersReduced) alphaMul = 1 + (vivid ? ALPHA_BREATH_AMP_VIVID : ALPHA_BREATH_AMP) * Math.sin(2 * Math.PI * elapsed / alphaPeriod + alphaPhase);
         const drawPuffs = (originX: number) => {
           for (const rp of puffs) {
-            const { sprite, puff, driftPhaseY, driftPeriodY } = rp;
+            const { sprite, puff, driftPhaseX, driftPhaseY, driftPeriodX, driftPeriodY } = rp;
+            let driftX = 0;
             let driftY = 0;
-            if (!prefersReduced) driftY = (vivid ? DRIFT_AMPLITUDE_VIVID : DRIFT_AMPLITUDE) * Math.sin(2 * Math.PI * elapsed / driftPeriodY + driftPhaseY);
-            const px = originX + puff.x * baseSize * sizeScale;
+            let scaleBreath = 1;
+            if (!prefersReduced) {
+              const driftAmp = vivid ? DRIFT_AMPLITUDE_VIVID : DRIFT_AMPLITUDE;
+              driftX = driftAmp * 0.28 * Math.sin(2 * Math.PI * elapsed / driftPeriodX + driftPhaseX);
+              driftY = driftAmp * Math.sin(2 * Math.PI * elapsed / driftPeriodY + driftPhaseY);
+              scaleBreath = 1 + 0.018 * Math.sin(2 * Math.PI * elapsed / (driftPeriodX * 1.7) + driftPhaseX * 0.73);
+            }
+            const px = originX + (puff.x + driftX) * baseSize * sizeScale;
             const py = cy + (puff.y + driftY) * baseSize * sizeScale;
-            const drawR = puff.r * baseSize * sizeScale;
+            const drawR = puff.r * baseSize * sizeScale * scaleBreath;
             const drawHalf = drawR * SPRITE_SCALE;
             ctx.drawImage(sprite, px - drawHalf, py - drawHalf, drawHalf * 2, drawHalf * 2);
           }
@@ -121,7 +130,7 @@ export default function SkyBackground() {
       }
       ctx.globalAlpha = 1;
       if (vivid && particles) {
-        drawBirdSilhouette(ctx, particles, width, height, elapsed, offset, ascend);
+        drawBirdSilhouette(ctx, particles, width, height, elapsed, windOffset, ascend);
       }
       if (ascend > 0.01 && !prefersReduced) {
         ctx.globalAlpha = ascend * 0.55;

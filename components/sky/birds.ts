@@ -12,6 +12,10 @@ export type Bird = {
   weavePeriod: number;
 };
 
+const BIRD_WRAP_MODULUS = 1.2;
+
+const wrapPosition = (value: number, modulus: number) => ((value % modulus) + modulus) % modulus;
+
 export function buildBirds(rng: () => number, count: number): Bird[] {
   return Array.from({ length: count }, () => ({
     x: rng(),
@@ -34,7 +38,7 @@ export function drawBirdSilhouette(
   width: number,
   height: number,
   elapsed: number,
-  offset: number,
+  windOffset: number,
   ascend = 0,
 ): void {
   ctx.save();
@@ -42,8 +46,8 @@ export function drawBirdSilhouette(
   ctx.lineJoin = 'round';
 
   for (const bird of birds) {
-    const normX = (bird.x + offset * bird.speedMul * 0.22) % 1.2;
-    const wrapProgress = normX / 1.2;
+    const normX = wrapPosition(bird.x + windOffset * bird.speedMul * 0.22, BIRD_WRAP_MODULUS);
+    const wrapProgress = normX / BIRD_WRAP_MODULUS;
     const fadeInWindow = 0.15;
     const fadeOutWindow = 0.45;
     const tIn  = Math.min(1, Math.max(0, wrapProgress / fadeInWindow));
@@ -51,21 +55,24 @@ export function drawBirdSilhouette(
     const fadeIn  = 1 - (1 - tIn) * (1 - tIn);   // easeOutQuad
     const fadeOut = 1 - (1 - tOut) * (1 - tOut);  // easeOutQuad — gentle tail, no harsh cutoff
     const wrapFade = Math.min(fadeIn, fadeOut);
+    const distanceScale = 1 - wrapProgress * 0.42;
+    const distanceFade = 1 - wrapProgress * 0.32;
+    const perspectiveScale = bird.scale * distanceScale;
     let px = normX * width;
-    if (px > width) px -= width * 1.2;
-    px += Math.sin((2 * Math.PI * elapsed) / bird.weavePeriod + bird.weavePhase) * 10 * bird.scale;
+    px += Math.sin((2 * Math.PI * elapsed) / bird.weavePeriod + bird.weavePhase) * 10 * perspectiveScale;
     if (px < -24 || px > width + 24) continue;
 
     const py =
       bird.y * height +
+      wrapProgress * height * -0.06 +
       Math.sin((2 * Math.PI * elapsed) / bird.bobPeriod + bird.bobPhase) * 4 +
       Math.sin((2 * Math.PI * elapsed) / (bird.weavePeriod * 0.7) + bird.weavePhase) * 2.5;
     const flap = Math.sin((2 * Math.PI * elapsed) / bird.flapPeriod + bird.flapPhase);
-    const wingSpan = 9 * bird.scale;
-    const wingLift = (3 + flap * 3.1) * bird.scale;
+    const wingSpan = 9 * perspectiveScale;
+    const wingLift = (3 + flap * 3.1) * perspectiveScale;
 
-    ctx.strokeStyle = `rgba(78, 86, 96, ${bird.alpha * wrapFade * (1 - ascend)})`;
-    ctx.lineWidth = Math.max(1.2, 1.35 * bird.scale);
+    ctx.strokeStyle = `rgba(78, 86, 96, ${bird.alpha * wrapFade * distanceFade * (1 - ascend)})`;
+    ctx.lineWidth = Math.max(0.9, 1.35 * perspectiveScale);
     ctx.beginPath();
     ctx.moveTo(px - wingSpan, py + wingLift * 0.35);
     ctx.quadraticCurveTo(px - wingSpan * 0.45, py - wingLift, px, py);
