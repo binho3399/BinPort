@@ -23,6 +23,7 @@
 
 .site-nav a,
 .site-nav button {
+  position: relative;
   appearance: none;
   min-width: 74px;
   padding: 2px 0 3px;
@@ -44,10 +45,35 @@
     transform 0.18s;
 }
 
+.site-nav a::after,
+.site-nav button::after {
+  position: absolute;
+  right: 0;
+  bottom: -3px;
+  width: 18px;
+  height: 1px;
+  content: '';
+  background: currentColor;
+  opacity: 0;
+  transform: scaleX(0.35);
+  transform-origin: right center;
+  transition:
+    opacity 0.18s,
+    transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
 .site-nav a:hover,
 .site-nav button:hover {
   color: var(--ink);
   transform: translate(-2px);
+}
+
+.site-nav a:hover::after,
+.site-nav button:hover::after,
+.site-nav a[aria-current='page']::after,
+.site-nav button[aria-current='page']::after {
+  opacity: 0.42;
+  transform: scaleX(1);
 }
 
 .site-nav a[aria-current='page'],
@@ -106,6 +132,8 @@
 @media (prefers-reduced-motion: reduce) {
   .site-nav a,
   .site-nav button,
+  .site-nav a::after,
+  .site-nav button::after,
   .back-circle-control {
     transition: none;
   }

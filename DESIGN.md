@@ -72,6 +72,13 @@
 - Mix-blend-mode: `overlay`
 - SVG fractal noise, 256×256 tiles
 
+### Ambient Sky Overlays
+
+- `.webgl-background::before`: soft-light atmospheric veil with white/blue radial gradients + a diagonal light wash
+- `.webgl-background::after`: subtle lower-horizon depth wash using multiply blend
+- Motion: `sky-ambient-drift` over `24s ease-in-out infinite alternate`
+- Reduced motion: ambient drift is disabled under `prefers-reduced-motion`
+
 ---
 
 ## 3. Typography
@@ -213,7 +220,8 @@ Key constraints:
 - Flex column, `align-items: flex-end`, gap `8px`
 - Links: uppercase, `#0b0b0a75` → `#0b0b0a` on hover
 - Hover: `translate(-2px)` left
-- Active page: `[aria-current='page']` → `color: #0b0b0a`
+- Hover/active underline: right-aligned 18px pseudo-element reveal, `currentColor`, `opacity: 0.42`, `scaleX(0.35 → 1)`
+- Active page: `[aria-current='page']` → `color: #0b0b0a` + same underline treatment
 - Hidden during route transition (`opacity: 0`, `pointer-events: none`)
 
 ### Back Circle Control (`.back-circle-control`)
@@ -268,11 +276,14 @@ Key constraints:
 | Context | Duration | Easing |
 |---|---|---|
 | Nav link hover | 0.18s | Default (ease) |
+| Nav underline reveal | 0.18s opacity / 0.26s transform | `cubic-bezier(0.2, 0.8, 0.2, 1)` |
 | Back-circle hover | 0.18s colors / 0.26s transform | `cubic-bezier(0.2, 0.8, 0.2, 1)` |
 | Cursor transition | 0.18s | Default |
 | Language toggle | 0.18s | Default |
 | Project card image zoom | 0.52s | `cubic-bezier(0.2, 0.8, 0.2, 1)` |
 | Contact link hover | 0.18s | Default |
+| Home/about meta line accent | 0.26s opacity / 0.36s transform | `cubic-bezier(0.2, 0.8, 0.2, 1)` |
+| Ambient sky drift | 24s | `ease-in-out` (infinite alternate) |
 | Rotate hint scroll | 1.9s | `ease-in-out` (infinite) |
 | Film grain CSS animation | 0.83s | `steps(10)` (12fps) |
 | Route transition | GSAP-morphed SVG path | `power2.in` cover / `power3.inOut` reveal |
@@ -282,10 +293,13 @@ Key constraints:
 - Subtle, fast transitions (most 0.18s)
 - Transform-based hover effects (translate, scale)
 - Cubic-bezier easing for organic feel (project cards, back-circle)
+- Ambient background motion should feel like slow sky brightness/depth drift, not a separate decorative effect
+- Meta block line accents may animate on hover, but should preserve the existing grid/layout and copy hierarchy
 - `prefers-reduced-motion` disables all non-essential motion
 - Film grain uses CSS animation instead of JS loop for performance
 - WebGL scene throttled: 24fps home / 12fps non-home via RenderScheduler
 - Sky background RAF throttled to 30fps
+- Showreel video texture is muted, inline, looped, and should autoplay once the WebGL model/video texture is ready; it must not wait for hover or first pointer interaction
 
 ---
 

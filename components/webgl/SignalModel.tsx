@@ -2,7 +2,7 @@
 
 import { useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import * as THREE from 'three';
 import { prepareSignalScene } from './prepareScene';
@@ -30,7 +30,6 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
   const ownedResourcesRef = useRef<Array<{ dispose: () => void }>>([]);
   const hoverPointerDirty = useRef(false);
   const textureFrameTimes = useRef({ contact: 0, profile: 0, projects: 0 });
-  const [hasInteracted, setHasInteracted] = useState(false);
   const hasVideoApplied = useRef(false);
 
   const prepared = useMemo(() => prepareSignalScene(scene), [scene]);
@@ -59,7 +58,7 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
   }, [highQuality, invalidate]);
 
   useEffect(() => {
-    if (!hasInteracted || hasVideoApplied.current) return;
+    if (hasVideoApplied.current) return;
     const mesh = showreelMeshRef.current;
     if (!mesh || Array.isArray(mesh.material)) return;
     if (!showreelVideoResourceRef.current) {
@@ -102,21 +101,7 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
     resource.video.addEventListener('canplaythrough', handleReady, { passive: true });
 
     return cleanupListeners;
-  }, [hasInteracted, invalidate]);
-
-  useEffect(() => {
-    if (hasInteracted) return undefined;
-    const markInteracted = () => setHasInteracted(true);
-    const element = gl.domElement;
-    element.addEventListener('pointerdown', markInteracted, { passive: true });
-    element.addEventListener('wheel', markInteracted, { passive: true });
-    element.addEventListener('touchstart', markInteracted, { passive: true });
-    return () => {
-      element.removeEventListener('pointerdown', markInteracted);
-      element.removeEventListener('wheel', markInteracted);
-      element.removeEventListener('touchstart', markInteracted);
-    };
-  }, [gl.domElement, hasInteracted]);
+  }, [invalidate, prepared]);
 
   useEffect(() => {
     return () => {
@@ -169,7 +154,7 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
   useSignalModelFrame({
     interactive,
     highQuality,
-    hasInteracted,
+    hasInteracted: true,
     textureInterval,
     initialTextureInterval,
     hoverPointerDirtyRef: hoverPointerDirty,
