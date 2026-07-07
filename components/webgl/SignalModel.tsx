@@ -9,7 +9,7 @@ import { prepareSignalScene } from './prepareScene';
 import { useModelCamera } from './useModelCamera';
 import type { AnimatedTexturesState, InteractiveSignSurface, TrafficLight } from './types';
 import { useNavigate } from '../../lib/navigationContext';
-import { tryCreateShowreelVideoTexture } from './textures';
+import { tryCreateShowreelVideoTextureResource } from './textures';
 import { getRouteForMaterial } from './modelRoutes';
 import { useModelCursor } from './useModelCursor';
 import { useModelInteractions } from './useModelInteractions';
@@ -26,7 +26,7 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
   const animatedTexturesRef = useRef<AnimatedTexturesState | null>(null);
   const trafficLightsRef = useRef<TrafficLight[]>([]);
   const showreelMeshRef = useRef<THREE.Mesh | null>(null);
-  const showreelVideoTextureRef = useRef<THREE.VideoTexture | null>(null);
+  const showreelVideoResourceRef = useRef<ReturnType<typeof tryCreateShowreelVideoTextureResource> | null>(null);
   const ownedResourcesRef = useRef<Array<{ dispose: () => void }>>([]);
   const hoverPointerDirty = useRef(false);
   const textureFrameTimes = useRef({ contact: 0, profile: 0, projects: 0 });
@@ -36,6 +36,11 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
   const prepared = useMemo(() => prepareSignalScene(scene), [scene]);
   const preparedScene = prepared.clone;
   const signSurfaces: readonly InteractiveSignSurface[] = prepared.signSurfaces;
+  const raycastTargets = useMemo<readonly THREE.Object3D[]>(() => {
+    return signSurfaces.every((surface) => (surface.mesh as THREE.Mesh).isMesh === true)
+      ? signSurfaces.map((surface) => surface.mesh)
+      : [preparedScene];
+  }, [preparedScene, signSurfaces]);
   const cameraRef = useModelCamera(preparedScene);
 
   useEffect(() => {
@@ -45,6 +50,8 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
     ownedResourcesRef.current = prepared.ownedResources;
     textureFrameTimes.current = { contact: 0, profile: 0, projects: 0 };
     hasVideoApplied.current = false;
+    showreelVideoResourceRef.current?.dispose();
+    showreelVideoResourceRef.current = null;
   }, [prepared]);
 
   useEffect(() => {
@@ -55,16 +62,46 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
     if (!hasInteracted || hasVideoApplied.current) return;
     const mesh = showreelMeshRef.current;
     if (!mesh || Array.isArray(mesh.material)) return;
-    const texture = tryCreateShowreelVideoTexture();
-    if (!texture) return;
-    showreelVideoTextureRef.current = texture;
-    const material = mesh.material.clone() as THREE.MeshStandardMaterial;
-    material.map = texture;
-    material.emissiveMap = texture;
-    material.needsUpdate = true;
-    mesh.material = material;
-    hasVideoApplied.current = true;
-    invalidate();
+    if (!showreelVideoResourceRef.current) {
+      showreelVideoResourceRef.current = tryCreateShowreelVideoTextureResource();
+    }
+    const resource = showreelVideoResourceRef.current;
+    if (!resource) return;
+
+    const applyReadyVideoMaterial = () => {
+      if (hasVideoApplied.current) return;
+      const currentMesh = showreelMeshRef.current;
+      if (!currentMesh || Array.isArray(currentMesh.material)) return;
+      const material = currentMesh.material.clone() as THREE.MeshStandardMaterial;
+      material.map = resource.texture;
+      material.emissiveMap = resource.texture;
+      material.needsUpdate = true;
+      currentMesh.material = material;
+      hasVideoApplied.current = true;
+      invalidate();
+    };
+
+    if (resource.isReady()) {
+      applyReadyVideoMaterial();
+      return;
+    }
+
+    const handleReady = () => {
+      cleanupListeners();
+      applyReadyVideoMaterial();
+    };
+
+    const cleanupListeners = () => {
+      resource.video.removeEventListener('loadeddata', handleReady);
+      resource.video.removeEventListener('canplay', handleReady);
+      resource.video.removeEventListener('canplaythrough', handleReady);
+    };
+
+    resource.video.addEventListener('loadeddata', handleReady, { passive: true });
+    resource.video.addEventListener('canplay', handleReady, { passive: true });
+    resource.video.addEventListener('canplaythrough', handleReady, { passive: true });
+
+    return cleanupListeners;
   }, [hasInteracted, invalidate]);
 
   useEffect(() => {
@@ -89,13 +126,8 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
         standardMaterial.map = null;
         standardMaterial.emissiveMap = null;
       }
-      showreelVideoTextureRef.current?.dispose();
-      const video = showreelVideoTextureRef.current?.source?.data as HTMLVideoElement | undefined;
-      if (video) {
-        video.pause();
-        video.removeAttribute('src');
-        video.load();
-      }
+      showreelVideoResourceRef.current?.dispose();
+      showreelVideoResourceRef.current = null;
       ownedResourcesRef.current.forEach((resource) => resource.dispose());
     };
   }, []);
@@ -130,7 +162,7 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
       navigateToMaterial,
       dispatchCursorLabel,
       raycaster,
-      preparedScene,
+      raycastTargets,
       signSurfaces,
     });
 
@@ -145,7 +177,7 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
     isCanvasHoveredRef: isCanvasHovered,
     cameraRef,
     raycaster,
-    preparedScene,
+    raycastTargets,
     signSurfaces,
     dispatchCursorLabel,
     animatedTexturesRef,

@@ -105,8 +105,56 @@ export function makeVideoTexture(src: string): THREE.VideoTexture | null {
   return texture;
 }
 
+export type ShowreelVideoTextureResource = {
+  texture: THREE.VideoTexture;
+  video: HTMLVideoElement;
+  isReady: () => boolean;
+  dispose: () => void;
+};
+
+function isVideoReady(video: HTMLVideoElement) {
+  return video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
+}
+
+export function createShowreelVideoTextureResource(src: string): ShowreelVideoTextureResource | null {
+  if (typeof document === 'undefined') return null;
+  const video = document.createElement('video');
+  video.src = src;
+  video.crossOrigin = 'anonymous';
+  video.loop = true;
+  video.muted = true;
+  video.playsInline = true;
+  video.autoplay = true;
+  video.preload = 'auto';
+  video.play().catch(() => {});
+
+  const texture = new THREE.VideoTexture(video);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  texture.flipY = false;
+  texture.generateMipmaps = false;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+
+  return {
+    texture,
+    video,
+    isReady: () => isVideoReady(video),
+    dispose: () => {
+      texture.dispose();
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+    },
+  };
+}
+
 export function tryCreateShowreelVideoTexture() {
   return makeVideoTexture('/videos/hirotos_showreel.mp4');
+}
+
+export function tryCreateShowreelVideoTextureResource() {
+  return createShowreelVideoTextureResource('/videos/hirotos_showreel.mp4');
 }
 
 export function makeShowreelTexture(): THREE.CanvasTexture | null {

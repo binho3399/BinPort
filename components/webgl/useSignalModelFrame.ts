@@ -17,7 +17,7 @@ type UseSignalModelFrameOptions = {
   isCanvasHoveredRef: React.MutableRefObject<boolean>;
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   raycaster: THREE.Raycaster;
-  preparedScene: THREE.Object3D;
+  raycastTargets: readonly THREE.Object3D[];
   signSurfaces: readonly InteractiveSignSurface[];
   dispatchCursorLabel: (label: string | null) => void;
   animatedTexturesRef: React.MutableRefObject<AnimatedTexturesState | null>;
@@ -37,7 +37,7 @@ export function useSignalModelFrame(options: UseSignalModelFrameOptions) {
     isCanvasHoveredRef,
     cameraRef,
     raycaster,
-    preparedScene,
+    raycastTargets,
     signSurfaces,
     dispatchCursorLabel,
     animatedTexturesRef,
@@ -50,7 +50,7 @@ export function useSignalModelFrame(options: UseSignalModelFrameOptions) {
       hoverPointerDirtyRef.current = false;
       const activeCamera = cameraRef.current ?? (state.camera as THREE.PerspectiveCamera);
       raycaster.setFromCamera(hoverPointerRef.current, activeCamera);
-      const intersections = raycaster.intersectObject(preparedScene, true);
+      const intersections = raycaster.intersectObjects([...raycastTargets], true);
       intersections.sort((a, b) => a.distance - b.distance);
       const materialName = getInteractiveCanvasHit(
         intersections,

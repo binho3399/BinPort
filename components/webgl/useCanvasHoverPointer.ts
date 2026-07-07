@@ -19,9 +19,15 @@ export function useCanvasHoverPointer({
   dispatchCursorLabel,
 }: UseCanvasHoverPointerOptions) {
   useEffect(() => {
+    let bounds: DOMRect | null = null;
+
+    const refreshBounds = () => {
+      bounds = element.getBoundingClientRect();
+    };
+
     const updateHoverPointer = (event: PointerEvent) => {
-      const bounds = element.getBoundingClientRect();
-      if (bounds.width === 0 || bounds.height === 0) return;
+      if (!bounds) refreshBounds();
+      if (!bounds || bounds.width === 0 || bounds.height === 0) return;
 
       hoverPointer.current.set(
         ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
@@ -33,6 +39,7 @@ export function useCanvasHoverPointer({
     const handlePointerEnter = (event: PointerEvent) => {
       if (event.pointerType === 'touch') return;
       isCanvasHovered.current = true;
+      refreshBounds();
       updateHoverPointer(event);
     };
 
@@ -45,17 +52,28 @@ export function useCanvasHoverPointer({
     const handlePointerLeave = () => {
       isCanvasHovered.current = false;
       hoverPointerDirty.current = false;
+      bounds = null;
       dispatchCursorLabel(null);
+    };
+
+    const handleResize = () => {
+      if (!isCanvasHovered.current) {
+        bounds = null;
+        return;
+      }
+      refreshBounds();
     };
 
     element.addEventListener('pointerenter', handlePointerEnter);
     element.addEventListener('pointermove', handlePointerMove);
     element.addEventListener('pointerleave', handlePointerLeave);
+    window.addEventListener('resize', handleResize);
 
     return () => {
       element.removeEventListener('pointerenter', handlePointerEnter);
       element.removeEventListener('pointermove', handlePointerMove);
       element.removeEventListener('pointerleave', handlePointerLeave);
+      window.removeEventListener('resize', handleResize);
     };
   }, [dispatchCursorLabel, element, hoverPointer, hoverPointerDirty, isCanvasHovered]);
 }

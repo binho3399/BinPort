@@ -11,7 +11,7 @@ type UseModelInteractionsOptions = {
   navigateToMaterial: (materialName: string) => void;
   dispatchCursorLabel: (label: string | null) => void;
   raycaster: THREE.Raycaster;
-  preparedScene: THREE.Object3D;
+  raycastTargets: readonly THREE.Object3D[];
   signSurfaces: readonly InteractiveSignSurface[];
 };
 
@@ -20,7 +20,7 @@ export function useModelInteractions({
   navigateToMaterial,
   dispatchCursorLabel,
   raycaster,
-  preparedScene,
+  raycastTargets,
   signSurfaces,
 }: UseModelInteractionsOptions) {
   const touchStart = useRef<{ id: number; x: number; y: number } | null>(null);
@@ -28,12 +28,12 @@ export function useModelInteractions({
   const getInteractiveMaterialNameFromRay = useCallback(
     (ray: THREE.Ray) => {
       raycaster.ray.copy(ray);
-      const intersections = raycaster.intersectObject(preparedScene, true);
+      const intersections = raycaster.intersectObjects([...raycastTargets], true);
       intersections.sort((a, b) => a.distance - b.distance);
       return getInteractiveCanvasHit(intersections, SIGN_MATERIAL_NAMES, signSurfaces, raycaster.ray)
         ?.materialName;
     },
-    [preparedScene, raycaster, signSurfaces],
+    [raycastTargets, raycaster, signSurfaces],
   );
 
   const handlePointerDown = useCallback(
