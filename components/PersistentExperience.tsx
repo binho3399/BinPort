@@ -125,7 +125,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
         preserveAspectRatio="xMidYMin slice"
         aria-hidden="true"
       >
-        <path ref={routeWaveRef} fill="#ddeaf6" />
+        <path ref={routeWaveRef} />
       </svg>
       {shouldShowShellBackButton(route) ? (
         <button
@@ -143,11 +143,6 @@ export default function PersistentExperience({ children }: { children: ReactNode
         {transitionPhase === 'covering' ? displayedChildren : children}
       </div>
       <SiteNav currentRoute={route} onNavigate={handleNavigate} />
-      {isHomeShellRoute ? (
-        <div className="home-rotate-hint" aria-hidden="true">
-          <span>Scroll to rotate\nmodel 3D</span>
-        </div>
-      ) : null}
       {isContactShellRoute ? null : (
         <>
           {showOverlayExtras ? <FilmGrain /> : null}

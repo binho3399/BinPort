@@ -32,12 +32,19 @@ export function isContactRoute(route: RouteId | null) {
   return route === shellRouteFlags.contactShellHidden;
 }
 
+export function normalizeRoutePath(pathname: string) {
+  if (!pathname || pathname === '/') return '/';
+  const normalized = pathname.replace(/\/+$/, '');
+  return normalized || '/';
+}
+
 export function getRouteId(pathname: string): RouteId | null {
-  return routes.find((route) => route.href === pathname)?.id ?? null;
+  const normalizedPath = normalizeRoutePath(pathname);
+  return routes.find((route) => normalizeRoutePath(route.href) === normalizedPath)?.id ?? null;
 }
 
 export const standaloneRoutes = new Set(['/yellow-canvas-test', '/codegraph', '/bg-test-2']);
 
 export function isStandaloneRoute(pathname: string) {
-  return standaloneRoutes.has(pathname);
+  return standaloneRoutes.has(normalizeRoutePath(pathname));
 }

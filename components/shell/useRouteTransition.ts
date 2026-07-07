@@ -2,12 +2,15 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { emitInteractionEvent } from '../../lib/interactions';
 import type { RouteId } from '../../lib/routes';
-import { getRouteId } from '../../lib/routes';
+import { getRouteId, normalizeRoutePath } from '../../lib/routes';
 import { skyTransition } from '../../lib/skyTransition';
+import { buildRevealTimeline, setWavePath, waveClosedPath, waveMidPath, waveOpenPath } from '../waveTransition';
+
+const NAVIGATION_FAILSAFE_MS = 1400;
 
 export function useRouteTransition(children: ReactNode) {
   const pathname = usePathname();
@@ -15,14 +18,37 @@ export function useRouteTransition(children: ReactNode) {
   const router = useRouter();
   const routeWaveRef = useRef<SVGPathElement | null>(null);
   const routeTimelineRef = useRef<gsap.core.Timeline | null>(null);
-  const coverTweenRef = useRef<gsap.core.Tween | null>(null);
+  const coverTweenRef = useRef<gsap.core.Animation | null>(null);
   const prevRoute = useRef<RouteId | null>(null);
   const prevChildren = useRef<ReactNode | null>(null);
   const pendingNavRef = useRef<string | null>(null);
+  const fallbackTimeoutRef = useRef<number | null>(null);
   const isPreCoveredRef = useRef(false);
   const [displayRoute, setDisplayRoute] = useState<RouteId | null>(null);
   const [displayedChildren, setDisplayedChildren] = useState<ReactNode>(children);
   const [transitionPhase, setTransitionPhase] = useState<'idle' | 'covering' | 'revealing'>('idle');
+
+  const clearFallbackTimeout = useCallback(() => {
+    if (fallbackTimeoutRef.current !== null) {
+      window.clearTimeout(fallbackTimeoutRef.current);
+      fallbackTimeoutRef.current = null;
+    }
+  }, []);
+
+  const clearPendingNavigation = useCallback(() => {
+    pendingNavRef.current = null;
+    coverTweenRef.current?.kill();
+    coverTweenRef.current = null;
+    clearFallbackTimeout();
+  }, [clearFallbackTimeout]);
+
+  const finishPendingNavigation = useCallback((target: string | null) => {
+    clearPendingNavigation();
+    isPreCoveredRef.current = true;
+    if (target) router.push(target);
+    gsap.killTweensOf(skyTransition);
+    gsap.to(skyTransition, { ascend: 0, duration: 1.2, ease: 'power3.out' });
+  }, [clearPendingNavigation, router]);
 
   useLayoutEffect(() => {
     routeTimelineRef.current?.kill();
@@ -37,11 +63,14 @@ export function useRouteTransition(children: ReactNode) {
     if (!svg) return;
 
     if (!prevRoute.current || prevRoute.current === route) {
+      clearPendingNavigation();
       prevRoute.current = route;
       prevChildren.current = children;
       setDisplayedChildren(children);
       setDisplayRoute(route);
       setTransitionPhase('idle');
+      setWavePath(path, waveClosedPath);
+      gsap.set(svg, { opacity: 0 });
       gsap.killTweensOf(skyTransition);
       skyTransition.ascend = 0;
       return;
@@ -50,6 +79,7 @@ export function useRouteTransition(children: ReactNode) {
     prevRoute.current = route;
 
     if (isPreCoveredRef.current) {
+      clearPendingNavigation();
       isPreCoveredRef.current = false;
       setDisplayedChildren(children);
       setDisplayRoute(route);
@@ -57,38 +87,67 @@ export function useRouteTransition(children: ReactNode) {
       prevChildren.current = children;
       gsap.killTweensOf(skyTransition);
       gsap.to(skyTransition, { ascend: 0, duration: 1.2, ease: 'power3.out' });
-      // fade veil out — no wave shape morphing
-      gsap.to(svg, { opacity: 0, duration: 1.0, delay: 0.1, ease: 'power2.out', onComplete: () => setTransitionPhase('idle') });
+      routeTimelineRef.current = buildRevealTimeline(path, svg, () => setTransitionPhase('idle'));
       return;
     }
 
     setTransitionPhase('covering');
-    // set wave path to full cover (static, no animation)
-    path.setAttribute('d', 'M 0 0 H 100 V 100 H 0 Z');
+    const coverState = { ...waveClosedPath };
+    setWavePath(path, coverState);
     gsap.set(svg, { opacity: 1 });
     const coverTl = gsap.timeline({
       onComplete: () => {
+        clearPendingNavigation();
         setDisplayedChildren(children);
         setDisplayRoute(route);
         setTransitionPhase('revealing');
         prevChildren.current = children;
         gsap.killTweensOf(skyTransition);
         gsap.to(skyTransition, { ascend: 0, duration: 1.2, ease: 'power3.out' });
-        gsap.to(svg, { opacity: 0, duration: 1.0, delay: 0.1, ease: 'power2.out', onComplete: () => setTransitionPhase('idle') });
+        routeTimelineRef.current = buildRevealTimeline(path, svg, () => setTransitionPhase('idle'));
       },
     });
     routeTimelineRef.current = coverTl;
-    // small pause so sky ascend is visible before DOM swap
-    coverTl.to({}, { duration: 0.45 });
+    coverTl
+      .to(coverState, {
+        ...waveMidPath,
+        duration: 0.28,
+        ease: 'power2.in',
+        onUpdate: () => setWavePath(path, coverState),
+      })
+      .to(coverState, {
+        ...waveOpenPath,
+        duration: 0.22,
+        ease: 'power2.out',
+        onUpdate: () => setWavePath(path, coverState),
+      });
 
     return () => {
       routeTimelineRef.current?.kill();
       routeTimelineRef.current = null;
     };
-  }, [route, children]);
+  }, [children, clearPendingNavigation, route]);
+
+  useLayoutEffect(() => {
+    return () => {
+      clearPendingNavigation();
+      routeTimelineRef.current?.kill();
+      routeTimelineRef.current = null;
+      gsap.killTweensOf(skyTransition);
+    };
+  }, [clearPendingNavigation]);
 
   const handleNavigate = (href: string) => {
-    if (pendingNavRef.current) return;
+    const currentPath = normalizeRoutePath(pathname);
+    const nextPath = normalizeRoutePath(href);
+    if (currentPath === nextPath) {
+      return;
+    }
+
+    if (pendingNavRef.current) {
+      pendingNavRef.current = href;
+      return;
+    }
 
     emitInteractionEvent(window, 'cursorReset');
     gsap.killTweensOf(skyTransition);
@@ -106,19 +165,32 @@ export function useRouteTransition(children: ReactNode) {
     }
 
     pendingNavRef.current = href;
-    // snap veil on — sky ascend is the visual; veil just ensures DOM swap is hidden
-    path.setAttribute('d', 'M 0 0 H 100 V 100 H 0 Z');
+    clearFallbackTimeout();
+    fallbackTimeoutRef.current = window.setTimeout(() => {
+      finishPendingNavigation(pendingNavRef.current);
+    }, NAVIGATION_FAILSAFE_MS);
+    const coverState = { ...waveClosedPath };
+    setWavePath(path, coverState);
     gsap.set(svg, { opacity: 1 });
-    // wait for ascend to peak, then push route
-    coverTweenRef.current = gsap.delayedCall(0.45, () => {
-      coverTweenRef.current = null;
-      isPreCoveredRef.current = true;
-      const target = pendingNavRef.current;
-      pendingNavRef.current = null;
-      if (target) router.push(target);
-      gsap.killTweensOf(skyTransition);
-      gsap.to(skyTransition, { ascend: 0, duration: 1.2, ease: 'power3.out' });
+    const coverTl = gsap.timeline({
+      onComplete: () => {
+        finishPendingNavigation(pendingNavRef.current);
+      },
     });
+    coverTweenRef.current = coverTl;
+    coverTl
+      .to(coverState, {
+        ...waveMidPath,
+        duration: 0.28,
+        ease: 'power2.in',
+        onUpdate: () => setWavePath(path, coverState),
+      })
+      .to(coverState, {
+        ...waveOpenPath,
+        duration: 0.22,
+        ease: 'power2.out',
+        onUpdate: () => setWavePath(path, coverState),
+      });
   };
 
   return {

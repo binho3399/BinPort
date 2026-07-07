@@ -22,7 +22,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  fill: var(--ink);
+  fill: var(--wave-fill);
 }
 
 .preloader__inner {

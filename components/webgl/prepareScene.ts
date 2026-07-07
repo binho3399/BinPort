@@ -235,7 +235,9 @@ export function prepareSignalScene(scene: THREE.Object3D): PreparedSignalScene {
     }
   });
 
-  objectsToRemove.forEach((object) => object.parent?.remove(object));
+  objectsToRemove.forEach((object) => {
+    object.parent?.remove(object);
+  });
 
   const animatedTextures = {
     projectsSign,

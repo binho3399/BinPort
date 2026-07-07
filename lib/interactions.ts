@@ -2,7 +2,6 @@ export const interactionEventNames = {
   cursorEnter: 'signal-pole:cursor-enter',
   cursorLeave: 'signal-pole:cursor-leave',
   cursorReset: 'signal-pole:cursor-reset',
-  resetCameraScroll: 'signal-pole:reset-camera-scroll',
   entered: 'signal-pole:entered',
 } as const;
 
@@ -17,7 +16,6 @@ type InteractionEventPayloads = {
   cursorEnter: CursorEnterDetail;
   cursorLeave: undefined;
   cursorReset: undefined;
-  resetCameraScroll: undefined;
   entered: undefined;
 };
 

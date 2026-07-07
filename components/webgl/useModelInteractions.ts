@@ -3,7 +3,6 @@
 import { useCallback, useRef } from 'react';
 import type { ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
-import { emitInteractionEvent } from '../../lib/interactions';
 import { getInteractiveCanvasHit, SIGN_MATERIAL_NAMES } from './hitTest';
 import type { InteractiveSignSurface } from './types';
 
@@ -81,7 +80,6 @@ export function useModelInteractions({
 
   const handlePointerMissed = useCallback(() => {
     dispatchCursorLabel(null);
-    emitInteractionEvent(window, 'resetCameraScroll');
   }, [dispatchCursorLabel]);
 
   return { handlePointerDown, handlePointerUp, handleClick, handlePointerMissed };

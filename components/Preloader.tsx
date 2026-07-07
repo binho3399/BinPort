@@ -163,12 +163,13 @@ export default function Preloader() {
   if (skipPreloader) return null;
 
   return (
-    <div ref={preloader} className="preloader" aria-atomic="true" aria-live="polite">
+    <div ref={preloader} className="preloader">
       <svg className="preloader__wave" viewBox="0 0 100 100" preserveAspectRatio="xMidYMin slice">
-        <path ref={wave} fill="#050505" />
+        <path ref={wave} />
       </svg>
       <div className="preloader__inner">
-        <span ref={text} className="preloader__text">
+        <span className="sr-only">Loading experience</span>
+        <span ref={text} className="preloader__text" aria-hidden="true">
           Loading...
         </span>
       </div>

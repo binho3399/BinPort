@@ -8,7 +8,6 @@ import * as THREE from 'three';
 import { prepareSignalScene } from './prepareScene';
 import { useModelCamera } from './useModelCamera';
 import type { AnimatedTexturesState, InteractiveSignSurface, TrafficLight } from './types';
-import { usePointerScroll } from './usePointerScroll';
 import { useNavigate } from '../../lib/navigationContext';
 import { tryCreateShowreelVideoTexture } from './textures';
 import { getRouteForMaterial } from './modelRoutes';
@@ -17,21 +16,13 @@ import { useModelInteractions } from './useModelInteractions';
 import { useSignalModelFrame } from './useSignalModelFrame';
 import { useCanvasHoverPointer } from './useCanvasHoverPointer';
 
-const INITIAL_SCROLL_PROGRESS = 0;
-
 export default function SignalModel({ interactive, highQuality }: { interactive: boolean; highQuality: boolean }) {
   const textureInterval = interactive ? 1 / 24 : 1 / 12;
   const initialTextureInterval = highQuality ? 1 / 24 : 1 / 12;
   const group = useRef<THREE.Object3D | null>(null);
-  const scroll = useRef(INITIAL_SCROLL_PROGRESS);
-  const scrollTarget = useRef(INITIAL_SCROLL_PROGRESS);
-  const shake = useRef(0);
-  const shakeClock = useRef(0);
   const navigate = useNavigate();
   const { gl, raycaster, invalidate } = useThree();
-  const { scene, animations } = useGLTF('/models/model.glb');
-  const actionRef = useRef<THREE.AnimationAction | null>(null);
-  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const { scene } = useGLTF('/models/model.glb');
   const animatedTexturesRef = useRef<AnimatedTexturesState | null>(null);
   const trafficLightsRef = useRef<TrafficLight[]>([]);
   const showreelMeshRef = useRef<THREE.Mesh | null>(null);
@@ -41,18 +32,6 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
   const textureFrameTimes = useRef({ contact: 0, profile: 0, projects: 0 });
   const [hasInteracted, setHasInteracted] = useState(false);
   const hasVideoApplied = useRef(false);
-
-  const resetScroll = useCallback(() => {
-    scroll.current = INITIAL_SCROLL_PROGRESS;
-    scrollTarget.current = INITIAL_SCROLL_PROGRESS;
-    shake.current = 0;
-    shakeClock.current = 0;
-    const action = actionRef.current;
-    const duration = action?.getClip().duration || 1;
-    mixerRef.current?.setTime((((INITIAL_SCROLL_PROGRESS % 1) + 1) % 1) * duration);
-  }, []);
-
-  usePointerScroll({ interactive, gl, scrollTarget, onReset: resetScroll });
 
   const prepared = useMemo(() => prepareSignalScene(scene), [scene]);
   const preparedScene = prepared.clone;
@@ -101,24 +80,6 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
       element.removeEventListener('touchstart', markInteracted);
     };
   }, [gl.domElement, hasInteracted]);
-
-  useEffect(() => {
-    const mixer = new THREE.AnimationMixer(preparedScene);
-    const clip = animations.find((item) => item.name === 'CameraAction');
-    const action = clip ? mixer.clipAction(clip, preparedScene) : null;
-    if (action) {
-      action.enabled = true;
-      action.reset().play();
-    }
-    mixerRef.current = mixer;
-    actionRef.current = action;
-    return () => {
-      actionRef.current = null;
-      mixerRef.current = null;
-      mixer.stopAllAction();
-      mixer.uncacheRoot(preparedScene);
-    };
-  }, [animations, preparedScene]);
 
   useEffect(() => {
     return () => {
@@ -179,10 +140,6 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
     hasInteracted,
     textureInterval,
     initialTextureInterval,
-    scrollRef: scroll,
-    scrollTargetRef: scrollTarget,
-    shakeRef: shake,
-    shakeClockRef: shakeClock,
     hoverPointerDirtyRef: hoverPointerDirty,
     hoverPointerRef: hoverPointer,
     isCanvasHoveredRef: isCanvasHovered,
@@ -194,8 +151,6 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
     animatedTexturesRef,
     textureFrameTimes,
     trafficLightsRef,
-    actionRef,
-    mixerRef,
   });
 
   useCanvasHoverPointer({

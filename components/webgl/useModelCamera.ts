@@ -11,7 +11,7 @@ function isPerspectiveCamera(
 }
 
 export function useModelCamera(preparedScene: THREE.Object3D) {
-  const { camera: defaultCamera, set: stateSetCamera } = useThree();
+  const { camera: defaultCamera, set: stateSetCamera, size } = useThree();
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
 
   useEffect(() => {
@@ -22,7 +22,8 @@ export function useModelCamera(preparedScene: THREE.Object3D) {
     const baseFov = camera.userData.baseFov ?? camera.fov;
     camera.userData.baseFov = baseFov;
     const apply = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
+      const aspect = size.height > 0 ? size.width / size.height : camera.aspect || 1;
+      camera.aspect = Number.isFinite(aspect) && aspect > 0 ? aspect : 1;
       camera.fov = window.matchMedia('(max-width: 620px)').matches
         ? Math.min(baseFov + 3, 72)
         : baseFov;
@@ -31,12 +32,11 @@ export function useModelCamera(preparedScene: THREE.Object3D) {
     cameraRef.current = camera;
     stateSetCamera({ camera });
     apply();
-    window.addEventListener('resize', apply);
     return () => {
-      window.removeEventListener('resize', apply);
+      cameraRef.current = null;
       stateSetCamera({ camera: defaultCamera });
     };
-  }, [defaultCamera, preparedScene, stateSetCamera]);
+  }, [defaultCamera, preparedScene, size.height, size.width, stateSetCamera]);
 
   return cameraRef;
 }

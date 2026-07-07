@@ -5,7 +5,6 @@ import * as THREE from 'three';
 import { getInteractiveCanvasHit, getMaterialLabel, SIGN_MATERIAL_NAMES } from './hitTest';
 import { updateAnimatedTextures, updateTrafficLights } from './textureAnimation';
 import type { AnimatedTexturesState, InteractiveSignSurface, TrafficLight } from './types';
-import { skyTransition } from '../../lib/skyTransition';
 
 type UseSignalModelFrameOptions = {
   interactive: boolean;
@@ -13,10 +12,6 @@ type UseSignalModelFrameOptions = {
   hasInteracted: boolean;
   textureInterval: number;
   initialTextureInterval: number;
-  scrollRef: React.MutableRefObject<number>;
-  scrollTargetRef: React.MutableRefObject<number>;
-  shakeRef: React.MutableRefObject<number>;
-  shakeClockRef: React.MutableRefObject<number>;
   hoverPointerDirtyRef: React.MutableRefObject<boolean>;
   hoverPointerRef: React.MutableRefObject<THREE.Vector2>;
   isCanvasHoveredRef: React.MutableRefObject<boolean>;
@@ -28,8 +23,6 @@ type UseSignalModelFrameOptions = {
   animatedTexturesRef: React.MutableRefObject<AnimatedTexturesState | null>;
   textureFrameTimes: React.MutableRefObject<{ contact: number; profile: number; projects: number }>;
   trafficLightsRef: React.MutableRefObject<TrafficLight[]>;
-  actionRef: React.MutableRefObject<THREE.AnimationAction | null>;
-  mixerRef: React.MutableRefObject<THREE.AnimationMixer | null>;
 };
 
 export function useSignalModelFrame(options: UseSignalModelFrameOptions) {
@@ -39,10 +32,6 @@ export function useSignalModelFrame(options: UseSignalModelFrameOptions) {
     hasInteracted,
     textureInterval,
     initialTextureInterval,
-    scrollRef,
-    scrollTargetRef,
-    shakeRef,
-    shakeClockRef,
     hoverPointerDirtyRef,
     hoverPointerRef,
     isCanvasHoveredRef,
@@ -54,15 +43,9 @@ export function useSignalModelFrame(options: UseSignalModelFrameOptions) {
     animatedTexturesRef,
     textureFrameTimes,
     trafficLightsRef,
-    actionRef,
-    mixerRef,
   } = options;
 
   useFrame((state, delta) => {
-    if (interactive && isCanvasHoveredRef.current && Math.abs(scrollTargetRef.current - scrollRef.current) > 0.0005) {
-      hoverPointerDirtyRef.current = true;
-    }
-
     if (interactive && isCanvasHoveredRef.current && hoverPointerDirtyRef.current) {
       hoverPointerDirtyRef.current = false;
       const activeCamera = cameraRef.current ?? (state.camera as THREE.PerspectiveCamera);
@@ -86,35 +69,5 @@ export function useSignalModelFrame(options: UseSignalModelFrameOptions) {
     }
 
     updateTrafficLights(trafficLightsRef.current, state.clock.elapsedTime, highQuality || hasInteracted);
-
-    const action = actionRef.current;
-    const mixer = mixerRef.current;
-    if (!action) {
-      mixer?.update(0);
-      return;
-    }
-    if (!mixer) return;
-    const duration = action.getClip().duration || 1;
-    const smoothing = 1 - Math.exp(-delta / 0.14);
-    scrollRef.current += (scrollTargetRef.current - scrollRef.current) * smoothing;
-    if (Math.abs(scrollRef.current) > 1000) {
-      const whole = Math.trunc(scrollRef.current);
-      scrollRef.current -= whole;
-      scrollTargetRef.current -= whole;
-    }
-    mixer.setTime((((scrollRef.current % 1) + 1) % 1) * duration);
-    const camera = cameraRef.current;
-    // Gentle dolly up when leaving home — runs while WebGL is still mounted during cover phase
-    if (camera && skyTransition.ascend > 0.001) {
-      camera.position.y += skyTransition.ascend * 0.12;
-      camera.rotation.x -= skyTransition.ascend * 0.055;
-    }
-    if (camera && shakeRef.current > 0.0001) {
-      const step = Math.min(delta, 1 / 30);
-      shakeClockRef.current += 52 * step;
-      camera.position.x += Math.sin(1.6 * shakeClockRef.current) * shakeRef.current * 0.0026;
-      camera.position.y += Math.cos(2.1 * shakeClockRef.current) * shakeRef.current * 0.0026 * 0.35;
-      shakeRef.current *= Math.exp(-14 * step);
-    }
   });
 }

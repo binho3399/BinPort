@@ -6,8 +6,8 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import SignalModel from './webgl/SignalModel';
 
-const IDLE_RENDER_INTERVAL_MS = 1000 / 24;
-const IDLE_RENDER_INTERVAL_MS_NON_INTERACTIVE = 1000 / 12;
+const IDLE_RENDER_INTERVAL_MS = 1000 / 12;
+const IDLE_RENDER_INTERVAL_MS_NON_INTERACTIVE = 1000 / 6;
 const ACTIVE_RENDER_BURST_MS = 700;
 const LOW_QUALITY_UPGRADE_DELAY_MS = 1800;
 
