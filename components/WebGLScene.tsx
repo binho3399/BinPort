@@ -159,6 +159,7 @@ function ProgressiveQualityGate({ onUpgrade }: { onUpgrade: () => void }) {
 export default function WebGLScene({ interactive }: WebGLSceneProps) {
   const [highQuality, setHighQuality] = useState(false);
   const isMobile = useViewportCategory();
+  const dpr: [number, number] = highQuality ? [1.25, 2] : isMobile ? [1, 1.5] : [0.75, 1];
   const shadowMapSize = highQuality ? (isMobile ? 1024 : 2048) : isMobile ? 512 : 768;
   const ambientIntensity = highQuality ? 0.1 : 0.18;
   const hemisphereIntensity = highQuality ? 1.38 : 1.58;
@@ -167,10 +168,10 @@ export default function WebGLScene({ interactive }: WebGLSceneProps) {
     <div className="webgl-canvas-wrap">
       <Canvas
         shadows={{ type: THREE.PCFShadowMap }}
-        dpr={highQuality ? [1, 2] : [0.75, 1]}
+        dpr={dpr}
         frameloop="demand"
         camera={{ position: [0.02, 0.12, 4.18], fov: 30 }}
-        gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = 1.56;
