@@ -8,6 +8,8 @@ export type Bird = {
   bobPeriod: number;
   flapPhase: number;
   flapPeriod: number;
+  weavePhase: number;
+  weavePeriod: number;
 };
 
 export function buildBirds(rng: () => number, count: number): Bird[] {
@@ -21,6 +23,8 @@ export function buildBirds(rng: () => number, count: number): Bird[] {
     bobPeriod: [15, 12, 10][Math.floor(rng() * 3)],
     flapPhase: rng() * 2 * Math.PI,
     flapPeriod: [2, 2.5, 3][Math.floor(rng() * 3)],
+    weavePhase: rng() * 2 * Math.PI,
+    weavePeriod: 18 + rng() * 14,
   }));
 }
 
@@ -49,11 +53,13 @@ export function drawBirdSilhouette(
     const wrapFade = Math.min(fadeIn, fadeOut);
     let px = normX * width;
     if (px > width) px -= width * 1.2;
+    px += Math.sin((2 * Math.PI * elapsed) / bird.weavePeriod + bird.weavePhase) * 10 * bird.scale;
     if (px < -24 || px > width + 24) continue;
 
     const py =
       bird.y * height +
-      Math.sin((2 * Math.PI * elapsed) / bird.bobPeriod + bird.bobPhase) * 4;
+      Math.sin((2 * Math.PI * elapsed) / bird.bobPeriod + bird.bobPhase) * 4 +
+      Math.sin((2 * Math.PI * elapsed) / (bird.weavePeriod * 0.7) + bird.weavePhase) * 2.5;
     const flap = Math.sin((2 * Math.PI * elapsed) / bird.flapPeriod + bird.flapPhase);
     const wingSpan = 9 * bird.scale;
     const wingLift = (3 + flap * 3.1) * bird.scale;

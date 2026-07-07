@@ -20,6 +20,8 @@ export type Bird = {
   bobPeriod: number;
   flapPhase: number;
   flapPeriod: number;
+  weavePhase: number;
+  weavePeriod: number;
 };
 
 export type RenderPuff = {

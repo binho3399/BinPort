@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { CLOUDS_BY_DEPTH, SKY_STOPS } from './sky/cloudData';
+import { CLOUDS_BY_DEPTH, MOBILE_CLOUDS_BY_DEPTH, SKY_STOPS } from './sky/cloudData';
 import {
   ALPHA_BREATH_AMP,
   ALPHA_BREATH_AMP_VIVID,
@@ -36,7 +36,8 @@ export default function SkyBackground() {
 
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const vivid = true;
-    const renderClouds = buildRenderClouds(CLOUDS_BY_DEPTH);
+    let renderClouds = buildRenderClouds(CLOUDS_BY_DEPTH);
+    let usingMobileClouds = false;
     let bgCanvas: HTMLCanvasElement | null = null;
     let rafId = 0;
     let startTime = 0;
@@ -53,6 +54,11 @@ export default function SkyBackground() {
       canvas.height = h;
       canvas.style.width = `${window.innerWidth}px`;
       canvas.style.height = `${window.innerHeight}px`;
+      const shouldUseMobileClouds = window.innerWidth <= 768;
+      if (shouldUseMobileClouds !== usingMobileClouds) {
+        renderClouds = buildRenderClouds(shouldUseMobileClouds ? MOBILE_CLOUDS_BY_DEPTH : CLOUDS_BY_DEPTH);
+        usingMobileClouds = shouldUseMobileClouds;
+      }
       bgCanvas = buildBackground(w, h, SKY_STOPS);
       if (vivid) {
         haloCanvas = buildSunGlowCanvas(w, h);
