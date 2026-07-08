@@ -1,11 +1,13 @@
 import { ArrowUpRight } from 'lucide-react';
 import { contactContent, contactLinks } from '../../lib/siteContent';
+import BackButton from './BackButton';
 
 export default function ContactPage() {
   return (
     <main className="experience-page experience-page--contact">
       <section className="contact-page page-shell">
         <header className="page-shell__header">
+          <BackButton />
         </header>
         <div className="contact-page__content reveal" suppressHydrationWarning>
           <div className="page-shell__intro">
