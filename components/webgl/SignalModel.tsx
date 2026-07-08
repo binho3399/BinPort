@@ -24,14 +24,17 @@ export default function SignalModel({
   interactive,
   highQuality,
   mood,
+  routeRevealActive,
 }: {
   interactive: boolean;
   highQuality: boolean;
   mood: ModelRouteMood;
+  routeRevealActive: boolean;
 }) {
   const textureInterval = interactive ? 1 / 24 : 1 / 12;
   const initialTextureInterval = highQuality ? 1 / 24 : 1 / 12;
   const group = useRef<THREE.Object3D | null>(null);
+  const routeRevealScaleRef = useRef(1);
   const navigate = useNavigate();
   const { gl, raycaster, invalidate } = useThree();
   const { scene } = useGLTF('/models/model.glb');
@@ -144,6 +147,12 @@ export default function SignalModel({
   useEffect(() => {
     invalidate();
   }, [highQuality, invalidate]);
+
+  useEffect(() => {
+    if (!routeRevealActive) return;
+    routeRevealScaleRef.current = 1.5;
+    invalidate();
+  }, [invalidate, routeRevealActive]);
 
   useEffect(() => {
     if (hasVideoApplied.current) return;
@@ -301,7 +310,15 @@ export default function SignalModel({
       mood.rotation[1] + rotationOffset.y,
       mood.rotation[2],
     );
-    const targetScale = new THREE.Vector3(mood.scale, mood.scale, mood.scale);
+    routeRevealScaleRef.current = THREE.MathUtils.lerp(routeRevealScaleRef.current, 1, 0.11);
+    if (Math.abs(routeRevealScaleRef.current - 1) < 0.002) routeRevealScaleRef.current = 1;
+
+    const revealScale = routeRevealScaleRef.current;
+    const targetScale = new THREE.Vector3(
+      mood.scale * revealScale,
+      mood.scale * revealScale,
+      mood.scale * revealScale,
+    );
     modelGroup.position.lerp(targetPosition, 0.08);
     modelGroup.rotation.x = THREE.MathUtils.lerp(modelGroup.rotation.x, targetRotation.x, 0.08);
     modelGroup.rotation.y = THREE.MathUtils.lerp(modelGroup.rotation.y, targetRotation.y, 0.08);

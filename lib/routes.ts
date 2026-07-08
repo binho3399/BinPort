@@ -15,7 +15,7 @@ export const routes = [
 ];
 
 export const shellRouteFlags = {
-  backButtonVisible: new Set<RouteId>([routeIds.contact]),
+  backButtonVisible: new Set<RouteId>(),
   homeInteractive: routeIds.home,
   contactShellHidden: routeIds.contact,
 } as const;

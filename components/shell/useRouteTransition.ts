@@ -8,8 +8,8 @@ import { emitInteractionEvent } from '../../lib/interactions';
 import type { RouteId } from '../../lib/routes';
 import { getRouteId, normalizeRoutePath } from '../../lib/routes';
 
-type TransitionPhase = 'idle' | 'covering' | 'revealing';
-type RevealMode = 'initial' | 'route';
+export type TransitionPhase = 'idle' | 'covering' | 'revealing';
+export type RevealMode = 'initial' | 'route';
 
 const NAVIGATION_FAILSAFE_MS = 1500;
 
@@ -52,7 +52,7 @@ export function useRouteTransition(children: ReactNode) {
     const atmosphere = document.querySelector<HTMLElement>('.sky-background__canvas--atmosphere');
     const model = document.querySelector<HTMLElement>('.webgl-canvas-wrap');
     const veil = document.querySelector<HTMLElement>('.cloud-transition-veil');
-    const depthTargets = [atmosphere, model].filter(Boolean);
+    const depthTargets = [atmosphere].filter(Boolean);
     return { routeCurrent, atmosphere, model, depthTargets, veil };
   }, []);
 
@@ -73,7 +73,7 @@ export function useRouteTransition(children: ReactNode) {
   const buildRevealTimeline = useCallback(
     (onComplete?: () => void) => {
       const reduced = prefersReducedMotion();
-      const { routeCurrent, atmosphere, model, veil } = shellTargets();
+      const { routeCurrent, atmosphere, veil } = shellTargets();
       routeTimelineRef.current?.kill();
 
       const tl = gsap.timeline({
@@ -95,9 +95,8 @@ export function useRouteTransition(children: ReactNode) {
 
       tl.set(routeCurrent, { autoAlpha: 0, scale: 1.5, y: 26, filter: 'blur(10px)', transformOrigin: '50% 42%' })
         .set(atmosphere, { scale: 0.96, autoAlpha: 0.72, transformOrigin: '50% 50%' })
-        .set(model, { scale: 1.5, autoAlpha: 0.72, transformOrigin: '50% 50%' })
         .to(routeCurrent, { autoAlpha: 1, scale: 1, y: 0, filter: 'blur(0px)', duration: 0.72, ease: 'power3.out' }, 0.06)
-        .to([atmosphere, model].filter(Boolean), { scale: 1, autoAlpha: 1, duration: 0.9, ease: 'power3.out' }, 0)
+        .to(atmosphere, { scale: 1, autoAlpha: 1, duration: 0.9, ease: 'power3.out' }, 0)
         .to(veil, { autoAlpha: 0, scale: 1, filter: 'blur(16px)', duration: 0.82, ease: 'power2.out' }, 0.08);
       return tl;
     },
@@ -157,7 +156,7 @@ export function useRouteTransition(children: ReactNode) {
     }, NAVIGATION_FAILSAFE_MS);
 
     const reduced = prefersReducedMotion();
-    const { routeCurrent, depthTargets, veil } = shellTargets();
+    const { routeCurrent, atmosphere, model, veil } = shellTargets();
     routeTimelineRef.current?.kill();
 
     const tl = gsap.timeline({
@@ -175,7 +174,8 @@ export function useRouteTransition(children: ReactNode) {
 
     tl.set(veil, { autoAlpha: 0, scale: 1.5, filter: 'blur(18px)', transformOrigin: '50% 50%' })
       .to(routeCurrent, { autoAlpha: 0, scale: 0.86, y: 34, filter: 'blur(4px)', duration: 0.52, ease: 'power3.in' }, 0)
-      .to(depthTargets, { autoAlpha: 0.42, scale: 0.9, filter: 'blur(3px)', duration: 0.58, ease: 'power3.in' }, 0)
+      .to(atmosphere, { autoAlpha: 0.42, scale: 0.9, filter: 'blur(3px)', duration: 0.58, ease: 'power3.in' }, 0)
+      .to(model, { autoAlpha: 0.42, filter: 'blur(3px)', duration: 0.58, ease: 'power3.in' }, 0)
       .to(veil, { autoAlpha: 1, scale: 1.08, filter: 'blur(7px)', duration: 0.62, ease: 'power2.out' }, 0.04);
   };
 

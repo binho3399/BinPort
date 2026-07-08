@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import SignalModel from './webgl/SignalModel';
 import type { RouteId } from '../lib/routes';
 import { getModelRouteMood } from './webgl/modelRoutes';
+import type { RevealMode, TransitionPhase } from './shell/useRouteTransition';
 
 const IDLE_RENDER_INTERVAL_MS = 1000 / 12;
 const IDLE_RENDER_INTERVAL_MS_NON_INTERACTIVE = 1000 / 6;
@@ -16,6 +17,8 @@ const LOW_QUALITY_UPGRADE_DELAY_MS = 1800;
 type WebGLSceneProps = {
   interactive: boolean;
   route: RouteId | null;
+  revealMode: RevealMode;
+  transitionPhase: TransitionPhase;
 };
 
 function RenderScheduler({ interactive }: { interactive: boolean }) {
@@ -159,7 +162,7 @@ function ProgressiveQualityGate({ onUpgrade }: { onUpgrade: () => void }) {
   return null;
 }
 
-export default function WebGLScene({ interactive, route }: WebGLSceneProps) {
+export default function WebGLScene({ interactive, route, revealMode, transitionPhase }: WebGLSceneProps) {
   const [highQuality, setHighQuality] = useState(false);
   const isMobile = useViewportCategory();
   const dpr: [number, number] = highQuality ? [1.25, 2] : isMobile ? [1, 1.5] : [0.75, 1];
@@ -196,7 +199,12 @@ export default function WebGLScene({ interactive, route }: WebGLSceneProps) {
           shadow-mapSize-width={shadowMapSize}
         />
         <Suspense fallback={null}>
-          <SignalModel interactive={interactive} highQuality={highQuality} mood={mood} />
+          <SignalModel
+            interactive={interactive}
+            highQuality={highQuality}
+            mood={mood}
+            routeRevealActive={route === 'home' && revealMode === 'route' && transitionPhase === 'revealing'}
+          />
         </Suspense>
         <Suspense fallback={null}>
           <Environment preset="city" environmentIntensity={environmentIntensity} />
