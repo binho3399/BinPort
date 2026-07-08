@@ -11,25 +11,23 @@ If there is no `.codegraph/` directory, skip CodeGraph entirely - indexing is th
 
 <!-- CODEGRAPH_END -->
 
-## Image Analysis Delegation
+## Image Analysis
 
-GLM 5.2 (the primary coder) cannot read images directly. When the task involves analyzing a screenshot, UI design, mockup, photo, or any image, delegate to the `vision-looker` subagent:
+The orchestration lane/model can read images directly. When the task involves a screenshot, UI design, mockup, photo, or any image:
 
-- Use the `task` tool with `subagent_type: "vision-looker"`.
-- Ask it to describe the visual content, layout, colors, typography, spacing, components, and any visible text/labels in the image.
-- Pass the absolute file path of the image to read (note: vision-looker reads files from disk; inline-attached images in chat are not directly readable — see "Reading images from clipboard" below).
-- Base any code implementation, CSS edits, layout fixes, or visual parity decisions on the structured text that `vision-looker` returns.
-- Prefer specific, scoped prompts: e.g. "Describe the nav bar layout, typography sizes, and color of the CTA button in /tmp/shot.png", rather than "describe this image".
-- For multi-step visual work, request structured output (sections, bullet lists) so you can map it directly to code changes.
+- Analyze the image directly in the orchestration lane first; do not delegate image reading to a `vision-looker` subagent.
+- Describe relevant visual content, layout, colors, typography, spacing, components, and visible text/labels before making UI/CSS decisions.
+- Base implementation, CSS edits, layout fixes, and visual parity decisions on that direct image analysis.
+- For multi-step visual work, keep structured notes (sections or bullets) so the findings map cleanly to code changes.
 
 ## Reading images from clipboard
 
-GLM 5.2 cannot itself pull an inline-attached chat image into a subagent call. To make an attached image readable by `vision-looker`:
+If an inline-attached image is not available to the active lane, ask the user to copy it into the macOS clipboard and dump it to a local file:
 
 - Ask the user to copy the image into the macOS clipboard (e.g. right-click → Copy Image, or `Cmd+Shift+Ctrl+4` to screenshot a region into the clipboard).
 - Run `pngpaste /tmp/opencode_paste.png` (already installed via Homebrew) to dump the clipboard image to a file.
 - Alternative without `pngpaste` (built-in Swift on macOS): `swift -e 'import AppKit; if let d=NSPasteboard.general.data(forType:.png){try d.write(to:URL(fileURLWithPath:"/tmp/opencode_paste.png"))}'`
-- Then pass `/tmp/opencode_paste.png` to `vision-looker` via the `task` tool.
+- Then read/analyze `/tmp/opencode_paste.png` directly in the orchestration lane.
 - If `pngpaste` reports "No image data found", the clipboard does not currently hold an image — ask the user to re-copy and retry.
 
 ## Local Visual Debugging
