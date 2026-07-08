@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import type { CSSProperties } from 'react';
 import { useState } from 'react';
 import { projects } from '../../lib/projects';
 import { projectsPageContent } from '../../lib/siteContent';
@@ -8,8 +9,6 @@ import BackButton from './BackButton';
 
 export default function ProjectsPage() {
   const [activeProject, setActiveProject] = useState<(typeof projects)[number] | null>(null);
-  // Two sets of the same items for a seamless -50% loop.
-  const sets = [projects, projects];
 
   return (
     <main className="experience-page experience-page--projects">
@@ -23,64 +22,56 @@ export default function ProjectsPage() {
         </header>
 
         <div className="projects-gl-gallery">
-          <div className="projects-marquee">
-            <div className="projects-marquee__track">
-              {sets.map((set, setIdx) => (
-                <div
-                  className="projects-marquee__set"
-                  key={`set-${setIdx}`}
-                  aria-hidden={setIdx > 0 ? 'true' : undefined}
-                >
-                  {set.map((project) => (
+          <div className="projects-stack" aria-label="Selected projects">
+            {projects.map((project, index) => (
+              <a
+                className="projects-stack__card"
+                href={project.href}
+                key={project.title}
+                style={{ '--project-index': index } as CSSProperties & Record<'--project-index', number>}
+                data-cursor-stalker-label="View Project"
+                onPointerEnter={() => setActiveProject(project)}
+                onPointerLeave={() => setActiveProject(null)}
+                onFocus={() => setActiveProject(project)}
+                onBlur={() => setActiveProject(null)}
+              >
+                <figure className="projects-stack__figure">
+                  {project.image ? (
+                    <Image
+                      src={project.image}
+                      alt={`${project.title} preview`}
+                      width={1600}
+                      height={900}
+                      sizes="(max-width: 768px) 86vw, (max-width: 1280px) 54vw, 42vw"
+                      priority={index < 3}
+                      draggable={false}
+                    />
+                  ) : (
                     <div
-                      key={`${setIdx}-${project.title}`}
-                      className="projects-marquee__item"
-                    >
-                      <a
-                        className="projects-marquee__card"
-                        href={project.href}
-                        tabIndex={setIdx > 0 ? -1 : undefined}
-                        data-cursor-stalker-label="View Project"
-                        onPointerEnter={() => setActiveProject(project)}
-                        onPointerLeave={() => setActiveProject(null)}
-                        onFocus={() => setActiveProject(project)}
-                        onBlur={() => setActiveProject(null)}
-                      >
-                        <figure className="projects-marquee__figure">
-                          {project.image ? (
-                            <Image
-                              src={project.image}
-                              alt={`${project.title} preview`}
-                              width={1600}
-                              height={900}
-                              sizes="(max-width: 768px) 92vw, (max-width: 1280px) 42vw, 33vw"
-                              priority={setIdx === 0}
-                              loading={setIdx === 1 ? 'eager' : undefined}
-                              draggable={false}
-                            />
-                          ) : (
-                            <div
-                              className="projects-marquee__placeholder"
-                              aria-label={`${project.title} preview unavailable`}
-                              role="img"
-                            />
-                          )}
-                        </figure>
-                      </a>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
+                      className="projects-stack__placeholder"
+                      aria-label={`${project.title} preview unavailable`}
+                      role="img"
+                    />
+                  )}
+                  <figcaption className="projects-stack__caption">
+                    <span>{String(index + 1).padStart(2, '0')}</span>
+                    <strong>{project.title}</strong>
+                  </figcaption>
+                </figure>
+              </a>
+            ))}
           </div>
         </div>
 
-        {activeProject ? (
-          <div className="projects-page__active-meta" aria-live="polite">
-            <p>{activeProject.categories.join(' / ').toUpperCase()}</p>
-            <h2>{activeProject.title.toUpperCase()}</h2>
-          </div>
-        ) : null}
+        <div className="projects-page__active-meta" aria-live="polite">
+          <p>{(activeProject ?? projects[0]).categories.join(' / ').toUpperCase()}</p>
+          <h2>{(activeProject ?? projects[0]).title.toUpperCase()}</h2>
+        </div>
+
+        <div className="projects-page__mode-pill" aria-label="Project view mode">
+          <span aria-current="true">Overview</span>
+          <span>Index</span>
+        </div>
       </section>
     </main>
   );
