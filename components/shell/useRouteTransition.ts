@@ -175,8 +175,10 @@ export function useRouteTransition(children: ReactNode) {
     tl.set(veil, { autoAlpha: 0, scale: 1.5, filter: 'blur(18px)', transformOrigin: '50% 50%' })
       .to(routeCurrent, { autoAlpha: 0, scale: 0.86, y: 34, filter: 'blur(4px)', duration: 0.52, ease: 'power3.in' }, 0)
       .to(atmosphere, { autoAlpha: 0.42, scale: 0.9, filter: 'blur(3px)', duration: 0.58, ease: 'power3.in' }, 0)
-      .to(model, { autoAlpha: 0.42, filter: 'blur(3px)', duration: 0.58, ease: 'power3.in' }, 0)
       .to(veil, { autoAlpha: 1, scale: 1.08, filter: 'blur(7px)', duration: 0.62, ease: 'power2.out' }, 0.04);
+    if (model) {
+      tl.to(model, { autoAlpha: 0.42, filter: 'blur(3px)', duration: 0.58, ease: 'power3.in' }, 0);
+    }
   };
 
   return {

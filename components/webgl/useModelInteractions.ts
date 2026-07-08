@@ -3,7 +3,7 @@
 import { useCallback, useRef } from 'react';
 import type { ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
-import { getInteractiveCanvasHit, SIGN_MATERIAL_NAMES } from './hitTest';
+import { getInteractiveCanvasHit, getMaterialLabel, SIGN_MATERIAL_NAMES } from './hitTest';
 import type { InteractiveCanvasHit } from './hitTest';
 import type { InteractiveSignSurface } from './types';
 
@@ -69,6 +69,19 @@ export function useModelInteractions({
     [getInteractiveHitFromRay, interactive, navigateToMaterial, shouldSuppressNavigation],
   );
 
+  const handlePointerMove = useCallback(
+    (event: ThreeEvent<PointerEvent>) => {
+      if (!interactive || event.nativeEvent.pointerType === 'touch') return;
+      const hit = getInteractiveHitFromRay(event.ray);
+      dispatchCursorLabel(getMaterialLabel(hit?.materialName ?? null));
+    },
+    [dispatchCursorLabel, getInteractiveHitFromRay, interactive],
+  );
+
+  const handlePointerOut = useCallback(() => {
+    dispatchCursorLabel(null);
+  }, [dispatchCursorLabel]);
+
   const handleClick = useCallback(
     (event: ThreeEvent<MouseEvent>) => {
       if (!interactive) return;
@@ -84,5 +97,5 @@ export function useModelInteractions({
     dispatchCursorLabel(null);
   }, [dispatchCursorLabel]);
 
-  return { handlePointerDown, handlePointerUp, handleClick, handlePointerMissed };
+  return { handlePointerDown, handlePointerUp, handlePointerMove, handlePointerOut, handleClick, handlePointerMissed };
 }

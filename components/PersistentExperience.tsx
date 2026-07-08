@@ -40,6 +40,10 @@ export default function PersistentExperience({ children }: { children: ReactNode
 
   useEffect(() => {
     if (hasEnteredExperience) return;
+    if (document.documentElement.classList.contains('is-entered')) {
+      const id = window.setTimeout(() => setHasEnteredExperience(true), 0);
+      return () => window.clearTimeout(id);
+    }
     const handleEntered = () => setHasEnteredExperience(true);
     onInteractionEvent(window, 'entered', handleEntered);
     return () => offInteractionEvent(window, 'entered', handleEntered);
@@ -47,6 +51,10 @@ export default function PersistentExperience({ children }: { children: ReactNode
 
   useEffect(() => {
     if (hasPreloaderCompleted) return;
+    if (document.documentElement.classList.contains('is-entered')) {
+      const id = window.setTimeout(() => setHasPreloaderCompleted(true), 0);
+      return () => window.clearTimeout(id);
+    }
     const handlePreloaderComplete = () => setHasPreloaderCompleted(true);
     onInteractionEvent(window, 'preloaderComplete', handlePreloaderComplete);
     return () => offInteractionEvent(window, 'preloaderComplete', handlePreloaderComplete);

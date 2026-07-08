@@ -243,6 +243,13 @@ export default function SignalModel({
   const isCanvasHovered = useRef(false);
   const { dispatchCursorLabel, hoverPointer } = useModelCursor();
 
+  useEffect(() => {
+    if (interactive) return;
+    isCanvasHovered.current = false;
+    hoverPointerDirty.current = false;
+    dispatchCursorLabel(null);
+  }, [dispatchCursorLabel, interactive]);
+
   const getHitStandardMaterial = useCallback((hit: InteractiveCanvasHit) => {
     const mesh = hit.intersection.object as THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>;
     const material = Array.isArray(mesh.material)
@@ -525,7 +532,7 @@ export default function SignalModel({
     [invalidate, navigate, startSignRipple],
   );
 
-  const { handlePointerDown, handlePointerUp, handleClick, handlePointerMissed } =
+  const { handlePointerDown, handlePointerUp, handlePointerMove, handlePointerOut, handleClick, handlePointerMissed } =
     useModelInteractions({
       interactive,
       navigateToMaterial,
@@ -561,6 +568,7 @@ export default function SignalModel({
     hoverPointerDirty,
     isCanvasHovered,
     dispatchCursorLabel,
+    invalidate,
   });
 
   return (
@@ -568,6 +576,8 @@ export default function SignalModel({
       object={preparedScene}
       onClick={handleClick}
       onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerOut={handlePointerOut}
       onPointerUp={handlePointerUp}
       onPointerMissed={handlePointerMissed}
     />

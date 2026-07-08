@@ -2,7 +2,7 @@
 
 import { Canvas, useThree } from '@react-three/fiber';
 import { Environment } from '@react-three/drei';
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import SignalModel from './webgl/SignalModel';
 import type { RouteId } from '../lib/routes';
@@ -21,7 +21,15 @@ type WebGLSceneProps = {
   transitionPhase: TransitionPhase;
 };
 
-function RenderScheduler({ interactive }: { interactive: boolean }) {
+function RenderScheduler({
+  interactive,
+  onContextLost,
+  onContextRestored,
+}: {
+  interactive: boolean;
+  onContextLost: () => void;
+  onContextRestored: () => void;
+}) {
   const { gl, invalidate } = useThree();
   const glDomElement = gl.domElement;
   const activeUntil = useRef(0);
@@ -67,7 +75,7 @@ function RenderScheduler({ interactive }: { interactive: boolean }) {
       'touchend',
     ];
 
-    const onContextLost = (event: Event) => {
+    const handleContextLostEvent = (event: Event) => {
       event.preventDefault();
       contextLost.current = true;
       if (activeFrame.current !== null) {
@@ -75,14 +83,16 @@ function RenderScheduler({ interactive }: { interactive: boolean }) {
         activeFrame.current = null;
       }
       console.warn('[WebGLScene] context lost', { interactive, dpr: gl.getPixelRatio() });
+      onContextLost();
     };
-    const onContextRestored = () => {
+    const handleContextRestoredEvent = () => {
       contextLost.current = false;
+      onContextRestored();
       requestActiveRender();
       console.info('[WebGLScene] context restored', { interactive });
     };
-    canvas.addEventListener('webglcontextlost', onContextLost, false);
-    canvas.addEventListener('webglcontextrestored', onContextRestored, false);
+    canvas.addEventListener('webglcontextlost', handleContextLostEvent, false);
+    canvas.addEventListener('webglcontextrestored', handleContextRestoredEvent, false);
 
     const idleInterval = window.setInterval(
       invalidateIfVisible,
@@ -101,8 +111,8 @@ function RenderScheduler({ interactive }: { interactive: boolean }) {
     return () => {
       window.clearInterval(idleInterval);
       if (activeFrame.current !== null) window.cancelAnimationFrame(activeFrame.current);
-      canvas.removeEventListener('webglcontextlost', onContextLost);
-      canvas.removeEventListener('webglcontextrestored', onContextRestored);
+      canvas.removeEventListener('webglcontextlost', handleContextLostEvent);
+      canvas.removeEventListener('webglcontextrestored', handleContextRestoredEvent);
       window.removeEventListener('resize', requestActiveRender);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (interactive) {
@@ -111,7 +121,7 @@ function RenderScheduler({ interactive }: { interactive: boolean }) {
         });
       }
     };
-  }, [gl, glDomElement, interactive, invalidate]);
+  }, [gl, glDomElement, interactive, invalidate, onContextLost, onContextRestored]);
 
   return null;
 }
@@ -171,11 +181,17 @@ function ProgressiveQualityGate({ enabled, onUpgrade }: { enabled: boolean; onUp
 export default function WebGLScene({ interactive, route, revealMode, transitionPhase }: WebGLSceneProps) {
   const [highQuality, setHighQuality] = useState(false);
   const isMobile = useViewportCategory();
-  const dpr: [number, number] = isMobile ? [1, 1] : highQuality ? [1.25, 2] : [0.75, 1];
-  const shadowMapSize = highQuality ? (isMobile ? 1024 : 2048) : isMobile ? 512 : 768;
+  const dpr: [number, number] = isMobile ? [1, 1] : highQuality ? [1, 1.5] : [0.75, 1];
+  const shadowMapSize = highQuality ? (isMobile ? 1024 : 1536) : isMobile ? 512 : 768;
   const mood = getModelRouteMood(route);
-  const enableShadows = !isMobile;
-  const enableEnvironment = !isMobile;
+  const enableShadows = highQuality && !isMobile;
+  const enableEnvironment = highQuality && !isMobile;
+  const handleContextLost = useCallback(() => {
+    setHighQuality(false);
+  }, []);
+  const handleContextRestored = useCallback(() => {
+    setHighQuality(false);
+  }, []);
   const ambientIntensity = (highQuality ? 0.1 : 0.18) * mood.lightMultiplier;
   const hemisphereIntensity = (highQuality ? 1.38 : 1.58) * mood.lightMultiplier;
   const directionalIntensity = (highQuality ? 1.28 : 1.42) * mood.lightMultiplier;
@@ -187,14 +203,18 @@ export default function WebGLScene({ interactive, route, revealMode, transitionP
         dpr={dpr}
         frameloop="demand"
         camera={{ position: [0.02, 0.12, 4.18], fov: 30 }}
-        gl={{ antialias: !isMobile, alpha: true, powerPreference: isMobile ? 'default' : 'high-performance' }}
+        gl={{ antialias: highQuality && !isMobile, alpha: true, powerPreference: 'default' }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = 1.56;
         }}
       >
         <ProgressiveQualityGate enabled={interactive && !isMobile} onUpgrade={() => setHighQuality(true)} />
-        <RenderScheduler interactive={interactive} />
+        <RenderScheduler
+          interactive={interactive}
+          onContextLost={handleContextLost}
+          onContextRestored={handleContextRestored}
+        />
         <ambientLight intensity={ambientIntensity} />
         <hemisphereLight color="#fffdf8" groundColor="#d8d0c7" intensity={hemisphereIntensity} />
         <directionalLight
