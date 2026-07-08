@@ -1,11 +1,23 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { emitInteractionEvent } from '../../lib/interactions';
+import { emitInteractionEvent, offInteractionEvent, onInteractionEvent } from '../../lib/interactions';
 
 export function useModelCursor() {
   const activeLabel = useRef<string | null>(null);
+
+  useEffect(() => {
+    const resetActiveLabel = () => {
+      activeLabel.current = null;
+    };
+    onInteractionEvent(window, 'cursorReset', resetActiveLabel);
+    onInteractionEvent(window, 'cursorLeave', resetActiveLabel);
+    return () => {
+      offInteractionEvent(window, 'cursorReset', resetActiveLabel);
+      offInteractionEvent(window, 'cursorLeave', resetActiveLabel);
+    };
+  }, []);
 
   const dispatchCursorLabel = useCallback((label: string | null) => {
     if (activeLabel.current === label) return;
