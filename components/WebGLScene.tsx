@@ -5,6 +5,8 @@ import { Environment } from '@react-three/drei';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import SignalModel from './webgl/SignalModel';
+import type { RouteId } from '../lib/routes';
+import { getModelRouteMood } from './webgl/modelRoutes';
 
 const IDLE_RENDER_INTERVAL_MS = 1000 / 12;
 const IDLE_RENDER_INTERVAL_MS_NON_INTERACTIVE = 1000 / 6;
@@ -13,6 +15,7 @@ const LOW_QUALITY_UPGRADE_DELAY_MS = 1800;
 
 type WebGLSceneProps = {
   interactive: boolean;
+  route: RouteId | null;
 };
 
 function RenderScheduler({ interactive }: { interactive: boolean }) {
@@ -156,14 +159,16 @@ function ProgressiveQualityGate({ onUpgrade }: { onUpgrade: () => void }) {
   return null;
 }
 
-export default function WebGLScene({ interactive }: WebGLSceneProps) {
+export default function WebGLScene({ interactive, route }: WebGLSceneProps) {
   const [highQuality, setHighQuality] = useState(false);
   const isMobile = useViewportCategory();
   const dpr: [number, number] = highQuality ? [1.25, 2] : isMobile ? [1, 1.5] : [0.75, 1];
   const shadowMapSize = highQuality ? (isMobile ? 1024 : 2048) : isMobile ? 512 : 768;
-  const ambientIntensity = highQuality ? 0.1 : 0.18;
-  const hemisphereIntensity = highQuality ? 1.38 : 1.58;
-  const directionalIntensity = highQuality ? 1.28 : 1.42;
+  const mood = getModelRouteMood(route);
+  const ambientIntensity = (highQuality ? 0.1 : 0.18) * mood.lightMultiplier;
+  const hemisphereIntensity = (highQuality ? 1.38 : 1.58) * mood.lightMultiplier;
+  const directionalIntensity = (highQuality ? 1.28 : 1.42) * mood.lightMultiplier;
+  const environmentIntensity = (highQuality ? 0.58 : 0.42) * mood.environmentMultiplier;
   return (
     <div className="webgl-canvas-wrap">
       <Canvas
@@ -191,10 +196,10 @@ export default function WebGLScene({ interactive }: WebGLSceneProps) {
           shadow-mapSize-width={shadowMapSize}
         />
         <Suspense fallback={null}>
-          <SignalModel interactive={interactive} highQuality={highQuality} />
+          <SignalModel interactive={interactive} highQuality={highQuality} mood={mood} />
         </Suspense>
         <Suspense fallback={null}>
-          <Environment preset="city" environmentIntensity={highQuality ? 0.58 : 0.42} />
+          <Environment preset="city" environmentIntensity={environmentIntensity} />
         </Suspense>
       </Canvas>
     </div>

@@ -13,12 +13,21 @@ import { emitInteractionEvent } from '../../lib/interactions';
 import { useNavigate } from '../../lib/navigationContext';
 import { tryCreateShowreelVideoTextureResource } from './textures';
 import { getRouteForMaterial } from './modelRoutes';
+import type { ModelRouteMood } from './modelRoutes';
 import { useModelCursor } from './useModelCursor';
 import { useModelInteractions } from './useModelInteractions';
 import { useSignalModelFrame } from './useSignalModelFrame';
 import { useCanvasHoverPointer } from './useCanvasHoverPointer';
 
-export default function SignalModel({ interactive, highQuality }: { interactive: boolean; highQuality: boolean }) {
+export default function SignalModel({
+  interactive,
+  highQuality,
+  mood,
+}: {
+  interactive: boolean;
+  highQuality: boolean;
+  mood: ModelRouteMood;
+}) {
   const textureInterval = interactive ? 1 / 24 : 1 / 12;
   const initialTextureInterval = highQuality ? 1 / 24 : 1 / 12;
   const group = useRef<THREE.Object3D | null>(null);
@@ -47,6 +56,18 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
     baseEmissive: THREE.Color;
     baseEmissiveIntensity: number;
   } | null>(null);
+  const activeSignRippleRef = useRef<{
+    mesh: THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>;
+    material: THREE.MeshStandardMaterial;
+    originalMaterial: THREE.Material;
+    materialIndex: number | null;
+    startedAt: number;
+    uniforms: {
+      uPortalProgress: { value: number };
+      uPortalStrength: { value: number };
+      uPortalOrigin: { value: THREE.Vector2 };
+    };
+  } | null>(null);
 
   function restoreActiveSignGlow() {
     const active = activeSignGlowRef.current;
@@ -56,6 +77,20 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
     active.material.emissiveIntensity = active.baseEmissiveIntensity;
     active.material.needsUpdate = true;
     activeSignGlowRef.current = null;
+  }
+
+  function restoreActiveSignRipple() {
+    const active = activeSignRippleRef.current;
+    if (!active) return;
+
+    if (active.materialIndex === null) {
+      active.mesh.material = active.originalMaterial;
+    } else if (Array.isArray(active.mesh.material)) {
+      active.mesh.material[active.materialIndex] = active.originalMaterial;
+    }
+
+    active.material.dispose();
+    activeSignRippleRef.current = null;
   }
 
   const prepared = useMemo(() => prepareSignalScene(scene), [scene]);
@@ -137,6 +172,7 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
       }
       isPortalNavigationPendingRef.current = false;
       restoreActiveSignGlow();
+      restoreActiveSignRipple();
       const material = showreelMeshRef.current?.material;
       if (material && !Array.isArray(material)) {
         const standardMaterial = material as THREE.MeshStandardMaterial;
@@ -160,6 +196,89 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
 
     return material instanceof THREE.MeshStandardMaterial ? material : null;
   }, []);
+
+  useEffect(() => {
+    invalidate();
+  }, [invalidate, mood]);
+
+  const startSignRipple = useCallback((hit: InteractiveCanvasHit) => {
+    const uv = hit.intersection.uv;
+    if (!uv) return getHitStandardMaterial(hit);
+
+    restoreActiveSignRipple();
+    const mesh = hit.intersection.object as THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>;
+    const materials = mesh.material;
+    const materialIndex = Array.isArray(materials) ? (hit.intersection.face?.materialIndex ?? 0) : null;
+    const originalMaterial = Array.isArray(materials) ? materials[materialIndex ?? 0] : materials;
+    if (!(originalMaterial instanceof THREE.MeshStandardMaterial)) return null;
+
+    const rippleMaterial = originalMaterial.clone();
+    const uniforms = {
+      uPortalProgress: { value: 0 },
+      uPortalStrength: { value: 0 },
+      uPortalOrigin: { value: uv.clone() },
+    };
+
+    rippleMaterial.onBeforeCompile = (shader) => {
+      shader.uniforms.uPortalProgress = uniforms.uPortalProgress;
+      shader.uniforms.uPortalStrength = uniforms.uPortalStrength;
+      shader.uniforms.uPortalOrigin = uniforms.uPortalOrigin;
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec2 vPortalUv;')
+        .replace('#include <uv_vertex>', '#include <uv_vertex>\nvPortalUv = uv;');
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          '#include <common>',
+          '#include <common>\nuniform float uPortalProgress;\nuniform float uPortalStrength;\nuniform vec2 uPortalOrigin;\nvarying vec2 vPortalUv;',
+        )
+        .replace(
+          '#include <dithering_fragment>',
+          'float portalDistance = distance(vPortalUv, uPortalOrigin);\nfloat portalRadius = mix(0.03, 0.62, uPortalProgress);\nfloat portalRing = smoothstep(0.055, 0.0, abs(portalDistance - portalRadius));\nfloat portalCore = smoothstep(0.22, 0.0, portalDistance) * (1.0 - uPortalProgress);\nvec3 portalColor = mix(vec3(0.42, 0.72, 1.0), vec3(1.0, 0.76, 0.42), 0.28);\ngl_FragColor.rgb += portalColor * (portalRing * 0.42 + portalCore * 0.18) * uPortalStrength;\n#include <dithering_fragment>',
+        );
+    };
+    rippleMaterial.customProgramCacheKey = () => 'signal-portal-ripple-v1';
+    rippleMaterial.needsUpdate = true;
+
+    if (materialIndex === null) {
+      mesh.material = rippleMaterial;
+    } else if (Array.isArray(mesh.material)) {
+      mesh.material[materialIndex] = rippleMaterial;
+    }
+
+    activeSignRippleRef.current = {
+      mesh,
+      material: rippleMaterial,
+      originalMaterial,
+      materialIndex,
+      startedAt: performance.now(),
+      uniforms,
+    };
+
+    return rippleMaterial;
+  }, [getHitStandardMaterial]);
+
+  useFrame(() => {
+    const modelGroup = group.current;
+    if (!modelGroup || portalPulseStartedAtRef.current !== null) return;
+
+    const targetPosition = new THREE.Vector3(...mood.position);
+    const targetRotation = new THREE.Euler(...mood.rotation);
+    const targetScale = new THREE.Vector3(mood.scale, mood.scale, mood.scale);
+    modelGroup.position.lerp(targetPosition, 0.08);
+    modelGroup.rotation.x = THREE.MathUtils.lerp(modelGroup.rotation.x, targetRotation.x, 0.08);
+    modelGroup.rotation.y = THREE.MathUtils.lerp(modelGroup.rotation.y, targetRotation.y, 0.08);
+    modelGroup.rotation.z = THREE.MathUtils.lerp(modelGroup.rotation.z, targetRotation.z, 0.08);
+    modelGroup.scale.lerp(targetScale, 0.08);
+
+    const isSettled =
+      modelGroup.position.distanceTo(targetPosition) < 0.002 &&
+      Math.abs(modelGroup.rotation.x - targetRotation.x) < 0.0005 &&
+      Math.abs(modelGroup.rotation.y - targetRotation.y) < 0.0005 &&
+      Math.abs(modelGroup.rotation.z - targetRotation.z) < 0.0005 &&
+      modelGroup.scale.distanceTo(targetScale) < 0.002;
+
+    if (!isSettled) invalidate();
+  });
 
   useFrame(() => {
     const startedAt = portalPulseStartedAtRef.current;
@@ -221,6 +340,24 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
     invalidate();
   });
 
+  useFrame(() => {
+    const active = activeSignRippleRef.current;
+    if (!active) return;
+
+    const elapsed = performance.now() - active.startedAt;
+    const progress = Math.min(elapsed / 560, 1);
+    const fade = Math.sin(progress * Math.PI);
+    active.uniforms.uPortalProgress.value = progress;
+    active.uniforms.uPortalStrength.value = fade;
+
+    if (progress >= 1) {
+      restoreActiveSignRipple();
+      return;
+    }
+
+    invalidate();
+  });
+
   const navigateToMaterial = useCallback(
     (hit: InteractiveCanvasHit, event: MouseEvent | PointerEvent) => {
       if (isPortalNavigationPendingRef.current) return;
@@ -261,7 +398,7 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
       }
 
       restoreActiveSignGlow();
-      const signMaterial = getHitStandardMaterial(hit);
+      const signMaterial = startSignRipple(hit);
       if (signMaterial) {
         activeSignGlowRef.current = {
           material: signMaterial,
@@ -289,7 +426,7 @@ export default function SignalModel({ interactive, highQuality }: { interactive:
         performNavigation();
       }, 90);
     },
-    [getHitStandardMaterial, invalidate, navigate],
+    [invalidate, navigate, startSignRipple],
   );
 
   const { handlePointerDown, handlePointerUp, handleClick, handlePointerMissed } =
