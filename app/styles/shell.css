@@ -58,11 +58,13 @@
   background: var(--background);
 }
 
-.persistent-experience[data-transitioning='true'] .site-nav {
-  pointer-events: none;
-}
-
-.persistent-experience[data-transitioning='true'] .back-circle-control--shell {
+.persistent-experience[data-transitioning='true'] .site-nav,
+.persistent-experience[data-transitioning='true'] .back-circle-control--shell,
+.persistent-experience[data-transitioning='true'] .route-current,
+.persistent-experience[data-transitioning='true'] .route-current > *,
+.persistent-experience[data-transitioning='true'] .cursor,
+.persistent-experience[data-transitioning='true'] a,
+.persistent-experience[data-transitioning='true'] button {
   pointer-events: none;
 }
 

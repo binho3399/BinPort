@@ -11,8 +11,6 @@ import {
   DRIFT_AMPLITUDE_VIVID,
   GUST_AMP,
   GUST_PERIOD,
-  HUE_CYCLE_PERIOD,
-  HUE_CYCLE_PERIOD_VIVID,
   PARALLAX_X_AMP,
   PARALLAX_Y_AMP,
   SPRITE_SCALE,
@@ -28,13 +26,16 @@ import { skyTransition } from '../lib/skyTransition';
 const wrapPosition = (value: number, modulus: number) => ((value % modulus) + modulus) % modulus;
 
 export default function SkyBackground() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const baseCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const atmosphereCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const baseCanvas = baseCanvasRef.current;
+    const atmosphereCanvas = atmosphereCanvasRef.current;
+    if (!baseCanvas || !atmosphereCanvas) return;
+    const baseCtx = baseCanvas.getContext('2d');
+    const ctx = atmosphereCanvas.getContext('2d');
+    if (!baseCtx || !ctx) return;
 
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const vivid = true;
@@ -52,16 +53,20 @@ export default function SkyBackground() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const w = Math.floor(window.innerWidth * dpr);
       const h = Math.floor(window.innerHeight * dpr);
-      canvas.width = w;
-      canvas.height = h;
-      canvas.style.width = `${window.innerWidth}px`;
-      canvas.style.height = `${window.innerHeight}px`;
+      for (const canvas of [baseCanvas, atmosphereCanvas]) {
+        canvas.width = w;
+        canvas.height = h;
+        canvas.style.width = `${window.innerWidth}px`;
+        canvas.style.height = `${window.innerHeight}px`;
+      }
       const shouldUseMobileClouds = window.innerWidth <= 768;
       if (shouldUseMobileClouds !== usingMobileClouds) {
         renderClouds = buildRenderClouds(shouldUseMobileClouds ? MOBILE_CLOUDS_BY_DEPTH : CLOUDS_BY_DEPTH);
         usingMobileClouds = shouldUseMobileClouds;
       }
       bgCanvas = buildBackground(w, h, SKY_STOPS);
+      baseCtx.clearRect(0, 0, w, h);
+      baseCtx.drawImage(bgCanvas, 0, 0);
       if (vivid) {
         haloCanvas = buildSunGlowCanvas(w, h);
         if (!particles) {
@@ -74,16 +79,10 @@ export default function SkyBackground() {
 
     const drawScene = (elapsed: number) => {
       if (!bgCanvas) return;
-      const { width, height } = canvas;
+      const { width, height } = atmosphereCanvas;
       const ascend = skyTransition.ascend;
       const baseSize = Math.min(width, height);
       ctx.clearRect(0, 0, width, height);
-      if (!prefersReduced) {
-        const hueDelta = 0.5 * Math.sin(2 * Math.PI * elapsed / (vivid ? HUE_CYCLE_PERIOD_VIVID : HUE_CYCLE_PERIOD));
-        ctx.filter = `hue-rotate(${hueDelta * 10}deg)`;
-      }
-      ctx.drawImage(bgCanvas, 0, 0);
-      ctx.filter = 'none';
       if (vivid) {
         pointerX += (targetX - pointerX) * 0.05;
         pointerY += (targetY - pointerY) * 0.05;
@@ -155,5 +154,10 @@ export default function SkyBackground() {
     return () => { stop(); document.removeEventListener('visibilitychange', onVisibility); window.removeEventListener('resize', resize); if (vivid) { window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerleave', onPointerClear); window.removeEventListener('blur', onPointerClear); } };
   }, []);
 
-  return <canvas ref={canvasRef} className="sky-background__canvas" aria-hidden="true" />;
+  return (
+    <>
+      <canvas ref={baseCanvasRef} className="sky-background__canvas sky-background__canvas--base" aria-hidden="true" />
+      <canvas ref={atmosphereCanvasRef} className="sky-background__canvas sky-background__canvas--atmosphere" aria-hidden="true" />
+    </>
+  );
 }

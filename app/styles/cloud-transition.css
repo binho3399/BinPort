@@ -1,0 +1,87 @@
+.cloud-transition-veil {
+  position: fixed;
+  inset: -18vh -16vw;
+  z-index: calc(var(--z-content) + 8);
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(1.18);
+  transform-origin: 50% 50%;
+  will-change: transform, opacity, filter;
+  contain: layout paint style;
+}
+
+.cloud-transition-veil__wash,
+.cloud-transition-veil__band,
+.cloud-transition-veil__mist {
+  position: absolute;
+  pointer-events: none;
+  transform: translate3d(0, 0, 0);
+  will-change: transform, opacity;
+}
+
+.cloud-transition-veil__wash {
+  inset: -8%;
+  background:
+    radial-gradient(ellipse 86% 52% at 46% 48%, rgba(255, 255, 255, 0.82) 0%, rgba(246, 251, 253, 0.58) 38%, rgba(231, 242, 248, 0.2) 68%, rgba(231, 242, 248, 0) 100%),
+    linear-gradient(180deg, rgba(219, 236, 246, 0.16), rgba(255, 255, 255, 0.42) 44%, rgba(213, 232, 242, 0.18));
+}
+
+.cloud-transition-veil__band {
+  left: 50%;
+  width: 150vw;
+  height: 42vh;
+  border-radius: 50%;
+  filter: blur(26px);
+  mix-blend-mode: screen;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.94) 0%, rgba(246, 251, 253, 0.74) 42%, rgba(230, 242, 248, 0.16) 76%, rgba(230, 242, 248, 0) 100%);
+}
+
+.cloud-transition-veil__band--upper {
+  top: 4vh;
+  transform: translateX(-54%) rotate(-5deg) scaleX(1.12);
+  opacity: 0.82;
+}
+
+.cloud-transition-veil__band--middle {
+  top: 30vh;
+  height: 50vh;
+  transform: translateX(-48%) rotate(3deg) scaleX(1.18);
+  opacity: 0.96;
+}
+
+.cloud-transition-veil__band--lower {
+  top: 58vh;
+  height: 44vh;
+  transform: translateX(-52%) rotate(-2deg) scaleX(1.08);
+  opacity: 0.74;
+}
+
+.cloud-transition-veil__mist {
+  top: 8vh;
+  width: 78vw;
+  height: 90vh;
+  border-radius: 48%;
+  filter: blur(34px);
+  opacity: 0.7;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.72) 0%, rgba(240, 248, 252, 0.38) 54%, rgba(240, 248, 252, 0) 100%);
+}
+
+.cloud-transition-veil__mist--left {
+  left: -26vw;
+  transform: rotate(8deg) scaleY(0.8);
+}
+
+.cloud-transition-veil__mist--right {
+  right: -24vw;
+  transform: rotate(-10deg) scaleY(0.86);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cloud-transition-veil,
+  .cloud-transition-veil__band,
+  .cloud-transition-veil__mist {
+    filter: none;
+  }
+}

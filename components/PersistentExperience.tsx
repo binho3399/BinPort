@@ -9,6 +9,7 @@ import SkyBackground from './SkyBackground';
 import Preloader from './Preloader';
 import FilmGrain from './FilmGrain';
 import SiteNav from './SiteNav';
+import CloudTransitionVeil from './CloudTransitionVeil';
 import { getRouteId, isContactRoute, isHomeRoute, shouldShowShellBackButton } from '../lib/routes';
 import { NavigationContext } from '../lib/navigationContext';
 import { offInteractionEvent, onInteractionEvent } from '../lib/interactions';
@@ -31,7 +32,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
     () => typeof document !== 'undefined' && document.documentElement.classList.contains('is-entered'),
   );
   const [showOverlayExtras, setShowOverlayExtras] = useState(false);
-  const { routeWaveRef, displayRoute, displayedChildren, transitionPhase, handleNavigate } =
+  const { displayRoute, displayedChildren, transitionPhase, revealMode, handleNavigate } =
     useRouteTransition(children);
 
   useEffect(() => {
@@ -102,7 +103,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
     return () => offInteractionEvent(window, 'cursorReset', handleCursorReset);
   }, []);
 
-  usePageRevealAnimations(displayRoute, page);
+  usePageRevealAnimations(displayRoute, page, revealMode);
 
   return (
     <NavigationContext.Provider value={handleNavigate}>
@@ -121,14 +122,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
         ) : null}
       </div>
       <Preloader />
-      <svg
-        className="route-wave"
-        viewBox="0 0 100 100"
-        preserveAspectRatio="xMidYMin slice"
-        aria-hidden="true"
-      >
-        <path ref={routeWaveRef} />
-      </svg>
+      <CloudTransitionVeil />
       {shouldShowShellBackButton(route) ? (
         <button
           type="button"
