@@ -64,8 +64,13 @@ export function useModelDragRotation({
       }
     };
 
-    mediaQuery.addEventListener('change', handleMotionPreferenceChange);
-    return () => mediaQuery.removeEventListener('change', handleMotionPreferenceChange);
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', handleMotionPreferenceChange);
+      return () => mediaQuery.removeEventListener('change', handleMotionPreferenceChange);
+    }
+
+    mediaQuery.addListener(handleMotionPreferenceChange);
+    return () => mediaQuery.removeListener(handleMotionPreferenceChange);
   }, [invalidate]);
 
   useEffect(() => {

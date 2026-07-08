@@ -123,8 +123,13 @@ function useViewportCategory() {
     const media = window.matchMedia('(max-width: 620px)');
     const update = () => setIsNarrowViewport(media.matches);
     update();
-    media.addEventListener('change', update);
-    return () => media.removeEventListener('change', update);
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', update);
+      return () => media.removeEventListener('change', update);
+    }
+
+    media.addListener(update);
+    return () => media.removeListener(update);
   }, []);
 
   return isNarrowViewport;
@@ -166,9 +171,11 @@ function ProgressiveQualityGate({ enabled, onUpgrade }: { enabled: boolean; onUp
 export default function WebGLScene({ interactive, route, revealMode, transitionPhase }: WebGLSceneProps) {
   const [highQuality, setHighQuality] = useState(false);
   const isMobile = useViewportCategory();
-  const dpr: [number, number] = highQuality ? [1.25, 2] : isMobile ? [1, 1.5] : [0.75, 1];
+  const dpr: [number, number] = isMobile ? [1, 1] : highQuality ? [1.25, 2] : [0.75, 1];
   const shadowMapSize = highQuality ? (isMobile ? 1024 : 2048) : isMobile ? 512 : 768;
   const mood = getModelRouteMood(route);
+  const enableShadows = !isMobile;
+  const enableEnvironment = !isMobile;
   const ambientIntensity = (highQuality ? 0.1 : 0.18) * mood.lightMultiplier;
   const hemisphereIntensity = (highQuality ? 1.38 : 1.58) * mood.lightMultiplier;
   const directionalIntensity = (highQuality ? 1.28 : 1.42) * mood.lightMultiplier;
@@ -176,22 +183,22 @@ export default function WebGLScene({ interactive, route, revealMode, transitionP
   return (
     <div className="webgl-canvas-wrap">
       <Canvas
-        shadows={{ type: THREE.PCFShadowMap }}
+        shadows={enableShadows ? { type: THREE.PCFShadowMap } : false}
         dpr={dpr}
         frameloop="demand"
         camera={{ position: [0.02, 0.12, 4.18], fov: 30 }}
-        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+        gl={{ antialias: !isMobile, alpha: true, powerPreference: isMobile ? 'default' : 'high-performance' }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = 1.56;
         }}
       >
-        <ProgressiveQualityGate enabled={interactive} onUpgrade={() => setHighQuality(true)} />
+        <ProgressiveQualityGate enabled={interactive && !isMobile} onUpgrade={() => setHighQuality(true)} />
         <RenderScheduler interactive={interactive} />
         <ambientLight intensity={ambientIntensity} />
         <hemisphereLight color="#fffdf8" groundColor="#d8d0c7" intensity={hemisphereIntensity} />
         <directionalLight
-          castShadow
+          castShadow={enableShadows}
           color="#fff7ed"
           position={[4.8, 6.2, 4.2]}
           intensity={directionalIntensity}
@@ -208,9 +215,11 @@ export default function WebGLScene({ interactive, route, revealMode, transitionP
             routeCoverActive={route === 'home' && transitionPhase === 'covering'}
           />
         </Suspense>
-        <Suspense fallback={null}>
-          <Environment preset="city" environmentIntensity={environmentIntensity} />
-        </Suspense>
+        {enableEnvironment ? (
+          <Suspense fallback={null}>
+            <Environment preset="city" environmentIntensity={environmentIntensity} />
+          </Suspense>
+        ) : null}
       </Canvas>
     </div>
   );
