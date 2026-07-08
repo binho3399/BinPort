@@ -18,6 +18,7 @@ import { useModelCursor } from './useModelCursor';
 import { useModelInteractions } from './useModelInteractions';
 import { useSignalModelFrame } from './useSignalModelFrame';
 import { useCanvasHoverPointer } from './useCanvasHoverPointer';
+import { useModelDragRotation } from './useModelDragRotation';
 
 export default function SignalModel({
   interactive,
@@ -95,6 +96,25 @@ export default function SignalModel({
 
   const prepared = useMemo(() => prepareSignalScene(scene), [scene]);
   const preparedScene = prepared.clone;
+  const visualRoot = useMemo(() => {
+    const root = new THREE.Group();
+    root.name = 'SignalModelVisualRoot';
+
+    preparedScene.updateMatrixWorld(true);
+    const cameraObject = preparedScene.getObjectByName('Camera');
+    if (cameraObject?.parent && cameraObject.parent !== preparedScene) {
+      preparedScene.attach(cameraObject);
+    }
+
+    preparedScene.add(root);
+    const topLevelChildren = [...preparedScene.children];
+    for (const child of topLevelChildren) {
+      if (child === root || child === cameraObject) continue;
+      root.attach(child);
+    }
+
+    return root;
+  }, [preparedScene]);
   const signSurfaces: readonly InteractiveSignSurface[] = prepared.signSurfaces;
   const raycastTargets = useMemo<readonly THREE.Object3D[]>(() => {
     return signSurfaces.every((surface) => (surface.mesh as THREE.Mesh).isMesh === true)
@@ -102,6 +122,13 @@ export default function SignalModel({
       : [preparedScene];
   }, [preparedScene, signSurfaces]);
   const cameraRef = useModelCamera(preparedScene);
+
+  useEffect(() => {
+    group.current = visualRoot;
+    return () => {
+      if (group.current === visualRoot) group.current = null;
+    };
+  }, [visualRoot]);
 
   useEffect(() => {
     animatedTexturesRef.current = prepared.animatedTextures;
@@ -201,6 +228,12 @@ export default function SignalModel({
     invalidate();
   }, [invalidate, mood]);
 
+  const { rotationOffsetRef, shouldSuppressNavigation } = useModelDragRotation({
+    element: gl.domElement,
+    interactive,
+    invalidate,
+  });
+
   const startSignRipple = useCallback((hit: InteractiveCanvasHit) => {
     const uv = hit.intersection.uv;
     if (!uv) return getHitStandardMaterial(hit);
@@ -261,8 +294,13 @@ export default function SignalModel({
     const modelGroup = group.current;
     if (!modelGroup || portalPulseStartedAtRef.current !== null) return;
 
+    const rotationOffset = rotationOffsetRef.current;
     const targetPosition = new THREE.Vector3(...mood.position);
-    const targetRotation = new THREE.Euler(...mood.rotation);
+    const targetRotation = new THREE.Euler(
+      mood.rotation[0] + rotationOffset.x,
+      mood.rotation[1] + rotationOffset.y,
+      mood.rotation[2],
+    );
     const targetScale = new THREE.Vector3(mood.scale, mood.scale, mood.scale);
     modelGroup.position.lerp(targetPosition, 0.08);
     modelGroup.rotation.x = THREE.MathUtils.lerp(modelGroup.rotation.x, targetRotation.x, 0.08);
@@ -437,6 +475,7 @@ export default function SignalModel({
       raycaster,
       raycastTargets,
       signSurfaces,
+      shouldSuppressNavigation,
     });
 
   useSignalModelFrame({
@@ -468,7 +507,6 @@ export default function SignalModel({
 
   return (
     <primitive
-      ref={group}
       object={preparedScene}
       onClick={handleClick}
       onPointerDown={handlePointerDown}

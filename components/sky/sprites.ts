@@ -9,9 +9,9 @@ export function buildPuffSprite(cloud: Cloud, puff: Puff): HTMLCanvasElement {
   const b = Math.round(SKY_TINT.b + (255 - SKY_TINT.b) * depth);
   const alphaMul = 0.5 + depth * 0.5;
   const a = puff.alpha * alphaMul;
-  const fadeStart = 0.4 + depth * 0.2;
-  const fadeMid = 0.78 + depth * 0.1;
-  const midAlpha = 0.6 - depth * 0.15;
+  const fadeStart = 0.36 + depth * 0.16;
+  const fadeMid = 0.72 + depth * 0.12;
+  const midAlpha = 0.48 - depth * 0.1;
   const canvas = document.createElement('canvas');
   canvas.width = SPRITE_SIZE;
   canvas.height = SPRITE_SIZE;
@@ -19,38 +19,74 @@ export function buildPuffSprite(cloud: Cloud, puff: Puff): HTMLCanvasElement {
   if (!ctx) return canvas;
 
   const c = SPRITE_SIZE / 2;
-  const gradient = ctx.createRadialGradient(c - SPRITE_RADIUS * 0.08, c - SPRITE_RADIUS * 0.22, 0, c, c, SPRITE_RADIUS);
-  gradient.addColorStop(0, `rgba(255, 255, 255, ${a})`);
-  gradient.addColorStop(0.22, `rgba(${Math.min(255, r + 10)}, ${Math.min(255, g + 10)}, ${Math.min(255, b + 12)}, ${a * 0.96})`);
-  gradient.addColorStop(fadeStart, `rgba(${r}, ${g}, ${b}, ${a * 0.88})`);
-  gradient.addColorStop(fadeMid, `rgba(${r}, ${g}, ${b}, ${a * midAlpha})`);
-  gradient.addColorStop(0.92, `rgba(${r}, ${g}, ${b}, ${a * midAlpha * 0.3})`);
-  gradient.addColorStop(1, `rgba(${SKY_TINT.r}, ${SKY_TINT.g}, ${SKY_TINT.b}, 0)`);
+  const clamp = (value: number) => Math.max(0, Math.min(255, Math.round(value)));
+  const blueShadow = {
+    r: clamp(SKY_TINT.r - 26 + depth * 10),
+    g: clamp(SKY_TINT.g - 18 + depth * 8),
+    b: clamp(SKY_TINT.b + 8),
+  };
 
   ctx.filter = `blur(${SPRITE_BLUR}px)`;
-  ctx.fillStyle = gradient;
+  const body = ctx.createRadialGradient(
+    c - SPRITE_RADIUS * 0.12,
+    c - SPRITE_RADIUS * 0.24,
+    SPRITE_RADIUS * 0.04,
+    c + SPRITE_RADIUS * 0.02,
+    c + SPRITE_RADIUS * 0.04,
+    SPRITE_RADIUS,
+  );
+  body.addColorStop(0, `rgba(255, 255, 255, ${a * 0.96})`);
+  body.addColorStop(0.2, `rgba(${clamp(r + 12)}, ${clamp(g + 14)}, ${clamp(b + 16)}, ${a * 0.9})`);
+  body.addColorStop(fadeStart, `rgba(${r}, ${g}, ${b}, ${a * 0.78})`);
+  body.addColorStop(fadeMid, `rgba(${clamp(r - 8)}, ${clamp(g - 4)}, ${clamp(b + 4)}, ${a * midAlpha})`);
+  body.addColorStop(0.94, `rgba(${SKY_TINT.r}, ${SKY_TINT.g}, ${SKY_TINT.b}, ${a * 0.08})`);
+  body.addColorStop(1, `rgba(${SKY_TINT.r}, ${SKY_TINT.g}, ${SKY_TINT.b}, 0)`);
+  ctx.fillStyle = body;
+  ctx.fillRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+
+  const lowerShade = ctx.createRadialGradient(
+    c + SPRITE_RADIUS * 0.3,
+    c + SPRITE_RADIUS * 0.38,
+    SPRITE_RADIUS * 0.06,
+    c + SPRITE_RADIUS * 0.1,
+    c + SPRITE_RADIUS * 0.16,
+    SPRITE_RADIUS * 0.82,
+  );
+  lowerShade.addColorStop(0, `rgba(${blueShadow.r}, ${blueShadow.g}, ${blueShadow.b}, ${a * 0.18})`);
+  lowerShade.addColorStop(0.42, `rgba(${blueShadow.r}, ${blueShadow.g}, ${blueShadow.b}, ${a * 0.08})`);
+  lowerShade.addColorStop(1, `rgba(${SKY_TINT.r}, ${SKY_TINT.g}, ${SKY_TINT.b}, 0)`);
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.fillStyle = lowerShade;
   ctx.fillRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
   ctx.filter = 'none';
 
-  const shadow = ctx.createRadialGradient(
-    c + SPRITE_RADIUS * 0.18,
-    c + SPRITE_RADIUS * 0.28,
-    SPRITE_RADIUS * 0.1,
-    c + SPRITE_RADIUS * 0.1,
-    c + SPRITE_RADIUS * 0.14,
-    SPRITE_RADIUS * 0.9,
-  );
-  shadow.addColorStop(0, `rgba(${SKY_TINT.r - 12}, ${SKY_TINT.g - 8}, ${SKY_TINT.b + 8}, ${a * 0.13})`);
-  shadow.addColorStop(0.55, `rgba(${SKY_TINT.r}, ${SKY_TINT.g}, ${SKY_TINT.b}, ${a * 0.06})`);
-  shadow.addColorStop(1, `rgba(${SKY_TINT.r}, ${SKY_TINT.g}, ${SKY_TINT.b}, 0)`);
-  ctx.globalCompositeOperation = 'multiply';
-  ctx.fillStyle = shadow;
-  ctx.fillRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
   ctx.globalCompositeOperation = 'screen';
-  const highlight = ctx.createRadialGradient(c - SPRITE_RADIUS * 0.28, c - SPRITE_RADIUS * 0.35, 0, c - SPRITE_RADIUS * 0.18, c - SPRITE_RADIUS * 0.22, SPRITE_RADIUS * 0.55);
-  highlight.addColorStop(0, `rgba(255, 255, 255, ${a * 0.18})`);
-  highlight.addColorStop(1, 'rgba(255, 255, 255, 0)');
-  ctx.fillStyle = highlight;
+  const innerGlow = ctx.createRadialGradient(
+    c - SPRITE_RADIUS * 0.18,
+    c - SPRITE_RADIUS * 0.18,
+    0,
+    c - SPRITE_RADIUS * 0.04,
+    c - SPRITE_RADIUS * 0.04,
+    SPRITE_RADIUS * 0.68,
+  );
+  innerGlow.addColorStop(0, `rgba(255, 255, 255, ${a * 0.22})`);
+  innerGlow.addColorStop(0.48, `rgba(255, 255, 255, ${a * 0.08})`);
+  innerGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = innerGlow;
+  ctx.fillRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+
+  const rimLight = ctx.createRadialGradient(
+    c - SPRITE_RADIUS * 0.34,
+    c - SPRITE_RADIUS * 0.38,
+    0,
+    c - SPRITE_RADIUS * 0.24,
+    c - SPRITE_RADIUS * 0.3,
+    SPRITE_RADIUS * 0.4,
+  );
+  rimLight.addColorStop(0, `rgba(255, 255, 255, ${a * 0.24})`);
+  rimLight.addColorStop(0.5, `rgba(255, 255, 255, ${a * 0.08})`);
+  rimLight.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = rimLight;
   ctx.fillRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
   ctx.globalCompositeOperation = 'source-over';
 

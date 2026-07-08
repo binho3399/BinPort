@@ -116,8 +116,8 @@ export default function PersistentExperience({ children }: { children: ReactNode
         <div className="sky-layer">
           <SkyBackground />
         </div>
-        {hasEnteredExperience || isHomeShellRoute ? (
-          <WebGLScene route={route} interactive={isHomeShellRoute && hasEnteredExperience} />
+        {isHomeShellRoute ? (
+          <WebGLScene route={route} interactive={hasEnteredExperience} />
         ) : null}
       </div>
       <Preloader />

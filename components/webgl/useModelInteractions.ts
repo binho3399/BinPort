@@ -14,6 +14,7 @@ type UseModelInteractionsOptions = {
   raycaster: THREE.Raycaster;
   raycastTargets: readonly THREE.Object3D[];
   signSurfaces: readonly InteractiveSignSurface[];
+  shouldSuppressNavigation?: () => boolean;
 };
 
 export function useModelInteractions({
@@ -23,6 +24,7 @@ export function useModelInteractions({
   raycaster,
   raycastTargets,
   signSurfaces,
+  shouldSuppressNavigation,
 }: UseModelInteractionsOptions) {
   const touchStart = useRef<{ id: number; x: number; y: number } | null>(null);
 
@@ -59,23 +61,23 @@ export function useModelInteractions({
         event.nativeEvent.clientX - start.x,
         event.nativeEvent.clientY - start.y,
       );
-      if (dist > 12) return;
+      if (dist > 12 || shouldSuppressNavigation?.()) return;
       const hit = getInteractiveHitFromRay(event.ray);
       if (!hit) return;
       navigateToMaterial(hit, event.nativeEvent);
     },
-    [getInteractiveHitFromRay, interactive, navigateToMaterial],
+    [getInteractiveHitFromRay, interactive, navigateToMaterial, shouldSuppressNavigation],
   );
 
   const handleClick = useCallback(
     (event: ThreeEvent<MouseEvent>) => {
       if (!interactive) return;
-      if ((event.nativeEvent as PointerEvent).pointerType === 'touch') return;
+      if ((event.nativeEvent as PointerEvent).pointerType === 'touch' || shouldSuppressNavigation?.()) return;
       const hit = getInteractiveHitFromRay(event.ray);
       if (!hit) return;
       navigateToMaterial(hit, event.nativeEvent);
     },
-    [getInteractiveHitFromRay, interactive, navigateToMaterial],
+    [getInteractiveHitFromRay, interactive, navigateToMaterial, shouldSuppressNavigation],
   );
 
   const handlePointerMissed = useCallback(() => {
