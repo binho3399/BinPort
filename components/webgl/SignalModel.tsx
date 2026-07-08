@@ -20,21 +20,32 @@ import { useSignalModelFrame } from './useSignalModelFrame';
 import { useCanvasHoverPointer } from './useCanvasHoverPointer';
 import { useModelDragRotation } from './useModelDragRotation';
 
+const ROUTE_REVEAL_DELAY_MS = 60;
+const ROUTE_REVEAL_DURATION_MS = 720;
+const ROUTE_COVER_DURATION_MS = 520;
+const easePower3Out = (progress: number) => 1 - Math.pow(1 - progress, 3);
+const easePower3In = (progress: number) => progress * progress * progress;
+
 export default function SignalModel({
   interactive,
   highQuality,
   mood,
   routeRevealActive,
+  routeCoverActive,
 }: {
   interactive: boolean;
   highQuality: boolean;
   mood: ModelRouteMood;
   routeRevealActive: boolean;
+  routeCoverActive: boolean;
 }) {
   const textureInterval = interactive ? 1 / 24 : 1 / 12;
   const initialTextureInterval = highQuality ? 1 / 24 : 1 / 12;
   const group = useRef<THREE.Object3D | null>(null);
   const routeRevealScaleRef = useRef(1);
+  const routeRevealStartedAtRef = useRef<number | null>(null);
+  const routeCoverScaleRef = useRef(1);
+  const routeCoverStartedAtRef = useRef<number | null>(null);
   const navigate = useNavigate();
   const { gl, raycaster, invalidate } = useThree();
   const { scene } = useGLTF('/models/model.glb');
@@ -151,8 +162,16 @@ export default function SignalModel({
   useEffect(() => {
     if (!routeRevealActive) return;
     routeRevealScaleRef.current = 1.5;
+    routeRevealStartedAtRef.current = performance.now();
     invalidate();
   }, [invalidate, routeRevealActive]);
+
+  useEffect(() => {
+    if (!routeCoverActive) return;
+    routeCoverScaleRef.current = 1;
+    routeCoverStartedAtRef.current = performance.now();
+    invalidate();
+  }, [invalidate, routeCoverActive]);
 
   useEffect(() => {
     if (hasVideoApplied.current) return;
@@ -310,10 +329,28 @@ export default function SignalModel({
       mood.rotation[1] + rotationOffset.y,
       mood.rotation[2],
     );
-    routeRevealScaleRef.current = THREE.MathUtils.lerp(routeRevealScaleRef.current, 1, 0.11);
-    if (Math.abs(routeRevealScaleRef.current - 1) < 0.002) routeRevealScaleRef.current = 1;
+    const routeRevealStartedAt = routeRevealStartedAtRef.current;
+    const routeCoverStartedAt = routeCoverStartedAtRef.current;
+    let routeRevealRunning = false;
+    let routeCoverRunning = false;
+    if (routeRevealStartedAt !== null) {
+      const elapsed = performance.now() - routeRevealStartedAt - ROUTE_REVEAL_DELAY_MS;
+      const progress = Math.min(Math.max(elapsed / ROUTE_REVEAL_DURATION_MS, 0), 1);
+      routeRevealScaleRef.current = THREE.MathUtils.lerp(1.5, 1, easePower3Out(progress));
+      routeRevealRunning = progress < 1;
+      if (progress >= 1) {
+        routeRevealScaleRef.current = 1;
+        routeRevealStartedAtRef.current = null;
+      }
+    }
+    if (routeCoverStartedAt !== null) {
+      const progress = Math.min((performance.now() - routeCoverStartedAt) / ROUTE_COVER_DURATION_MS, 1);
+      routeCoverScaleRef.current = THREE.MathUtils.lerp(1, 0.86, easePower3In(progress));
+      routeCoverRunning = progress < 1;
+      if (progress >= 1) routeCoverStartedAtRef.current = null;
+    }
 
-    const revealScale = routeRevealScaleRef.current;
+    const revealScale = routeRevealScaleRef.current * routeCoverScaleRef.current;
     const targetScale = new THREE.Vector3(
       mood.scale * revealScale,
       mood.scale * revealScale,
@@ -323,7 +360,11 @@ export default function SignalModel({
     modelGroup.rotation.x = THREE.MathUtils.lerp(modelGroup.rotation.x, targetRotation.x, 0.08);
     modelGroup.rotation.y = THREE.MathUtils.lerp(modelGroup.rotation.y, targetRotation.y, 0.08);
     modelGroup.rotation.z = THREE.MathUtils.lerp(modelGroup.rotation.z, targetRotation.z, 0.08);
-    modelGroup.scale.lerp(targetScale, 0.08);
+    if (routeRevealStartedAt !== null || routeCoverStartedAt !== null) {
+      modelGroup.scale.copy(targetScale);
+    } else {
+      modelGroup.scale.lerp(targetScale, 0.08);
+    }
 
     const isSettled =
       modelGroup.position.distanceTo(targetPosition) < 0.002 &&
@@ -332,7 +373,7 @@ export default function SignalModel({
       Math.abs(modelGroup.rotation.z - targetRotation.z) < 0.0005 &&
       modelGroup.scale.distanceTo(targetScale) < 0.002;
 
-    if (!isSettled) invalidate();
+    if (!isSettled || routeRevealRunning || routeCoverRunning) invalidate();
   });
 
   useFrame(() => {

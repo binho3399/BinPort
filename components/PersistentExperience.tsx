@@ -31,6 +31,9 @@ export default function PersistentExperience({ children }: { children: ReactNode
   const [hasEnteredExperience, setHasEnteredExperience] = useState(
     () => typeof document !== 'undefined' && document.documentElement.classList.contains('is-entered'),
   );
+  const [hasPreloaderCompleted, setHasPreloaderCompleted] = useState(
+    () => typeof document !== 'undefined' && document.documentElement.classList.contains('is-entered'),
+  );
   const [showOverlayExtras, setShowOverlayExtras] = useState(false);
   const { displayRoute, displayedChildren, transitionPhase, revealMode, handleNavigate } =
     useRouteTransition(children);
@@ -41,6 +44,13 @@ export default function PersistentExperience({ children }: { children: ReactNode
     onInteractionEvent(window, 'entered', handleEntered);
     return () => offInteractionEvent(window, 'entered', handleEntered);
   }, [hasEnteredExperience]);
+
+  useEffect(() => {
+    if (hasPreloaderCompleted) return;
+    const handlePreloaderComplete = () => setHasPreloaderCompleted(true);
+    onInteractionEvent(window, 'preloaderComplete', handlePreloaderComplete);
+    return () => offInteractionEvent(window, 'preloaderComplete', handlePreloaderComplete);
+  }, [hasPreloaderCompleted]);
 
   useEffect(() => {
     if (!hasEnteredExperience) return undefined;
@@ -120,7 +130,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
         {isHomeShellRoute ? (
           <WebGLScene
             route={route}
-            interactive={hasEnteredExperience}
+            interactive={hasPreloaderCompleted}
             revealMode={revealMode}
             transitionPhase={transitionPhase}
           />

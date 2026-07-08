@@ -12,6 +12,14 @@ const loadingMessages = ['Loading...', 'Almost there...', 'Just a moment...'];
 const scrambleChars = 'upperAndLowerCase0123456789<>!?_#*+';
 
 let hasEnteredExperience = false;
+let hasSignaledExperienceReady = false;
+
+function signalExperienceReady() {
+  if (hasSignaledExperienceReady) return;
+  hasSignaledExperienceReady = true;
+  document.documentElement.classList.add('is-page-ready', 'is-page-surface-ready', 'is-entered');
+  emitInteractionEvent(window, 'entered');
+}
 
 export default function Preloader() {
   const preloader = useRef<HTMLDivElement | null>(null);
@@ -37,8 +45,8 @@ export default function Preloader() {
     setWavePath(wave.current, waveClosedPath);
     if (root) gsap.set(root, { autoAlpha: 0, display: 'none' });
     hasEnteredExperience = true;
-    document.documentElement.classList.add('is-page-ready', 'is-page-surface-ready', 'is-entered');
-    emitInteractionEvent(window, 'entered');
+    signalExperienceReady();
+    emitInteractionEvent(window, 'preloaderComplete');
   }, []);
 
   const startExit = useCallback(() => {
@@ -116,6 +124,7 @@ export default function Preloader() {
       gsap.set(root, { autoAlpha: 1, display: 'grid' });
       gsap.set(label, { autoAlpha: 1, opacity: 0, textContent: '', y: 6 });
       setWavePath(wave.current, waveOpenPath);
+      signalExperienceReady();
 
       const loop = gsap.timeline({ repeat: -1 });
       loadingMessages.forEach((message) => {

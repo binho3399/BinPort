@@ -141,9 +141,10 @@ function useAdaptiveAutoUpgradeAllowed() {
   return allowed;
 }
 
-function ProgressiveQualityGate({ onUpgrade }: { onUpgrade: () => void }) {
+function ProgressiveQualityGate({ enabled, onUpgrade }: { enabled: boolean; onUpgrade: () => void }) {
   const allowAutomaticUpgrade = useAdaptiveAutoUpgradeAllowed();
   useEffect(() => {
+    if (!enabled) return;
     let completed = false;
     const finish = () => {
       if (completed) return;
@@ -158,7 +159,7 @@ function ProgressiveQualityGate({ onUpgrade }: { onUpgrade: () => void }) {
       if (idleId) window.clearTimeout(idleId);
       events.forEach((eventName) => window.removeEventListener(eventName, onInteraction));
     };
-  }, [allowAutomaticUpgrade, onUpgrade]);
+  }, [allowAutomaticUpgrade, enabled, onUpgrade]);
   return null;
 }
 
@@ -185,7 +186,7 @@ export default function WebGLScene({ interactive, route, revealMode, transitionP
           gl.toneMappingExposure = 1.56;
         }}
       >
-        <ProgressiveQualityGate onUpgrade={() => setHighQuality(true)} />
+        <ProgressiveQualityGate enabled={interactive} onUpgrade={() => setHighQuality(true)} />
         <RenderScheduler interactive={interactive} />
         <ambientLight intensity={ambientIntensity} />
         <hemisphereLight color="#fffdf8" groundColor="#d8d0c7" intensity={hemisphereIntensity} />
@@ -204,6 +205,7 @@ export default function WebGLScene({ interactive, route, revealMode, transitionP
             highQuality={highQuality}
             mood={mood}
             routeRevealActive={route === 'home' && revealMode === 'route' && transitionPhase === 'revealing'}
+            routeCoverActive={route === 'home' && transitionPhase === 'covering'}
           />
         </Suspense>
         <Suspense fallback={null}>

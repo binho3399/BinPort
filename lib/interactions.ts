@@ -3,6 +3,7 @@ export const interactionEventNames = {
   cursorLeave: 'signal-pole:cursor-leave',
   cursorReset: 'signal-pole:cursor-reset',
   entered: 'signal-pole:entered',
+  preloaderComplete: 'signal-pole:preloader-complete',
   modelPortalStart: 'signal-pole:model-portal-start',
 } as const;
 
@@ -25,6 +26,7 @@ type InteractionEventPayloads = {
   cursorLeave: undefined;
   cursorReset: undefined;
   entered: undefined;
+  preloaderComplete: undefined;
   modelPortalStart: ModelPortalStartDetail;
 };
 
