@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import SkyBgTest from '../../../components/SkyBgTest';
+import SkyBgTest from '../../../components/debug/SkyBgTest';
 
 export const metadata = {
   title: 'Sky Background Test',

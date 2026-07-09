@@ -2,9 +2,11 @@
 
 import { Canvas, useThree } from '@react-three/fiber';
 import { Environment } from '@react-three/drei';
+import type { RefObject } from 'react';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import SignalModel from './webgl/SignalModel';
+import { useAdaptiveExperienceMode } from './useAdaptiveExperienceMode';
 import type { RouteId } from '../lib/routes';
 import { getModelRouteMood } from './webgl/modelRoutes';
 import type { RevealMode, TransitionPhase } from './shell/useRouteTransition';
@@ -19,6 +21,7 @@ type WebGLSceneProps = {
   route: RouteId | null;
   revealMode: RevealMode;
   transitionPhase: TransitionPhase;
+  wrapperRef?: RefObject<HTMLDivElement | null>;
 };
 
 function RenderScheduler({
@@ -126,38 +129,9 @@ function RenderScheduler({
   return null;
 }
 
-function useViewportCategory() {
-  const [isNarrowViewport, setIsNarrowViewport] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia('(max-width: 620px)');
-    const update = () => setIsNarrowViewport(media.matches);
-    update();
-    if (typeof media.addEventListener === 'function') {
-      media.addEventListener('change', update);
-      return () => media.removeEventListener('change', update);
-    }
-
-    media.addListener(update);
-    return () => media.removeListener(update);
-  }, []);
-
-  return isNarrowViewport;
-}
-
-function useAdaptiveAutoUpgradeAllowed() {
-  const [allowed] = useState(() => {
-    const cores = navigator.hardwareConcurrency ?? 0;
-    const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 0;
-    const weakDevice = (cores > 0 && cores <= 4) || (memory > 0 && memory <= 4);
-    return !weakDevice;
-  });
-
-  return allowed;
-}
-
 function ProgressiveQualityGate({ enabled, onUpgrade }: { enabled: boolean; onUpgrade: () => void }) {
-  const allowAutomaticUpgrade = useAdaptiveAutoUpgradeAllowed();
+  const { shouldUseLowPowerRendering } = useAdaptiveExperienceMode();
+  const allowAutomaticUpgrade = !shouldUseLowPowerRendering;
   useEffect(() => {
     if (!enabled) return;
     let completed = false;
@@ -178,9 +152,11 @@ function ProgressiveQualityGate({ enabled, onUpgrade }: { enabled: boolean; onUp
   return null;
 }
 
-export default function WebGLScene({ interactive, route, revealMode, transitionPhase }: WebGLSceneProps) {
+export default function WebGLScene({ interactive, route, revealMode, transitionPhase, wrapperRef }: WebGLSceneProps) {
   const [highQuality, setHighQuality] = useState(false);
-  const isMobile = useViewportCategory();
+  const { hasCoarsePointer, isMobileViewport, allowShowreelVideo } = useAdaptiveExperienceMode();
+  const isMobile = isMobileViewport || hasCoarsePointer;
+  const disableShowreelVideo = !allowShowreelVideo;
   const dpr: [number, number] = isMobile ? [1, 1] : highQuality ? [1, 1.5] : [0.75, 1];
   const shadowMapSize = highQuality ? (isMobile ? 1024 : 1536) : isMobile ? 512 : 768;
   const mood = getModelRouteMood(route);
@@ -197,7 +173,7 @@ export default function WebGLScene({ interactive, route, revealMode, transitionP
   const directionalIntensity = (highQuality ? 1.28 : 1.42) * mood.lightMultiplier;
   const environmentIntensity = (highQuality ? 0.58 : 0.42) * mood.environmentMultiplier;
   return (
-    <div className="webgl-canvas-wrap">
+    <div ref={wrapperRef} className="webgl-canvas-wrap">
       <Canvas
         shadows={enableShadows ? { type: THREE.PCFShadowMap } : false}
         dpr={dpr}
@@ -230,6 +206,7 @@ export default function WebGLScene({ interactive, route, revealMode, transitionP
           <SignalModel
             interactive={interactive}
             highQuality={highQuality}
+            disableShowreelVideo={disableShowreelVideo}
             mood={mood}
             routeRevealActive={route === 'home' && revealMode === 'route' && transitionPhase === 'revealing'}
             routeCoverActive={route === 'home' && transitionPhase === 'covering'}

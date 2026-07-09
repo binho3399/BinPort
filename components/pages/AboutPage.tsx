@@ -6,6 +6,7 @@ import BackButton from './BackButton';
 import {
   aboutContent,
   aboutLanguages,
+  aboutUiContent,
   contactLinks,
   type AboutLanguage,
 } from '../../lib/siteContent';
@@ -49,16 +50,19 @@ export default function AboutPage() {
               <div>
                 <dt>{copy.contactLabel}</dt>
                 <dd>
-                  <a href={`mailto:${contactLinks.email}`} data-cursor-stalker-label="Mail">
+                  <a
+                    href={`mailto:${contactLinks.email}`}
+                    data-cursor-stalker-label={aboutUiContent.contactLinks.emailCursorLabel}
+                  >
                     {contactLinks.email} <ArrowUpRight size={18} />
                   </a>
                   <a
                     href={contactLinks.linkedin}
                     target="_blank"
                     rel="noreferrer"
-                    data-cursor-stalker-label="LinkedIn"
+                    data-cursor-stalker-label={aboutUiContent.contactLinks.linkedinCursorLabel}
                   >
-                    LinkedIn <ArrowUpRight size={18} />
+                    {aboutUiContent.contactLinks.linkedinLabel} <ArrowUpRight size={18} />
                   </a>
                 </dd>
               </div>

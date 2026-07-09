@@ -44,6 +44,8 @@ npm run analyze       # ANALYZE=true next build (bundle-analyzer)
 |---|---|
 | `AGENTS.md` | Agent instructions — codebase map, dev commands, edge cases. Loaded automatically by OpenCode. |
 | `CLAUDE.md` | Project context for Claude — Vietnamese-mixed English, conventions, CodeGraph usage, parity/visual work. |
+| `docs/architecture.md` | Concise module ownership + code placement guide — where new routes, copy, shell behavior, WebGL, CSS, debug code, and tests should live. |
+| `docs/plans/` | Timestamped implementation/maintenance plans. New plan files use `YYYY-MM-DD-HHMM-<plan-name>.md`. |
 | `DESIGN.md` | **Single source of truth for UI consistency** — colors, typography, spacing, layout, components, animation, responsive, CSS architecture, accessibility. |
 | `PLAN.md` | Quy trình cập nhật `WORKLOG.md` sau mỗi task (template + thứ tự thực hiện). |
 | `WORKLOG.md` | Timeline history của tất cả tasks đã thực hiện (files changed + summary table + bài học rút ra). |

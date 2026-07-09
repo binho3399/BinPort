@@ -5,7 +5,7 @@ import {
   drawProfileTexture,
   getProfileTextFrame,
   PROFILE_CYCLE_DURATION,
-} from './profileSignCanvas';
+} from '../profileSignCanvas';
 
 export default function YellowCanvasTest() {
   const fullCanvasRef = useRef<HTMLCanvasElement | null>(null);

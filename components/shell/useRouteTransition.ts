@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { emitInteractionEvent } from '../../lib/interactions';
@@ -13,10 +13,17 @@ export type RevealMode = 'initial' | 'route';
 
 const NAVIGATION_FAILSAFE_MS = 1500;
 
+export type RouteTransitionRefs = {
+  routeCurrentRef: RefObject<HTMLDivElement | null>;
+  atmosphereCanvasRef: RefObject<HTMLCanvasElement | null>;
+  modelWrapperRef: RefObject<HTMLDivElement | null>;
+  cloudVeilRef: RefObject<HTMLDivElement | null>;
+};
+
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export function useRouteTransition(children: ReactNode) {
+export function useRouteTransition(children: ReactNode, refs: RouteTransitionRefs) {
   const pathname = usePathname();
   const route = getRouteId(pathname);
   const router = useRouter();
@@ -47,18 +54,20 @@ export function useRouteTransition(children: ReactNode) {
     clearFallbackTimeout();
   }, [clearFallbackTimeout]);
 
+  const { routeCurrentRef, atmosphereCanvasRef, modelWrapperRef, cloudVeilRef } = refs;
+
   const shellTargets = useCallback(() => {
-    const routeCurrent = document.querySelector<HTMLElement>('.route-current');
-    const atmosphere = document.querySelector<HTMLElement>('.sky-background__canvas--atmosphere');
-    const model = document.querySelector<HTMLElement>('.webgl-canvas-wrap');
-    const veil = document.querySelector<HTMLElement>('.cloud-transition-veil');
+    const routeCurrent = routeCurrentRef.current;
+    const atmosphere = atmosphereCanvasRef.current;
+    const model = modelWrapperRef.current;
+    const veil = cloudVeilRef.current;
     const depthTargets = [atmosphere].filter(Boolean);
     return { routeCurrent, atmosphere, model, depthTargets, veil };
-  }, []);
+  }, [atmosphereCanvasRef, cloudVeilRef, modelWrapperRef, routeCurrentRef]);
 
   const resetShellTargets = useCallback(() => {
-    const { routeCurrent, depthTargets, veil } = shellTargets();
-    gsap.set([routeCurrent, ...depthTargets].filter(Boolean), { clearProps: 'transform,opacity,filter' });
+    const { routeCurrent, depthTargets, model, veil } = shellTargets();
+    gsap.set([routeCurrent, ...depthTargets, model].filter(Boolean), { clearProps: 'transform,opacity,filter' });
     gsap.set(veil, { autoAlpha: 0, scale: 1.18, clearProps: 'filter' });
   }, [shellTargets]);
 

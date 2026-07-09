@@ -20,6 +20,10 @@ const FAR_CLOUDS: Cloud[] = [
 ];
 
 export const CLOUDS_BY_DEPTH: Cloud[] = [...CLOUDS, ...FAR_CLOUDS].sort((a, b) => a.depth - b.depth);
-export const MOBILE_CLOUDS_BY_DEPTH: Cloud[] = [...FAR_CLOUDS.slice(0, 2), CLOUDS[0], CLOUDS[2], CLOUDS[5], CLOUDS[8], CLOUDS[10]].sort((a, b) => a.depth - b.depth);
+const MOBILE_CLOUDS = [FAR_CLOUDS[0], FAR_CLOUDS[1], CLOUDS[0], CLOUDS[2], CLOUDS[5], CLOUDS[8], CLOUDS[10]].filter(
+  (cloud): cloud is Cloud => Boolean(cloud),
+);
+
+export const MOBILE_CLOUDS_BY_DEPTH: Cloud[] = MOBILE_CLOUDS.sort((a, b) => a.depth - b.depth);
 export const SKY_TINT = { r: 195, g: 223, b: 240 };
 export const SKY_STOPS: ReadonlyArray<{ t: number; color: string }> = [{ t: 0, color: '#b8dff0' }, { t: 0.35, color: '#cce8f3' }, { t: 0.65, color: '#e2f1f8' }, { t: 1, color: '#f0f7fb' }];

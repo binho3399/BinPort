@@ -66,10 +66,32 @@ export const contactContent = {
   heading: 'Get in touch.',
 };
 
+export const preloaderContent = {
+  loadingMessages: ['Loading...', 'Almost there...', 'Just a moment...'],
+  exitText: 'Thanks for waiting - all set.',
+  srOnlyText: 'Loading experience',
+  initialVisibleText: 'Loading...',
+};
+
 export const projectsPageContent = {
   eyebrow: 'PROJECTS',
   heading:
     'Projects that explore design, motion, 3D, and interactive front-end development.',
+  galleryAriaLabel: 'Selected projects',
+  cursorLabel: 'View Project',
+  modePillAriaLabel: 'Project view mode',
+  modeLabels: {
+    primary: 'Overview',
+    secondary: 'Index',
+  },
+};
+
+export const aboutUiContent = {
+  contactLinks: {
+    emailCursorLabel: 'Mail',
+    linkedinCursorLabel: 'LinkedIn',
+    linkedinLabel: 'LinkedIn',
+  },
 };
 
 export const webglText = {

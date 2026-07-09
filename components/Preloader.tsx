@@ -5,10 +5,10 @@ import gsap from 'gsap';
 import ScrambleTextPlugin from 'gsap/ScrambleTextPlugin';
 import { setWavePath, waveClosedPath, waveMidPath, waveOpenPath } from './waveTransition';
 import { emitInteractionEvent } from '../lib/interactions';
+import { preloaderContent } from '../lib/siteContent';
 
 gsap.registerPlugin(ScrambleTextPlugin);
 
-const loadingMessages = ['Loading...', 'Almost there...', 'Just a moment...'];
 const scrambleChars = 'upperAndLowerCase0123456789<>!?_#*+';
 
 let hasEnteredExperience = false;
@@ -74,7 +74,7 @@ export default function Preloader() {
           chars: scrambleChars,
           revealDelay: 0.07,
           speed: 1.2,
-          text: 'Thanks for waiting - all set.',
+          text: preloaderContent.exitText,
         },
       })
       .to({}, { duration: 0.38 })
@@ -127,7 +127,7 @@ export default function Preloader() {
       signalExperienceReady();
 
       const loop = gsap.timeline({ repeat: -1 });
-      loadingMessages.forEach((message) => {
+      preloaderContent.loadingMessages.forEach((message) => {
         loop
           .to(label, {
             duration: 0.66,
@@ -177,9 +177,9 @@ export default function Preloader() {
         <path ref={wave} />
       </svg>
       <div className="preloader__inner">
-        <span className="sr-only">Loading experience</span>
+        <span className="sr-only">{preloaderContent.srOnlyText}</span>
         <span ref={text} className="preloader__text" aria-hidden="true">
-          Loading...
+          {preloaderContent.initialVisibleText}
         </span>
       </div>
     </div>

@@ -10,11 +10,14 @@ import Preloader from './Preloader';
 import FilmGrain from './FilmGrain';
 import SiteNav from './SiteNav';
 import CloudTransitionVeil from './CloudTransitionVeil';
+import { useAdaptiveExperienceMode } from './useAdaptiveExperienceMode';
 import { getRouteId, isContactRoute, isHomeRoute, shouldShowShellBackButton } from '../lib/routes';
 import { NavigationContext } from '../lib/navigationContext';
 import { offInteractionEvent, onInteractionEvent } from '../lib/interactions';
 import { useRouteTransition } from './shell/useRouteTransition';
 import { usePageRevealAnimations } from './shell/usePageRevealAnimations';
+import { useWarmRoutes } from './shell/useWarmRoutes';
+import { useWarmHomeExperience } from './shell/useWarmHomeExperience';
 
 const WebGLScene = dynamic(() => import('./WebGLScene'), {
   ssr: false,
@@ -27,7 +30,13 @@ export default function PersistentExperience({ children }: { children: ReactNode
   const route = getRouteId(pathname);
   const isHomeShellRoute = isHomeRoute(route);
   const isContactShellRoute = isContactRoute(route);
+  const { allowBackgroundWebGL, disableHeavyExperience, isResolved, mode } = useAdaptiveExperienceMode();
+  const shouldRenderHomeWebGL = isResolved && isHomeShellRoute && !disableHeavyExperience;
   const page = useRef<HTMLDivElement | null>(null);
+  const routeCurrentRef = useRef<HTMLDivElement | null>(null);
+  const atmosphereCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const modelWrapperRef = useRef<HTMLDivElement | null>(null);
+  const cloudVeilRef = useRef<HTMLDivElement | null>(null);
   const [hasEnteredExperience, setHasEnteredExperience] = useState(
     () => typeof document !== 'undefined' && document.documentElement.classList.contains('is-entered'),
   );
@@ -36,7 +45,12 @@ export default function PersistentExperience({ children }: { children: ReactNode
   );
   const [showOverlayExtras, setShowOverlayExtras] = useState(false);
   const { displayRoute, displayedChildren, transitionPhase, revealMode, handleNavigate } =
-    useRouteTransition(children);
+    useRouteTransition(children, {
+      routeCurrentRef,
+      atmosphereCanvasRef,
+      modelWrapperRef,
+      cloudVeilRef,
+    });
 
   useEffect(() => {
     if (hasEnteredExperience) return;
@@ -66,52 +80,8 @@ export default function PersistentExperience({ children }: { children: ReactNode
     return () => window.clearTimeout(id);
   }, [hasEnteredExperience]);
 
-  useEffect(() => {
-    if (!hasEnteredExperience) return undefined;
-
-    const warmRoutes = () => {
-      router.prefetch('/projects');
-      router.prefetch('/about');
-      router.prefetch('/contact');
-    };
-
-    const idleCallbackId =
-      typeof window.requestIdleCallback === 'function'
-        ? window.requestIdleCallback(warmRoutes, { timeout: 2000 })
-        : window.setTimeout(warmRoutes, 900);
-
-    return () => {
-      if (typeof window.cancelIdleCallback === 'function' && typeof idleCallbackId === 'number') {
-        window.cancelIdleCallback(idleCallbackId);
-      } else {
-        window.clearTimeout(idleCallbackId);
-      }
-    };
-  }, [hasEnteredExperience, router]);
-
-  useEffect(() => {
-    if (!isHomeShellRoute) return;
-    void import('./WebGLScene');
-    void import('./webgl/SignalModel');
-
-    const warmModel = () => {
-      const fetchMode = typeof fetch === 'function' ? { cache: 'force-cache' as const } : undefined;
-      void fetch('/models/model.glb', fetchMode).catch(() => {});
-    };
-
-    const idleCallbackId =
-      typeof window.requestIdleCallback === 'function'
-        ? window.requestIdleCallback(warmModel, { timeout: 2000 })
-        : window.setTimeout(warmModel, 300);
-
-    return () => {
-      if (typeof window.cancelIdleCallback === 'function' && typeof idleCallbackId === 'number') {
-        window.cancelIdleCallback(idleCallbackId);
-      } else {
-        window.clearTimeout(idleCallbackId);
-      }
-    };
-  }, [isHomeShellRoute]);
+  useWarmRoutes({ enabled: hasEnteredExperience, router });
+  useWarmHomeExperience({ enabled: isResolved && isHomeShellRoute && allowBackgroundWebGL });
 
   useEffect(() => {
     const handleCursorReset = () => {
@@ -129,14 +99,17 @@ export default function PersistentExperience({ children }: { children: ReactNode
       ref={page}
       className="persistent-experience"
       data-route={route ?? 'unknown'}
+      data-experience-mode={mode}
+      data-experience-resolved={isResolved}
       data-transitioning={transitionPhase !== 'idle'}
     >
       <div className="webgl-background" aria-hidden="true">
         <div className="sky-layer">
-          <SkyBackground />
+          <SkyBackground atmosphereCanvasRef={atmosphereCanvasRef} />
         </div>
-        {isHomeShellRoute ? (
+        {shouldRenderHomeWebGL ? (
           <WebGLScene
+            wrapperRef={modelWrapperRef}
             route={route}
             interactive={hasPreloaderCompleted}
             revealMode={revealMode}
@@ -145,7 +118,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
         ) : null}
       </div>
       <Preloader />
-      <CloudTransitionVeil />
+      <CloudTransitionVeil veilRef={cloudVeilRef} />
       {shouldShowShellBackButton(route) ? (
         <button
           type="button"
@@ -158,7 +131,7 @@ export default function PersistentExperience({ children }: { children: ReactNode
           </svg>
         </button>
       ) : null}
-      <div className="route-current">
+      <div ref={routeCurrentRef} className="route-current">
         {transitionPhase === 'covering' ? displayedChildren : children}
       </div>
       <SiteNav currentRoute={route} onNavigate={handleNavigate} />

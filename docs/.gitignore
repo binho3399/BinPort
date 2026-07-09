@@ -1,0 +1,9 @@
+# Local-only documentation scratch files
+.DS_Store
+*.tmp
+*.bak
+*.local.md
+
+# Keep canonical plans in docs/plans/ tracked.
+!plans/
+!plans/*.md

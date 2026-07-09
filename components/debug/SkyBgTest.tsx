@@ -1,6 +1,6 @@
 'use client';
 
-import SkyBackground from './SkyBackground';
+import SkyBackground from '../SkyBackground';
 
 /**
  * Debug wrapper for the sky background. Renders the shared SkyBackground

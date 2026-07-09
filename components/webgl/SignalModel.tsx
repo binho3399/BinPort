@@ -12,6 +12,7 @@ import type { AnimatedTexturesState, InteractiveSignSurface, TrafficLight } from
 import { emitInteractionEvent } from '../../lib/interactions';
 import { useNavigate } from '../../lib/navigationContext';
 import { tryCreateShowreelVideoTextureResource } from './textures';
+import { applyShowreelVideoMaterial, captureShowreelOriginalMaterial, restoreShowreelMaterial } from './showreelMaterial';
 import { getRouteForMaterial } from './modelRoutes';
 import type { ModelRouteMood } from './modelRoutes';
 import { useModelCursor } from './useModelCursor';
@@ -29,12 +30,14 @@ const easePower3In = (progress: number) => progress * progress * progress;
 export default function SignalModel({
   interactive,
   highQuality,
+  disableShowreelVideo,
   mood,
   routeRevealActive,
   routeCoverActive,
 }: {
   interactive: boolean;
   highQuality: boolean;
+  disableShowreelVideo: boolean;
   mood: ModelRouteMood;
   routeRevealActive: boolean;
   routeCoverActive: boolean;
@@ -52,6 +55,8 @@ export default function SignalModel({
   const animatedTexturesRef = useRef<AnimatedTexturesState | null>(null);
   const trafficLightsRef = useRef<TrafficLight[]>([]);
   const showreelMeshRef = useRef<THREE.Mesh | null>(null);
+  const showreelOriginalMaterialRef = useRef<THREE.Material | null>(null);
+  const showreelOwnedMaterialRef = useRef<THREE.Material | null>(null);
   const showreelVideoResourceRef = useRef<ReturnType<typeof tryCreateShowreelVideoTextureResource> | null>(null);
   const ownedResourcesRef = useRef<Array<{ dispose: () => void }>>([]);
   const hoverPointerDirty = useRef(false);
@@ -145,14 +150,22 @@ export default function SignalModel({
   }, [visualRoot]);
 
   useEffect(() => {
+    restoreShowreelMaterial({
+      mesh: showreelMeshRef.current,
+      originalMaterial: showreelOriginalMaterialRef.current,
+      ownedMaterial: showreelOwnedMaterialRef.current,
+    });
+    showreelOwnedMaterialRef.current = null;
+    showreelVideoResourceRef.current?.dispose();
+    showreelVideoResourceRef.current = null;
+
     animatedTexturesRef.current = prepared.animatedTextures;
     trafficLightsRef.current = prepared.trafficLights;
     showreelMeshRef.current = prepared.showreelMesh;
+    showreelOriginalMaterialRef.current = captureShowreelOriginalMaterial(prepared.showreelMesh);
     ownedResourcesRef.current = prepared.ownedResources;
     textureFrameTimes.current = { contact: 0, profile: 0, projects: 0 };
     hasVideoApplied.current = false;
-    showreelVideoResourceRef.current?.dispose();
-    showreelVideoResourceRef.current = null;
   }, [prepared]);
 
   useEffect(() => {
@@ -174,6 +187,19 @@ export default function SignalModel({
   }, [invalidate, routeCoverActive]);
 
   useEffect(() => {
+    if (disableShowreelVideo) {
+      restoreShowreelMaterial({
+        mesh: showreelMeshRef.current,
+        originalMaterial: showreelOriginalMaterialRef.current,
+        ownedMaterial: showreelOwnedMaterialRef.current,
+      });
+      showreelOwnedMaterialRef.current = null;
+      showreelVideoResourceRef.current?.dispose();
+      showreelVideoResourceRef.current = null;
+      hasVideoApplied.current = false;
+      invalidate();
+      return;
+    }
     if (hasVideoApplied.current) return;
     const mesh = showreelMeshRef.current;
     if (!mesh || Array.isArray(mesh.material)) return;
@@ -185,13 +211,12 @@ export default function SignalModel({
 
     const applyReadyVideoMaterial = () => {
       if (hasVideoApplied.current) return;
-      const currentMesh = showreelMeshRef.current;
-      if (!currentMesh || Array.isArray(currentMesh.material)) return;
-      const material = currentMesh.material.clone() as THREE.MeshStandardMaterial;
-      material.map = resource.texture;
-      material.emissiveMap = resource.texture;
-      material.needsUpdate = true;
-      currentMesh.material = material;
+      const material = applyShowreelVideoMaterial({
+        mesh: showreelMeshRef.current,
+        resource,
+      });
+      if (!material) return;
+      showreelOwnedMaterialRef.current = material;
       hasVideoApplied.current = true;
       invalidate();
     };
@@ -217,7 +242,7 @@ export default function SignalModel({
     resource.video.addEventListener('canplaythrough', handleReady, { passive: true });
 
     return cleanupListeners;
-  }, [invalidate, prepared]);
+  }, [disableShowreelVideo, invalidate, prepared]);
 
   useEffect(() => {
     return () => {
@@ -228,12 +253,12 @@ export default function SignalModel({
       isPortalNavigationPendingRef.current = false;
       restoreActiveSignGlow();
       restoreActiveSignRipple();
-      const material = showreelMeshRef.current?.material;
-      if (material && !Array.isArray(material)) {
-        const standardMaterial = material as THREE.MeshStandardMaterial;
-        standardMaterial.map = null;
-        standardMaterial.emissiveMap = null;
-      }
+      restoreShowreelMaterial({
+        mesh: showreelMeshRef.current,
+        originalMaterial: showreelOriginalMaterialRef.current,
+        ownedMaterial: showreelOwnedMaterialRef.current,
+      });
+      showreelOwnedMaterialRef.current = null;
       showreelVideoResourceRef.current?.dispose();
       showreelVideoResourceRef.current = null;
       ownedResourcesRef.current.forEach((resource) => resource.dispose());

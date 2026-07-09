@@ -47,6 +47,14 @@ If an inline-attached image is not available to the active lane, ask the user to
 ## Design System
 
 - **`DESIGN.md`** is the single source of truth for UI consistency. Consult it for colors, typography, spacing, layout patterns, component specs, animation, and responsive behavior. Do not invent new design values unless explicitly asked.
+- When adding or moving code, consult **`docs/architecture.md`** first for module ownership and code placement rules.
+
+## Planning Workflow
+
+- When the user asks to create/save a plan, create a Markdown file under **`docs/plans/`**.
+- Plan filenames must use timestamp + short slug: `YYYY-MM-DD-HHMM-<plan-name>.md`.
+- Keep plans actionable: purpose, current state, prioritized backlog, file targets, safe order, verification, and non-goals.
+- Do not store throwaway local drafts in tracked docs; use `*.local.md` if needed (ignored by `docs/.gitignore`).
 
 ## Codebase Map
 
@@ -78,7 +86,7 @@ npm run analyze       # ANALYZE=true next build (bundle-analyzer)
 - Prefer small, route-aware edits. Shared shell changes in `PersistentExperience`, `Cursor`, `WebGLScene`, or `app/styles/*` affect every route.
 - Preserve the fixed full-viewport structure required by the clone-like experience: hidden page overflow, fixed WebGL background, fixed route layer, nav, cursor, preloader, and transition overlays.
 - When adjusting WebGL appearance, check the model asset request, canvas client size, drawing buffer size, camera/scroll state, and material/lighting changes before treating a blank screenshot as a scene bug.
-- CodeGraph pages and API routes are development helpers. `app/codegraph/page.tsx` intentionally returns `notFound()` in production or when `.codegraph/codegraph.db` is unavailable.
+- CodeGraph pages and API routes are development helpers. Their shared DB helper lives under `lib/debug/`. `app/codegraph/page.tsx` intentionally returns `notFound()` in production or when `.codegraph/codegraph.db` is unavailable.
 - Keep environment examples non-secret. `.env.example` currently documents placeholders only; runtime does not depend on custom env vars beyond normal Next/Node behavior.
 
 ## Verification

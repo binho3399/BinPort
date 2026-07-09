@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, hasCodegraphDb, type DbNode } from '../../../../lib/codegraph-db';
+import { getDb, hasCodegraphDb, type DbNode } from '../../../../lib/debug/codegraph-db';
 
 export function GET(req: NextRequest) {
   if (!hasCodegraphDb()) {

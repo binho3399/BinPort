@@ -1,6 +1,8 @@
 'use client';
 
+import type { RefObject } from 'react';
 import { useEffect, useRef } from 'react';
+import { useAdaptiveExperienceMode } from './useAdaptiveExperienceMode';
 import { CLOUDS_BY_DEPTH, MOBILE_CLOUDS_BY_DEPTH, SKY_STOPS } from './sky/cloudData';
 import {
   ALPHA_BREATH_AMP,
@@ -25,9 +27,15 @@ import { skyTransition } from '../lib/skyTransition';
 
 const wrapPosition = (value: number, modulus: number) => ((value % modulus) + modulus) % modulus;
 
-export default function SkyBackground() {
+type SkyBackgroundProps = {
+  atmosphereCanvasRef?: RefObject<HTMLCanvasElement | null>;
+};
+
+export default function SkyBackground({ atmosphereCanvasRef: externalAtmosphereCanvasRef }: SkyBackgroundProps) {
   const baseCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const atmosphereCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const internalAtmosphereCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const atmosphereCanvasRef = externalAtmosphereCanvasRef ?? internalAtmosphereCanvasRef;
+  const { shouldReduceMotion, shouldMinimizeMotion } = useAdaptiveExperienceMode();
 
   useEffect(() => {
     const baseCanvas = baseCanvasRef.current;
@@ -37,8 +45,10 @@ export default function SkyBackground() {
     const ctx = atmosphereCanvas.getContext('2d');
     if (!baseCtx || !ctx) return;
 
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const vivid = true;
+    const prefersReduced = shouldMinimizeMotion;
+    const shouldMinimizeAnimation = shouldReduceMotion;
+    const vivid = !shouldMinimizeAnimation;
+    const frameInterval = shouldMinimizeAnimation ? 1000 / 12 : 1000 / 30;
     let renderClouds = buildRenderClouds(CLOUDS_BY_DEPTH);
     let usingMobileClouds = false;
     let bgCanvas: HTMLCanvasElement | null = null;
@@ -50,7 +60,7 @@ export default function SkyBackground() {
     let particles: Bird[] | null = null;
 
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, shouldMinimizeAnimation ? 1.25 : 2);
       const w = Math.floor(window.innerWidth * dpr);
       const h = Math.floor(window.innerHeight * dpr);
       for (const canvas of [baseCanvas, atmosphereCanvas]) {
@@ -59,7 +69,7 @@ export default function SkyBackground() {
         canvas.style.width = `${window.innerWidth}px`;
         canvas.style.height = `${window.innerHeight}px`;
       }
-      const shouldUseMobileClouds = window.innerWidth <= 768;
+      const shouldUseMobileClouds = shouldMinimizeAnimation || window.innerWidth <= 768;
       if (shouldUseMobileClouds !== usingMobileClouds) {
         renderClouds = buildRenderClouds(shouldUseMobileClouds ? MOBILE_CLOUDS_BY_DEPTH : CLOUDS_BY_DEPTH);
         usingMobileClouds = shouldUseMobileClouds;
@@ -74,6 +84,9 @@ export default function SkyBackground() {
           const count = window.innerWidth <= 768 ? 12 : 25;
           particles = buildBirds(rng, count);
         }
+      } else {
+        haloCanvas = null;
+        particles = null;
       }
     };
 
@@ -89,13 +102,13 @@ export default function SkyBackground() {
         drawSunGlow(ctx, haloCanvas, elapsed);
       }
       const gust = vivid ? GUST_AMP * Math.sin(2 * Math.PI * elapsed / GUST_PERIOD) : 0;
-      const windOffset = elapsed * (WIND_BASE_SPEED + gust);
+      const windOffset = shouldMinimizeAnimation ? 0 : elapsed * (WIND_BASE_SPEED + gust);
       for (const rc of renderClouds) {
         const { cloud, puffs, sizeScale, parallax, bobPhase, bobPeriod, alphaPhase, alphaPeriod } = rc;
         const animatedX = wrapPosition(cloud.x + windOffset * parallax, WRAP_MODULUS);
         let cx = animatedX * width;
         let bobOffset = 0;
-        if (!prefersReduced) bobOffset = (vivid ? BOB_AMPLITUDE_VIVID : BOB_AMPLITUDE) * height * Math.sin(2 * Math.PI * elapsed / bobPeriod + bobPhase);
+        if (!shouldMinimizeAnimation) bobOffset = (vivid ? BOB_AMPLITUDE_VIVID : BOB_AMPLITUDE) * height * Math.sin(2 * Math.PI * elapsed / bobPeriod + bobPhase);
         let cy = cloud.y * height + bobOffset;
         // Parallax ascend: near clouds (high rc.parallax) rush down faster
         if (ascend > 0.001) {
@@ -103,14 +116,14 @@ export default function SkyBackground() {
         }
         if (vivid) { cx += pointerX * width * PARALLAX_X_AMP * parallax; cy += pointerY * height * PARALLAX_Y_AMP * parallax; }
         let alphaMul = 1;
-        if (!prefersReduced) alphaMul = 1 + (vivid ? ALPHA_BREATH_AMP_VIVID : ALPHA_BREATH_AMP) * Math.sin(2 * Math.PI * elapsed / alphaPeriod + alphaPhase);
+        if (!shouldMinimizeAnimation) alphaMul = 1 + (vivid ? ALPHA_BREATH_AMP_VIVID : ALPHA_BREATH_AMP) * Math.sin(2 * Math.PI * elapsed / alphaPeriod + alphaPhase);
         const drawPuffs = (originX: number) => {
           for (const rp of puffs) {
             const { sprite, puff, driftPhaseX, driftPhaseY, driftPeriodX, driftPeriodY } = rp;
             let driftX = 0;
             let driftY = 0;
             let scaleBreath = 1;
-            if (!prefersReduced) {
+            if (!shouldMinimizeAnimation) {
               const driftAmp = vivid ? DRIFT_AMPLITUDE_VIVID : DRIFT_AMPLITUDE;
               driftX = driftAmp * 0.28 * Math.sin(2 * Math.PI * elapsed / driftPeriodX + driftPhaseX);
               driftY = driftAmp * Math.sin(2 * Math.PI * elapsed / driftPeriodY + driftPhaseY);
@@ -131,7 +144,7 @@ export default function SkyBackground() {
       if (vivid && particles) {
         drawBirdSilhouette(ctx, particles, width, height, elapsed, windOffset, ascend);
       }
-      if (ascend > 0.01 && !prefersReduced) {
+      if (ascend > 0.01 && !shouldMinimizeAnimation) {
         ctx.globalAlpha = ascend * 0.55;
         ctx.fillStyle = '#e8f1fa';
         ctx.fillRect(0, 0, width, height);
@@ -139,7 +152,7 @@ export default function SkyBackground() {
       }
     };
 
-    const animate = (time: number) => { rafId = window.requestAnimationFrame(animate); if (!startTime) startTime = time; if (time - lastDrawTime < 1000 / 30) return; lastDrawTime = time; drawScene((time - startTime) / 1000); };
+    const animate = (time: number) => { rafId = window.requestAnimationFrame(animate); if (!startTime) startTime = time; if (time - lastDrawTime < frameInterval) return; lastDrawTime = time; drawScene((time - startTime) / 1000); };
     const start = () => { if (rafId) return; lastDrawTime = 0; rafId = window.requestAnimationFrame(animate); };
     const stop = () => { if (rafId) { window.cancelAnimationFrame(rafId); rafId = 0; } };
     const onPointerMove = (event: PointerEvent) => { if (event.pointerType === 'touch') return; targetX = (event.clientX / window.innerWidth) * 2 - 1; targetY = (event.clientY / window.innerHeight) * 2 - 1; };
@@ -152,7 +165,7 @@ export default function SkyBackground() {
     window.addEventListener('resize', resize);
     if (vivid) { window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerleave', onPointerClear); window.addEventListener('blur', onPointerClear); }
     return () => { stop(); document.removeEventListener('visibilitychange', onVisibility); window.removeEventListener('resize', resize); if (vivid) { window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerleave', onPointerClear); window.removeEventListener('blur', onPointerClear); } };
-  }, []);
+  }, [atmosphereCanvasRef, shouldMinimizeMotion, shouldReduceMotion]);
 
   return (
     <>

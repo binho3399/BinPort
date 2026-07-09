@@ -22,14 +22,14 @@ export default function ProjectsPage() {
         </header>
 
         <div className="projects-gl-gallery">
-          <div className="projects-stack" aria-label="Selected projects">
+          <div className="projects-stack" aria-label={projectsPageContent.galleryAriaLabel}>
             {projects.map((project, index) => (
               <a
                 className="projects-stack__card"
                 href={project.href}
                 key={project.title}
                 style={{ '--project-index': index } as CSSProperties & Record<'--project-index', number>}
-                data-cursor-stalker-label="View Project"
+                data-cursor-stalker-label={projectsPageContent.cursorLabel}
                 onPointerEnter={() => setActiveProject(project)}
                 onPointerLeave={() => setActiveProject(null)}
                 onFocus={() => setActiveProject(project)}
@@ -68,9 +68,9 @@ export default function ProjectsPage() {
           <h2>{(activeProject ?? projects[0]).title.toUpperCase()}</h2>
         </div>
 
-        <div className="projects-page__mode-pill" aria-label="Project view mode">
-          <span aria-current="true">Overview</span>
-          <span>Index</span>
+        <div className="projects-page__mode-pill" aria-label={projectsPageContent.modePillAriaLabel}>
+          <span aria-current="true">{projectsPageContent.modeLabels.primary}</span>
+          <span>{projectsPageContent.modeLabels.secondary}</span>
         </div>
       </section>
     </main>
